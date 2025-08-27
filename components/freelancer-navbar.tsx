@@ -184,7 +184,18 @@ export default function FreelancerNavbar() {
       .channel("public:messages")
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
         // Only update if the message is for the current user or its read status changes
-        if (payload.new.receiver_id === profile?.id || payload.old?.is_read !== payload.new?.is_read) {
+        if (
+          payload.new &&
+          typeof payload.new === "object" &&
+          "receiver_id" in payload.new &&
+          (payload.new.receiver_id === profile?.id ||
+            (payload.old &&
+              typeof payload.old === "object" &&
+              "is_read" in payload.old &&
+              payload.new &&
+              "is_read" in payload.new &&
+              payload.old.is_read !== payload.new.is_read))
+        ) {
           console.log("FreelancerNavbar: Real-time message update detected, reloading data.")
           loadUserData() // Reload data to update message count and notifications
         }
