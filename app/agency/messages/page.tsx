@@ -444,11 +444,11 @@ export default function AgencyMessagesPage() {
                         <div className="flex items-center text-xs text-muted-foreground mt-0.5">
                           <span className="text-yellow-500 mr-1">★ 4.8</span>
                           <span className="bg-green-500 w-2 h-2 rounded-full mr-1"></span>
-                          <span className="truncate">React</span>
+                          {/* <span className="truncate">React</span> */}
                         </div>
                         <p className="text-sm text-muted-foreground truncate mt-0.5">
                           {/* Display a snippet of the last message if available */}
-                          {conversation.last_message_at ? "You welcome" : "No messages yet"}
+                          {conversation.last_message_at ? "Freelancer" : "No messages yet"}
                         </p>
                       </div>
                     </div>
@@ -495,7 +495,7 @@ export default function AgencyMessagesPage() {
                     <div className="flex items-center text-sm text-muted-foreground mt-0.5">
                       <span className="text-yellow-500 mr-1">★ 4.8</span>
                       <span className="bg-green-500 w-2 h-2 rounded-full mr-1"></span>
-                      <span>React</span>
+                      {/* <span>React</span> */}
                     </div>
                   </div>
                 </div>

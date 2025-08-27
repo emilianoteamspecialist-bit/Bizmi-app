@@ -117,15 +117,16 @@ export default function FreelancerTutorial() {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Can't find what you're looking for? Our support team is here to help you succeed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                variant="outline"
-                className="border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 bg-transparent"
-              >
-                Contact Support
-              </Button>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">Browse FAQ</Button>
-            </div>
+          
+          <div className="flex justify-center">
+  <a href="mailto:Bizimisocials12@gmail.com">
+    <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+      Contact Support
+    </Button>
+  </a>
+</div>
+
+
           </div>
         </div>
       </div>
