@@ -57,7 +57,8 @@ export default function SavedJobsPage() {
         // Load saved jobs
         const { data: savedJobsData, error } = await supabase
           .from("saved_jobs")
-          .select(`*
+          .select(`
+            *,
             jobs!saved_jobs_job_id_fkey (
               *,
               profiles!jobs_agency_id_fkey (
@@ -82,7 +83,6 @@ export default function SavedJobsPage() {
         } else {
           // Get job counts for each agency
           const agencyIds = [...new Set(savedJobsData?.map((item) => item.jobs?.profiles?.id).filter(Boolean))]
-
           const agencyJobCounts: { [key: string]: number } = {}
 
           for (const agencyId of agencyIds) {
@@ -413,8 +413,10 @@ export default function SavedJobsPage() {
                   <div>
                     <CardTitle className="text-xl">{selectedAgency.name}</CardTitle>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <img src="/images/blue-tick.png" alt="Verified" className="h-5 w-5" />
-                      <span>Verified Agency</span>
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span>
+                        {selectedAgency.rating} ({selectedAgency.reviews} reviews)
+                      </span>
                     </div>
                   </div>
                 </div>
