@@ -5,20 +5,7 @@ import FreelancerNavbar from "@/components/freelancer-navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  Eye,
-  Calendar,
-  X,
-  MapPin,
-  Clock,
-  Users,
-  Star,
-  Bookmark,
-  CreditCard,
-  Upload,
-  Send,
-  BookmarkX,
-} from "lucide-react"
+import { Eye, Calendar, X, MapPin, Clock, Users, Bookmark, CreditCard, Upload, Send, BookmarkX } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -315,8 +302,7 @@ export default function SavedJobsPage() {
                                 {job.proposals} proposals
                               </span>
                               <span className="flex items-center">
-                                <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                                {job.rating}
+                                <img src="/images/blue-tick.png" alt="Verified" className="h-4 w-4" />
                               </span>
                               <span className="flex items-center">
                                 <CreditCard className="h-4 w-4 mr-1 text-orange-500" />
@@ -413,7 +399,7 @@ export default function SavedJobsPage() {
                   <div>
                     <CardTitle className="text-xl">{selectedAgency.name}</CardTitle>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Star className="h-4 w-4 text-yellow-500" />
+                      <img src="/images/blue-tick.png" alt="Verified" className="h-4 w-4" />
                       <span>
                         {selectedAgency.rating} ({selectedAgency.reviews} reviews)
                       </span>
