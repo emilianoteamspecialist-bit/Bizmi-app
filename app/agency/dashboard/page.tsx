@@ -34,15 +34,13 @@ import PaymentModal from "@/components/payment-modal"
 
 // Available skills for selection
 const availableSkills = [
- "Web Development",
+  "Web Development",
   "Mobile App Development",
   "Frontend Development",
   "Backend Development",
   "Full-Stack Development",
   "UI/UX Design",
   "Software Development",
-  
-
 ]
 
 export default function AgencyDashboard() {
@@ -1357,7 +1355,7 @@ export default function AgencyDashboard() {
                       if (actionType === "edit") {
                         alert("Edit functionality coming soon!")
                       } else {
-                        handleJobAction(selectedJob, actionType)
+                        actionType && handleJobAction(selectedJob, actionType)
                       }
                       setShowJobActionModal(false)
                     }}
