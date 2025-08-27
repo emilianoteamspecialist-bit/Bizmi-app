@@ -98,8 +98,7 @@ export default function AgencyPostsPage() {
       let query = supabase
         .from("jobs")
         .select(
-          `
-          id,
+          `id,
           title,
           description,
           budget_min,
@@ -110,8 +109,7 @@ export default function AgencyPostsPage() {
           job_type,
           skills,
           proposals(count),
-          job_funding_status(funding_status, job_status)
-        `,
+          job_funding_status(funding_status, job_status)`,
           { count: "exact" },
         )
         .eq("agency_id", currentUserId)
@@ -178,15 +176,15 @@ export default function AgencyPostsPage() {
       const { data: proposalsData, error } = await supabase
         .from("proposals")
         .select(
-          `
-          *,
+          `*,
           profiles!proposals_freelancer_id_fkey (
             id,
             full_name,
             bio,
             location,
             phone,
-            website
+            website,
+            email
           )
         `,
         )
@@ -531,13 +529,17 @@ export default function AgencyPostsPage() {
             setSelectedJobForPayment(null)
             setSelectedFreelancerForPayment(null)
           }}
-          jobId={selectedJobForPayment.id}
-          jobTitle={selectedJobForPayment.title}
-          jobBudgetMax={selectedJobForPayment.budget_max}
-          jobBudgetMin={selectedJobForPayment.budget_min}
-          freelancerId={selectedFreelancerForPayment.freelancer_id}
-          freelancerName={selectedFreelancerForPayment.profiles?.full_name}
-          onPaymentSuccess={handlePaymentSuccess}
+          jobData={{
+            id: selectedJobForPayment.id,
+            title: selectedJobForPayment.title,
+            freelancer: {
+              id: selectedFreelancerForPayment.freelancer_id,
+              name: selectedFreelancerForPayment.profiles?.full_name || "Unknown Freelancer",
+              email: selectedFreelancerForPayment.profiles?.email || "No email provided",
+            },
+            amount: selectedJobForPayment.budget_max,
+          }}
+          onSuccess={handlePaymentSuccess}
         />
       )}
 
