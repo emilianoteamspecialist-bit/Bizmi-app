@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation"
 type AccountType = "freelancer" | "agency"
 
 const AVAILABLE_SKILLS = [
-   "Web Development",
+  "Web Development",
   "Mobile App Development",
   "Frontend Development",
   "Backend Development",
@@ -37,7 +37,6 @@ const AVAILABLE_SKILLS = [
   "Blockchain Development",
   "Smart Contracts",
   "Cybersecurity",
-
 ]
 
 export default function SignUpPage() {
@@ -244,8 +243,13 @@ export default function SignUpPage() {
       } else if (authData.user && accountType === "freelancer") {
         setSignupStatus({ type: "info", message: "Uploading identity documents..." })
 
+        const userId = authData.user.id
+        if (!userId) {
+          throw new Error("User ID not available")
+        }
+
         // Upload front ID
-        const frontFileName = `${authData.user.id}/front-id-${Date.now()}.${identityData.frontIdFile!.name.split(".").pop()}`
+        const frontFileName = `${userId}/front-id-${Date.now()}.${identityData.frontIdFile!.name.split(".").pop()}`
         const { data: frontUpload, error: frontError } = await supabase.storage
           .from("identity-documents")
           .upload(frontFileName, identityData.frontIdFile!)
@@ -253,7 +257,7 @@ export default function SignUpPage() {
         if (frontError) throw frontError
 
         // Upload back ID
-        const backFileName = `${authData.user.id}/back-id-${Date.now()}.${identityData.backIdFile!.name.split(".").pop()}`
+        const backFileName = `${userId}/back-id-${Date.now()}.${identityData.backIdFile!.name.split(".").pop()}`
         const { data: backUpload, error: backError } = await supabase.storage
           .from("identity-documents")
           .upload(backFileName, identityData.backIdFile!)
@@ -266,7 +270,7 @@ export default function SignUpPage() {
 
         // Save identity data
         const { error: identityError } = await supabase.from("Freelancer_identitie").insert({
-          user_id: authData.user.id,
+          user_id: userId,
           nin_number: identityData.ninNumber,
           front_id_url: frontUrl.publicUrl,
           back_id_url: backUrl.publicUrl,
@@ -276,7 +280,7 @@ export default function SignUpPage() {
 
         // Save skills
         const skillsData = selectedSkills.map((skill) => ({
-          user_id: authData.user.id,
+          user_id: userId,
           skill_name: skill,
         }))
 
