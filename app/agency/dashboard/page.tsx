@@ -425,8 +425,8 @@ export default function AgencyDashboard() {
     }
   }
 
-  const handleJobSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleJobSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (!profile) return
 
     try {
