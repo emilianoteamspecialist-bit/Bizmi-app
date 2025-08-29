@@ -626,7 +626,6 @@ export default function AgencyDashboard() {
         job_type: jobFormData.jobType,
         skills: selectedSkills,
         credit_cost: jobFormData.credits,
-        comments: jobFormData.comments,
         status: "active",
       }
 
@@ -878,6 +877,14 @@ export default function AgencyDashboard() {
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                        {job.comments && (
+                          <div className="mb-3">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Additional Comments</p>
+                            <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap line-clamp-3">
+                              {job.comments}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-1 mb-3">
                           {job.skills?.slice(0, 4).map((skill: string, skillIndex: number) => (
                             <Badge key={skillIndex} variant="outline" className="text-xs">
