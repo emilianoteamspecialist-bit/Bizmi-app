@@ -12,27 +12,11 @@ export default function FreelancerTutorial() {
   const tutorials = [
     {
       id: 1,
-      title: "How to place a bid",
+      title: "Bizimi-complete guide for freelancer", // Updated title as requested
       description: "Learn the best practices for submitting competitive bids that win projects",
-      thumbnail: "/placeholder.svg?height=200&width=300&text=How+to+place+a+bid",
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Replace with actual video URL
-      duration: "8:45",
-    },
-    {
-      id: 2,
-      title: "How to receive a payout",
-      description: "Step-by-step guide on setting up your payment details and receiving payments",
-      thumbnail: "/placeholder.svg?height=200&width=300&text=How+to+receive+a+payout",
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Replace with actual video URL
-      duration: "6:30",
-    },
-    {
-      id: 3,
-      title: "Strategies to a winning proposals",
-      description: "Expert tips and strategies to craft proposals that stand out from the competition",
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Strategies+to+winning+proposals",
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", // Replace with actual video URL
-      duration: "12:15",
+      thumbnail: "https://i.ibb.co/ZzLdP39W/Bizmi-freelancer.jpg",
+      videoUrl: "https://youtu.be/X_Ia9zjBR1U", // Replace with actual video URL
+      duration: "13:35",
     },
   ]
 
@@ -117,16 +101,12 @@ export default function FreelancerTutorial() {
             <p className="text-gray-600 dark:text-gray-300 mb-6">
               Can't find what you're looking for? Our support team is here to help you succeed.
             </p>
-          
-          <div className="flex justify-center">
-  <a href="mailto:Bizimisocials12@gmail.com">
-    <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-      Contact Support
-    </Button>
-  </a>
-</div>
 
-
+            <div className="flex justify-center">
+              <a href="mailto:Bizimisocials12@gmail.com">
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white">Contact Support</Button>
+              </a>
+            </div>
           </div>
         </div>
       </div>

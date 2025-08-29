@@ -707,7 +707,7 @@ export default function SignUpPage() {
               <div className="space-y-4">
                 <div>
                   <Label>Select Your Skills * (Max 10)</Label>
-                  <p className="text-sm text-gray-600">Choose skills that best describe your expertise</p>
+                  <p className="text-sm text-gray-600">Search and choose your skills, or select Others.</p>
                 </div>
 
                 {/* Selected Skills */}

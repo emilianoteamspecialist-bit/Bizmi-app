@@ -262,19 +262,15 @@ export default function AgencyWalletPage() {
                   <p className="text-gray-600 mt-1">Get help with your wallet or transactions</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                 <Button
-  onClick={() =>
-    window.open(
-      "https://mail.google.com/mail/?view=cm&fs=1&to=Bizimisocials12@gmail.com&su=Wallet Support Request",
-      "_blank"
-    )
-  }
-  className="bg-orange-500 hover:bg-orange-600 text-white"
->
-  <Mail className="h-4 w-4 mr-2" />
-  Contact Us
-</Button>
-
+                  <Button
+                    onClick={() =>
+                      window.open("mailto:Bizimisocials12@gmail.com?subject=Wallet Support Request", "_blank")
+                    }
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Contact Us
+                  </Button>
                   <Button
                     onClick={handleDepositClick}
                     variant="outline"

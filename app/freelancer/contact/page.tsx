@@ -95,34 +95,51 @@ export default function FreelancerContactPage() {
             </Card>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200 mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">Follow Us on Social Media</h2>
-            <div className="flex justify-center gap-6">
-              <Button
-                onClick={() => handleSocialClick("https://www.instagram.com/bizimisocials12?igsh=cDNsNzNwd3h0ejI5")}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3"
-              >
-                <Instagram className="mr-2 h-5 w-5" />
-                Instagram
-              </Button>
-              <Button
-                onClick={() => handleSocialClick("https://www.facebook.com/share/15CBRyPXjGf/")}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3"
-              >
-                <Facebook className="mr-2 h-5 w-5" />
-                Facebook
-              </Button>
-              <Button
-                onClick={() => handleSocialClick("https://www.tiktok.com/@bizimi0?_t=ZM-8zAXJDSR2d3&_r=1")}
-                className="bg-orange-400 hover:bg-orange-500 text-white px-6 py-3"
-              >
-                <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-                </svg>
-                TikTok
-              </Button>
-            </div>
-          </div>
+         <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200 mb-8">
+  <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+    Follow Us on Social Media
+  </h2>
+  <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
+    <Button
+      onClick={() =>
+        handleSocialClick(
+          "https://www.instagram.com/bizimisocials12?igsh=cDNsNzNwd3h0ejI5"
+        )
+      }
+      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 w-full sm:w-auto"
+    >
+      <Instagram className="mr-2 h-5 w-5" />
+      Instagram
+    </Button>
+    <Button
+      onClick={() =>
+        handleSocialClick("https://www.facebook.com/share/15CBRyPXjGf/")
+      }
+      className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 w-full sm:w-auto"
+    >
+      <Facebook className="mr-2 h-5 w-5" />
+      Facebook
+    </Button>
+    <Button
+      onClick={() =>
+        handleSocialClick(
+          "https://www.tiktok.com/@bizimi0?_t=ZM-8zAXJDSR2d3&_r=1"
+        )
+      }
+      className="bg-orange-400 hover:bg-orange-500 text-white px-6 py-3 w-full sm:w-auto"
+    >
+      <svg
+        className="mr-2 h-5 w-5"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+      </svg>
+      TikTok
+    </Button>
+  </div>
+</div>
+
 
           {/* Additional Info */}
           <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200">

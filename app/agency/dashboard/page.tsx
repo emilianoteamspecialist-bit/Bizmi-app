@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,236 +36,235 @@ import PaymentModal from "@/components/payment-modal"
 
 // Available skills for selection
 const availableSkills = [
- "Web Development",
-       "Mobile App Development",
-       "Frontend Development",
-       "Backend Development",
-       "Full-Stack Development",
-       "UI/UX Design",
-       "Software Development",
-       "Game Development",
-       "Blockchain Development",
-       "Smart Contracts",
-       "Cybersecurity",
-       "Cloud Computing",
-       "DevOps",
-       "Database Management",
-       "API Development",
-       "WordPress Development",
-       "Shopify Development",
-       "E-commerce Development",
-       "SaaS Development",
-       "AR/VR Development",
-       "Machine Learning",
-       "Artificial Intelligence",
-       "Data Science",
-       "Django",
-       "Express.js",
-       "MongoDB",
-       "MySQL",
-       "PostgreSQL",
-       "Firebase",
-       "AWS",
-       "Docker",
-       "Git",
-       "Figma",
-       "Adobe XD",
-       "Photoshop",
-        "Mobile Development",
-          "Flutter",
-            "React Native",
-       "Data Analysis",
-       "Python Programming",
-       "JavaScript Development",
-       "React.js Development",
-       "Node.js Development",
-       "PHP Development",
-       "Java Development",
-       "C++ Development",
-       "C# Development",
-       "Go (Golang) Development",
-       "Ruby on Rails Development",
-       "Kotlin Development",
-       "Swift (iOS) Development",
-       "Android Development",
-       "Flutter Development",
-       "Rust Development",
-       "Penetration Testing",
-       "Ethical Hacking",
-       "Bug Bounty Research",
-       "IoT Development",
-       "Embedded Systems",
-       "Firmware Development",
-       "Robotics Programming",
-       "MATLAB",
-       "Simulations & Modeling",
-       "QA Testing / Software Testing",
-       "Automation Scripting",
-       "Web Scraping",
-       "Chatbot Development",
-       "API Integration",
-       "CRM Development (Salesforce, HubSpot, Zoho)",
-       "ERP Development (SAP, Oracle, Odoo)",
-       "Game Design (Unity, Unreal Engine)",
-       "Database Optimization",
-       "Big Data Engineering",
-       "Cloud Architecture (AWS, Azure, GCP)",
-       "Server Management",
-       "Linux System Administration",
-       "Network Administration",
-       "IT Support",
-       "Graphic Design",
-       "Logo Design",
-       "Illustration",
-       "Print Design",
-       "Business Card Design",
-       "Flyer & Brochure Design",
-       "Poster Design",
-       "Infographic Design",
-       "UI/UX Wireframing",
-       "Product Design",
-       "Industrial Design",
-       "Fashion Design",
-       "Jewelry Design",
-       "Interior Design",
-       "Architecture Design",
-       "3D Modeling",
-       "3D Rendering",
-       "Animation (2D/3D)",
-       "Motion Graphics",
-       "Character Design",
-       "Video Editing",
-       "Photography",
-       "Photo Editing / Retouching",
-       "Image Manipulation",
-       "NFT Art",
-       "Storyboarding",
-       "T-shirt Design",
-       "Merchandise Design",
-       "Packaging Design",
-       "Label Design",
-       "Tattoo Design",
-       "Book Cover Design",
-       "Album Cover Design",
-       "Presentation Design (PowerPoint, Keynote)",
-       "Infographic Video Creation",
-       "Architectural Visualization",
-       "Landscape Design",
-       "Set Design (Theater/Film)",
-       "Story Illustration",
-       "Typography Design",
-       "Calligraphy",
-       "Comic / Manga Art",
-       "Caricature Drawing",
-       "Content Writing",
-       "Copywriting",
-       "Creative Writing",
-       "Technical Writing",
-       "Blog Writing",
-       "Ghostwriting",
-       "Script Writing (Film/Video)",
-       "Resume Writing",
-       "Cover Letter Writing",
-       "White Papers",
-       "Academic Writing",
-       "Research Writing",
-       "Proofreading & Editing",
-       "Grant Writing",
-       "eBook Writing",
-       "Speech Writing",
-       "Song Lyrics Writing",
-       "Product Descriptions",
-       "Ad Copywriting",
-       "Case Studies",
-       "UX Writing",
-       "Press Releases",
-       "Medical Writing",
-       "Legal Writing",
-       "Grant Proposals",
-       "Business Proposals",
-       "Newsletter Writing",
-       "Review Writing (Books, Products, Movies)",
-       "Social Media Captions",
-       "Digital Marketing",
-       "SEO (Search Engine Optimization)",
-       "SEM (Search Engine Marketing)",
-       "Social Media Marketing",
-       "Social Media Management",
-       "Influencer Marketing",
-       "Content Marketing",
-       "Email Marketing",
-       "Affiliate Marketing",
-       "PPC Campaigns (Google, Facebook Ads)",
-       "Marketing Strategy",
-       "Brand Strategy",
-       "Lead Generation",
-       "Sales Funnel Design",
-       "PR (Public Relations)",
-       "Voice Over",
-       "Music Production",
-       "Audio Editing",
-       "Podcast Editing",
-       "Sound Design",
-       "DJ Services",
-       "Singing / Songwriting",
-       "Acting",
-       "Dance Choreography",
-       "Comedy / Stand-up",
-       "Video Production",
-       "Storytelling",
-       "Modeling",
-       "Event Hosting",
-       "Translation (All Languages)",
-       "Transcription",
-       "Subtitling / Captioning",
-       "Language Tutoring",
-       "Localization Services",
-       "Sign Language",
-       "Online Tutoring",
-       "Test Preparation (SAT, IELTS, GRE, etc.)",
-       "Academic Coaching",
-       "Career Counseling",
-       "Life Coaching",
-       "Personal Development",
-       "E-learning Course Creation",
-       "Educational Content Writing",
-       "Corporate Training",
-       "Virtual Assistant",
-       "Data Entry",
-       "Customer Support",
-       "Technical Support",
-       "Project Management",
-       "Business Consulting",
-       "Financial Consulting",
-       "Accounting & Bookkeeping",
-       "HR & Recruiting",
-       "Market Research",
-       "Business Plan Writing",
-       "Grant Proposal Writing",
-       "Legal Writing",
-       "Contract Drafting",
-       "Intellectual Property",
-       "Business Law",
-       "Tax Law",
-       "Immigration Law",
-       "Paralegal Services",
-       "CAD Design",
-       "Civil Engineering",
-       "Mechanical Engineering",
-       "Electrical Engineering",
-       "Architecture",
-       "Structural Engineering",
-       "Product Engineering",
-       "Lifestyle Coaching",
-       "Fitness Training",
-       "Nutrition Coaching",
-       "Cooking Lessons",
-       "Travel Planning",
-       "Astrology Services",
-       "Gaming Coaching (eSports)",
-       "Online Therapy / Counseling",
-       "Others",
-     
+  "Web Development",
+  "Mobile App Development",
+  "Frontend Development",
+  "Backend Development",
+  "Full-Stack Development",
+  "UI/UX Design",
+  "Software Development",
+  "Game Development",
+  "Blockchain Development",
+  "Smart Contracts",
+  "Cybersecurity",
+  "Cloud Computing",
+  "DevOps",
+  "Database Management",
+  "API Development",
+  "WordPress Development",
+  "Shopify Development",
+  "E-commerce Development",
+  "SaaS Development",
+  "AR/VR Development",
+  "Machine Learning",
+  "Artificial Intelligence",
+  "Data Science",
+  "Django",
+  "Express.js",
+  "MongoDB",
+  "MySQL",
+  "PostgreSQL",
+  "Firebase",
+  "AWS",
+  "Docker",
+  "Git",
+  "Figma",
+  "Adobe XD",
+  "Photoshop",
+  "Mobile Development",
+  "Flutter",
+  "React Native",
+  "Data Analysis",
+  "Python Programming",
+  "JavaScript Development",
+  "React.js Development",
+  "Node.js Development",
+  "PHP Development",
+  "Java Development",
+  "C++ Development",
+  "C# Development",
+  "Go (Golang) Development",
+  "Ruby on Rails Development",
+  "Kotlin Development",
+  "Swift (iOS) Development",
+  "Android Development",
+  "Flutter Development",
+  "Rust Development",
+  "Penetration Testing",
+  "Ethical Hacking",
+  "Bug Bounty Research",
+  "IoT Development",
+  "Embedded Systems",
+  "Firmware Development",
+  "Robotics Programming",
+  "MATLAB",
+  "Simulations & Modeling",
+  "QA Testing / Software Testing",
+  "Automation Scripting",
+  "Web Scraping",
+  "Chatbot Development",
+  "API Integration",
+  "CRM Development (Salesforce, HubSpot, Zoho)",
+  "ERP Development (SAP, Oracle, Odoo)",
+  "Game Design (Unity, Unreal Engine)",
+  "Database Optimization",
+  "Big Data Engineering",
+  "Cloud Architecture (AWS, Azure, GCP)",
+  "Server Management",
+  "Linux System Administration",
+  "Network Administration",
+  "IT Support",
+  "Graphic Design",
+  "Logo Design",
+  "Illustration",
+  "Print Design",
+  "Business Card Design",
+  "Flyer & Brochure Design",
+  "Poster Design",
+  "Infographic Design",
+  "UI/UX Wireframing",
+  "Product Design",
+  "Industrial Design",
+  "Fashion Design",
+  "Jewelry Design",
+  "Interior Design",
+  "Architecture Design",
+  "3D Modeling",
+  "3D Rendering",
+  "Animation (2D/3D)",
+  "Motion Graphics",
+  "Character Design",
+  "Video Editing",
+  "Photography",
+  "Photo Editing / Retouching",
+  "Image Manipulation",
+  "NFT Art",
+  "Storyboarding",
+  "T-shirt Design",
+  "Merchandise Design",
+  "Packaging Design",
+  "Label Design",
+  "Tattoo Design",
+  "Book Cover Design",
+  "Album Cover Design",
+  "Presentation Design (PowerPoint, Keynote)",
+  "Infographic Video Creation",
+  "Architectural Visualization",
+  "Landscape Design",
+  "Set Design (Theater/Film)",
+  "Story Illustration",
+  "Typography Design",
+  "Calligraphy",
+  "Comic / Manga Art",
+  "Caricature Drawing",
+  "Content Writing",
+  "Copywriting",
+  "Creative Writing",
+  "Technical Writing",
+  "Blog Writing",
+  "Ghostwriting",
+  "Script Writing (Film/Video)",
+  "Resume Writing",
+  "Cover Letter Writing",
+  "White Papers",
+  "Academic Writing",
+  "Research Writing",
+  "Proofreading & Editing",
+  "Grant Writing",
+  "eBook Writing",
+  "Speech Writing",
+  "Song Lyrics Writing",
+  "Product Descriptions",
+  "Ad Copywriting",
+  "Case Studies",
+  "UX Writing",
+  "Press Releases",
+  "Medical Writing",
+  "Legal Writing",
+  "Grant Proposals",
+  "Business Proposals",
+  "Newsletter Writing",
+  "Review Writing (Books, Products, Movies)",
+  "Social Media Captions",
+  "Digital Marketing",
+  "SEO (Search Engine Optimization)",
+  "SEM (Search Engine Marketing)",
+  "Social Media Marketing",
+  "Social Media Management",
+  "Influencer Marketing",
+  "Content Marketing",
+  "Email Marketing",
+  "Affiliate Marketing",
+  "PPC Campaigns (Google, Facebook Ads)",
+  "Marketing Strategy",
+  "Brand Strategy",
+  "Lead Generation",
+  "Sales Funnel Design",
+  "PR (Public Relations)",
+  "Voice Over",
+  "Music Production",
+  "Audio Editing",
+  "Podcast Editing",
+  "Sound Design",
+  "DJ Services",
+  "Singing / Songwriting",
+  "Acting",
+  "Dance Choreography",
+  "Comedy / Stand-up",
+  "Video Production",
+  "Storytelling",
+  "Modeling",
+  "Event Hosting",
+  "Translation (All Languages)",
+  "Transcription",
+  "Subtitling / Captioning",
+  "Language Tutoring",
+  "Localization Services",
+  "Sign Language",
+  "Online Tutoring",
+  "Test Preparation (SAT, IELTS, GRE, etc.)",
+  "Academic Coaching",
+  "Career Counseling",
+  "Life Coaching",
+  "Personal Development",
+  "E-learning Course Creation",
+  "Educational Content Writing",
+  "Corporate Training",
+  "Virtual Assistant",
+  "Data Entry",
+  "Customer Support",
+  "Technical Support",
+  "Project Management",
+  "Business Consulting",
+  "Financial Consulting",
+  "Accounting & Bookkeeping",
+  "HR & Recruiting",
+  "Market Research",
+  "Business Plan Writing",
+  "Grant Proposal Writing",
+  "Legal Writing",
+  "Contract Drafting",
+  "Intellectual Property",
+  "Business Law",
+  "Tax Law",
+  "Immigration Law",
+  "Paralegal Services",
+  "CAD Design",
+  "Civil Engineering",
+  "Mechanical Engineering",
+  "Electrical Engineering",
+  "Architecture",
+  "Structural Engineering",
+  "Product Engineering",
+  "Lifestyle Coaching",
+  "Fitness Training",
+  "Nutrition Coaching",
+  "Cooking Lessons",
+  "Travel Planning",
+  "Astrology Services",
+  "Gaming Coaching (eSports)",
+  "Online Therapy / Counseling",
+  "Others",
 ]
 
 export default function AgencyDashboard() {
@@ -299,6 +300,8 @@ export default function AgencyDashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
   const [isPosting, setIsPosting] = useState(false)
+  const [editingJobId, setEditingJobId] = useState<string | null>(null)
+  const [showJobForm, setShowJobForm] = useState(false)
 
   useEffect(() => {
     loadProfileAndJobs()
@@ -386,9 +389,21 @@ export default function AgencyDashboard() {
 
   const handleJobAction = async (job: any, action: "edit" | "pause" | "close") => {
     if (action === "edit") {
-      setSelectedJob(job)
-      setActionType(action)
-      setShowJobActionModal(true)
+      // Populate form with existing job data
+      setJobFormData({
+        title: job.title,
+        description: job.description,
+        budgetMin: job.budget_min,
+        budgetMax: job.budget_max,
+        duration: job.duration,
+        location: job.location,
+        jobType: job.job_type,
+        credits: job.credit_cost,
+        comments: job.comments || "",
+      })
+      setSelectedSkills(job.skills || [])
+      setEditingJobId(job.id) // Set the job ID being edited
+      setShowPostJobModal(true) // Show the job form instead of action modal
     } else {
       try {
         const newStatus = action === "pause" ? (job.status === "paused" ? "active" : "paused") : "closed"
@@ -407,6 +422,72 @@ export default function AgencyDashboard() {
         console.error("Error updating job:", error)
         alert("Error updating job. Please try again.")
       }
+    }
+  }
+
+  const handleJobSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!profile) return
+
+    try {
+      const jobData = {
+        title: jobFormData.title,
+        description: jobFormData.description,
+        skills: selectedSkills,
+        budget_min: jobFormData.budgetMin,
+        budget_max: jobFormData.budgetMax,
+        duration: jobFormData.duration,
+        location: jobFormData.location,
+        job_type: jobFormData.jobType,
+        credit_cost: jobFormData.credits,
+        comments: jobFormData.comments,
+        updated_at: new Date().toISOString(),
+      }
+
+      let error
+      if (editingJobId) {
+        // Update existing job
+        const result = await supabase.from("jobs").update(jobData).eq("id", editingJobId)
+        error = result.error
+      } else {
+        // Create new job
+        const result = await supabase.from("jobs").insert([
+          {
+            ...jobData,
+            agency_id: profile.id,
+            status: "active",
+            created_at: new Date().toISOString(),
+          },
+        ])
+        error = result.error
+      }
+
+      if (error) {
+        console.error("Error saving job:", error)
+        alert("Error saving job")
+        return
+      }
+
+      // Reset form and close modal
+      setJobFormData({
+        title: "",
+        description: "",
+        budgetMin: "",
+        budgetMax: "",
+        duration: "",
+        location: "",
+        jobType: "",
+        credits: 5,
+        comments: "",
+      })
+      setSelectedSkills([])
+      setEditingJobId(null)
+      setShowPostJobModal(false)
+      loadProfileAndJobs()
+      alert(editingJobId ? "Job updated successfully!" : "Job posted successfully!")
+    } catch (error) {
+      console.error("Error saving job:", error)
+      alert("Error saving job. Please try again.")
     }
   }
 
@@ -800,7 +881,22 @@ export default function AgencyDashboard() {
               <CardTitle className="text-lg sm:text-xl">Your Job Posts</CardTitle>
               <Button
                 className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
-                onClick={() => setShowPostJobModal(true)}
+                onClick={() => {
+                  setShowPostJobModal(true)
+                  setEditingJobId(null)
+                  setJobFormData({
+                    title: "",
+                    description: "",
+                    budgetMin: "",
+                    budgetMax: "",
+                    duration: "",
+                    location: "",
+                    jobType: "",
+                    credits: 5,
+                    comments: "",
+                  })
+                  setSelectedSkills([])
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Post New Job
@@ -815,7 +911,25 @@ export default function AgencyDashboard() {
                 <p className="text-muted-foreground mb-4">
                   Start by posting your first job to find talented freelancers
                 </p>
-                <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => setShowPostJobModal(true)}>
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600"
+                  onClick={() => {
+                    setShowPostJobModal(true)
+                    setEditingJobId(null)
+                    setJobFormData({
+                      title: "",
+                      description: "",
+                      budgetMin: "",
+                      budgetMax: "",
+                      duration: "",
+                      location: "",
+                      jobType: "",
+                      credits: 5,
+                      comments: "",
+                    })
+                    setSelectedSkills([])
+                  }}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Post Your First Job
                 </Button>
@@ -878,6 +992,14 @@ export default function AgencyDashboard() {
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                        {job.comments && (
+                          <div className="mb-3">
+                            <p className="text-sm font-medium text-muted-foreground mb-1">Additional Comments</p>
+                            <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap line-clamp-3">
+                              {job.comments}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-1 mb-3">
                           {job.skills?.slice(0, 4).map((skill: string, skillIndex: number) => (
                             <Badge key={skillIndex} variant="outline" className="text-xs">
@@ -1133,7 +1255,9 @@ export default function AgencyDashboard() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Post a Job</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {editingJobId ? "Edit Job Post" : "Post a Job"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     Step {postJobStep} of 4 -{" "}
                     {postJobStep === 1
@@ -1163,6 +1287,7 @@ export default function AgencyDashboard() {
                       credits: 5,
                       comments: "",
                     })
+                    setEditingJobId(null)
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -1494,6 +1619,7 @@ export default function AgencyDashboard() {
                           credits: 5,
                           comments: "",
                         })
+                        setEditingJobId(null)
                       }
                     }}
                     className="bg-transparent"
@@ -1506,7 +1632,7 @@ export default function AgencyDashboard() {
                       if (postJobStep < 4) {
                         setPostJobStep(postJobStep + 1)
                       } else {
-                        handlePostJob()
+                        handleJobSubmit()
                       }
                     }}
                     disabled={

@@ -1,105 +1,137 @@
-"use client"
-import AgencyNavbar from "@/components/agency-navbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Play, ExternalLink } from "lucide-react"
 
-export default function AgencyTutorial() {
+"use client"
+
+import { useState } from "react"
+import { Play, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import AgencyNavbar from "@/components/agency-navbar"
+
+export default function FreelancerTutorial() {
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+
   const tutorials = [
     {
       id: 1,
-      title: "How to create a job post",
-      description: "Learn how to create compelling job posts that attract the best freelancers",
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Job+Post+Tutorial",
-    },
-    {
-      id: 2,
-      title: "How to accept freelancer proposals",
-      description: "Discover the best practices for reviewing and accepting freelancer proposals",
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Accept+Proposals+Tutorial",
-    },
-    {
-      id: 3,
-      title: "How to make a deposit",
-      description: "Step-by-step guide on funding your projects and managing your wallet",
-      videoId: "dQw4w9WgXcQ", // Replace with actual YouTube video ID
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Make+Deposit+Tutorial",
+      title: "Bizimi-complete guide for agency", // Updated title as requested
+      description: "Learn the best practices for creating job post and accept proposals",
+      thumbnail: "https://i.ibb.co/DgRrMNcn/Bizmi-agency.jpg",
+      videoUrl: "https://youtu.be/Jy_Mr2kczN8", // Replace with actual video URL
+      duration: "24:37",
     },
   ]
 
-  const openVideo = (videoId: string) => {
-    window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank")
+  const handleWatchVideo = (videoUrl: string) => {
+    window.open(videoUrl, "_blank")
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AgencyNavbar />
+        <AgencyNavbar />
 
-      <div className="max-w-7xl mx-auto py-8 px-4">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Agency Tutorial Center</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Master the platform with our comprehensive video tutorials. Learn how to maximize your success as an agency
-            on Bizimi.
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Agency Video Tutorials</h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Master the art of posting and accepting jobs with our comprehensive video guides. 
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Tutorial Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {tutorials.map((tutorial) => (
             <Card
               key={tutorial.id}
-              className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-orange-500/20"
+              className={`group cursor-pointer transition-all duration-300 hover:shadow-xl ${
+                hoveredCard === tutorial.id ? "transform -translate-y-2" : ""
+              }`}
+              onMouseEnter={() => setHoveredCard(tutorial.id)}
+              onMouseLeave={() => setHoveredCard(null)}
+              onClick={() => handleWatchVideo(tutorial.videoUrl)}
             >
               <CardHeader className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img
                     src={tutorial.thumbnail || "/placeholder.svg"}
                     alt={tutorial.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                    <div className="bg-orange-500 rounded-full p-4 group-hover:scale-110 transition-transform duration-300">
-                      <Play className="h-8 w-8 text-white fill-white" />
+                  {/* Play Button Overlay */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="bg-orange-500 rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                      <Play className="h-8 w-8 text-white fill-current" />
                     </div>
+                  </div>
+                  {/* Duration Badge */}
+                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+                    {tutorial.duration}
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent className="p-6">
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-orange-500 transition-colors duration-300">
+                <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-orange-500 transition-colors duration-300">
                   {tutorial.title}
                 </CardTitle>
-                <p className="text-muted-foreground mb-4 line-clamp-3">{tutorial.description}</p>
+                <CardDescription className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                  {tutorial.description}
+                </CardDescription>
+
                 <Button
-                  onClick={() => openVideo(tutorial.videoId)}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white transition-colors duration-300"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleWatchVideo(tutorial.videoUrl)
+                  }}
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-4 w-4 mr-2" />
                   Watch Tutorial
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="h-4 w-4 ml-2" />
                 </Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm border border-orange-500/20">
+        {/* Additional Resources Section */}
+        <div className="mt-16 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               Can't find what you're looking for? Our support team is here to help you succeed.
             </p>
-            <Button
-              onClick={() => window.open("mailto:support@bizimi.com", "_blank")}
-              variant="outline"
-              className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-colors duration-300"
-            >
-              Contact Support
-            </Button>
+
+            <div className="flex justify-center">
+              <a href="mailto:Bizimisocials12@gmail.com">
+                <Button className="bg-orange-500 hover:bg-orange-600 text-white">Contact Support</Button>
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
