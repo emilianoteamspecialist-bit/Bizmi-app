@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -298,6 +300,8 @@ export default function AgencyDashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedProposal, setSelectedProposal] = useState<any>(null)
   const [isPosting, setIsPosting] = useState(false)
+  const [editingJobId, setEditingJobId] = useState<string | null>(null)
+  const [showJobForm, setShowJobForm] = useState(false)
 
   useEffect(() => {
     loadProfileAndJobs()
@@ -385,9 +389,21 @@ export default function AgencyDashboard() {
 
   const handleJobAction = async (job: any, action: "edit" | "pause" | "close") => {
     if (action === "edit") {
-      setSelectedJob(job)
-      setActionType(action)
-      setShowJobActionModal(true)
+      // Populate form with existing job data
+      setJobFormData({
+        title: job.title,
+        description: job.description,
+        budgetMin: job.budget_min,
+        budgetMax: job.budget_max,
+        duration: job.duration,
+        location: job.location,
+        jobType: job.job_type,
+        credits: job.credit_cost,
+        comments: job.comments || "",
+      })
+      setSelectedSkills(job.skills || [])
+      setEditingJobId(job.id) // Set the job ID being edited
+      setShowPostJobModal(true) // Show the job form instead of action modal
     } else {
       try {
         const newStatus = action === "pause" ? (job.status === "paused" ? "active" : "paused") : "closed"
@@ -406,6 +422,72 @@ export default function AgencyDashboard() {
         console.error("Error updating job:", error)
         alert("Error updating job. Please try again.")
       }
+    }
+  }
+
+  const handleJobSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!profile) return
+
+    try {
+      const jobData = {
+        title: jobFormData.title,
+        description: jobFormData.description,
+        skills: selectedSkills,
+        budget_min: jobFormData.budgetMin,
+        budget_max: jobFormData.budgetMax,
+        duration: jobFormData.duration,
+        location: jobFormData.location,
+        job_type: jobFormData.jobType,
+        credit_cost: jobFormData.credits,
+        comments: jobFormData.comments,
+        updated_at: new Date().toISOString(),
+      }
+
+      let error
+      if (editingJobId) {
+        // Update existing job
+        const result = await supabase.from("jobs").update(jobData).eq("id", editingJobId)
+        error = result.error
+      } else {
+        // Create new job
+        const result = await supabase.from("jobs").insert([
+          {
+            ...jobData,
+            agency_id: profile.id,
+            status: "active",
+            created_at: new Date().toISOString(),
+          },
+        ])
+        error = result.error
+      }
+
+      if (error) {
+        console.error("Error saving job:", error)
+        alert("Error saving job")
+        return
+      }
+
+      // Reset form and close modal
+      setJobFormData({
+        title: "",
+        description: "",
+        budgetMin: "",
+        budgetMax: "",
+        duration: "",
+        location: "",
+        jobType: "",
+        credits: 5,
+        comments: "",
+      })
+      setSelectedSkills([])
+      setEditingJobId(null)
+      setShowPostJobModal(false)
+      loadProfileAndJobs()
+      alert(editingJobId ? "Job updated successfully!" : "Job posted successfully!")
+    } catch (error) {
+      console.error("Error saving job:", error)
+      alert("Error saving job. Please try again.")
     }
   }
 
@@ -799,7 +881,22 @@ export default function AgencyDashboard() {
               <CardTitle className="text-lg sm:text-xl">Your Job Posts</CardTitle>
               <Button
                 className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
-                onClick={() => setShowPostJobModal(true)}
+                onClick={() => {
+                  setShowPostJobModal(true)
+                  setEditingJobId(null)
+                  setJobFormData({
+                    title: "",
+                    description: "",
+                    budgetMin: "",
+                    budgetMax: "",
+                    duration: "",
+                    location: "",
+                    jobType: "",
+                    credits: 5,
+                    comments: "",
+                  })
+                  setSelectedSkills([])
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Post New Job
@@ -814,7 +911,25 @@ export default function AgencyDashboard() {
                 <p className="text-muted-foreground mb-4">
                   Start by posting your first job to find talented freelancers
                 </p>
-                <Button className="bg-orange-500 hover:bg-orange-600" onClick={() => setShowPostJobModal(true)}>
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600"
+                  onClick={() => {
+                    setShowPostJobModal(true)
+                    setEditingJobId(null)
+                    setJobFormData({
+                      title: "",
+                      description: "",
+                      budgetMin: "",
+                      budgetMax: "",
+                      duration: "",
+                      location: "",
+                      jobType: "",
+                      credits: 5,
+                      comments: "",
+                    })
+                    setSelectedSkills([])
+                  }}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Post Your First Job
                 </Button>
@@ -1140,7 +1255,9 @@ export default function AgencyDashboard() {
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Post a Job</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    {editingJobId ? "Edit Job Post" : "Post a Job"}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     Step {postJobStep} of 4 -{" "}
                     {postJobStep === 1
@@ -1170,6 +1287,7 @@ export default function AgencyDashboard() {
                       credits: 5,
                       comments: "",
                     })
+                    setEditingJobId(null)
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -1501,6 +1619,7 @@ export default function AgencyDashboard() {
                           credits: 5,
                           comments: "",
                         })
+                        setEditingJobId(null)
                       }
                     }}
                     className="bg-transparent"
@@ -1513,7 +1632,7 @@ export default function AgencyDashboard() {
                       if (postJobStep < 4) {
                         setPostJobStep(postJobStep + 1)
                       } else {
-                        handlePostJob()
+                        handleJobSubmit()
                       }
                     }}
                     disabled={
