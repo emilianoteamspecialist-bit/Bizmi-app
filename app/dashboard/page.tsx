@@ -21,6 +21,7 @@ import {
   Upload,
   Send,
   Loader2,
+  Briefcase,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -890,6 +891,14 @@ export default function FreelancerDashboard() {
                     </CardHeader>
                     <CardContent className="p-4 sm:p-6 pt-3">
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{job.description}</p>
+
+                      {job.comments && (
+                        <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Comments</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{job.comments}</p>
+                        </div>
+                      )}
+
                       {/* Key Metrics Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4 text-sm">
                         <div className="flex items-center gap-2">
@@ -911,6 +920,13 @@ export default function FreelancerDashboard() {
                           <div className="min-w-0">
                             <p className="text-xs text-muted-foreground">Location</p>
                             <p className="font-medium text-gray-900 dark:text-white truncate">{job.location}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground">Job Type</p>
+                            <p className="font-medium text-gray-900 dark:text-white truncate">{job.job_type}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
