@@ -73,6 +73,28 @@ export default function FreelancerDashboard() {
     fromDate: "",
     toDate: "",
   })
+  const [profile, setProfile] = useState<any>(null)
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("username, full_name")
+        .eq("id", userId)
+        .single()
+
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError)
+        setProfile(null)
+      } else {
+        setProfile(profileData)
+        console.log("User profile loaded:", profileData)
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error)
+      setProfile(null)
+    }
+  }
 
   // Initial user and logo fetch on component mount
   useEffect(() => {
@@ -85,6 +107,8 @@ export default function FreelancerDashboard() {
       console.log("useEffect: Supabase getUser result:", user) // Added log
       if (user) {
         setCurrentUser(user)
+        await loadUserProfile(user.id)
+
         const { data: logoData, error: userLogoError } = await supabase // Added error check
           .from("freelancer_logos")
           .select("logo_data")
@@ -731,8 +755,13 @@ export default function FreelancerDashboard() {
           <CardContent className="p-4 sm:p-6 relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex-1">
-               <h2 className="text-xl sm:text-2xl font-bold mb-2">
-                  Welcome back, {profile?.username || profile?.full_name || "Freelancer"}!
+                <h2 className="text-xl sm:text-2xl font-bold mb-2">
+                  Welcome back,{" "}
+                  {profile?.full_name ||
+                    currentUser?.user_metadata?.full_name ||
+                    currentUser?.email?.split("@")[0] ||
+                    "Freelancer"}
+                  !
                 </h2>
                 <p className="text-orange-100 mb-4 text-sm sm:text-base">
                   Discover amazing opportunities and grow your freelance career
