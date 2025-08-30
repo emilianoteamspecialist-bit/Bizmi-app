@@ -12,11 +12,27 @@ export default function FreelancerTutorial() {
   const tutorials = [
     {
       id: 1,
-      title: "Bizimi-complete guide for freelancer", // Updated title as requested
+      title: "How to place a bid",
       description: "Learn the best practices for submitting competitive bids that win projects",
-      thumbnail: "https://i.ibb.co/ZzLdP39W/Bizmi-freelancer.jpg",
-      videoUrl: "https://youtu.be/X_Ia9zjBR1U", // Replace with actual video URL
-      duration: "13:35",
+      thumbnail: "/placeholder.svg?height=200&width=300&text=How+to+place+a+bid",
+      videoUrl: "https://youtu.be/DNJ5WnK1Ovw", // Replace with actual video URL
+      duration: "5:15",
+    },
+    {
+      id: 2,
+      title: "How to receive a payout",
+      description: "Step-by-step guide on setting up your payment details and receiving payments",
+      thumbnail: "/placeholder.svg?height=200&width=300&text=How+to+receive+a+payout",
+      videoUrl: "https://youtu.be/V3vrl_SBebw", // Replace with actual video URL
+      duration: "4:23",
+    },
+    {
+      id: 3,
+      title: "How to buy credits",
+      description: "Discover how to buy credits",
+      thumbnail: "/placeholder.svg?height=200&width=300&text=Strategies+to+winning+proposals",
+      videoUrl: "https://youtu.be/QZM-ojGMws4", // Replace with actual video URL
+      duration: "13:12",
     },
   ]
 
@@ -95,20 +111,21 @@ export default function FreelancerTutorial() {
         </div>
 
         {/* Additional Resources Section */}
-        <div className="mt-16 text-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Can't find what you're looking for? Our support team is here to help you succeed.
-            </p>
-
-            <div className="flex justify-center">
-              <a href="mailto:Bizimisocials12@gmail.com">
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white">Contact Support</Button>
-              </a>
-            </div>
-          </div>
-        </div>
+        <div className="mt-12 text-center">
+                 <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm border border-orange-500/20">
+                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
+                   <p className="text-muted-foreground mb-6">
+                     Can't find what you're looking for? Our support team is here to help you succeed.
+                   </p>
+                   <Button
+                     onClick={() => window.open("mailto:Bizimisocials12@gmail.com", "_blank")}
+                     variant="outline"
+                     className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-colors duration-300"
+                   >
+                     Contact Support
+                   </Button>
+                 </div>
+               </div>
       </div>
     </div>
   )

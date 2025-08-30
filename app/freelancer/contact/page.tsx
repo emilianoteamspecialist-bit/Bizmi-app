@@ -52,50 +52,50 @@ export default function FreelancerContactPage() {
               </CardContent>
             </Card>
 
-            {/* WhatsApp - Mubarack */}
+            {/* WhatsApp Support */}
             <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
                   <MessageCircle className="h-8 w-8 text-orange-600" />
                 </div>
-                <CardTitle className="text-xl text-gray-900">WhatsApp - Mubarak</CardTitle>
-                <CardDescription>Chat with Mubarak for immediate assistance</CardDescription>
+                <CardTitle className="text-xl text-gray-900">WhatsApp Support</CardTitle>
+                <CardDescription>Chat with us for immediate assistance</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <Button
-                  onClick={() => handleWhatsAppClick("+2347026875518", "Mubarack")}
+                  onClick={() => handleWhatsAppClick("+2347026875518", "Support")}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
-                  Chat with Mubarak
+                  Chat with Us
                 </Button>
                 <p className="text-sm text-gray-500 mt-2">+2347026875518</p>
               </CardContent>
             </Card>
 
-            {/* WhatsApp - Emiliano */}
+            {/* WhatsApp Community */}
             <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
                   <MessageCircle className="h-8 w-8 text-orange-400" />
                 </div>
-                <CardTitle className="text-xl text-gray-900">WhatsApp - Emiliano</CardTitle>
-                <CardDescription>Chat with Emiliano for technical support</CardDescription>
+                <CardTitle className="text-xl text-gray-900">Join Community</CardTitle>
+                <CardDescription>Connect with other freelancers and agencies</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <Button
-                  onClick={() => handleWhatsAppClick("+2347052345295", "Emiliano")}
+                  onClick={() => handleSocialClick("https://chat.whatsapp.com/H5yku22xKV35cAFDyinj6y?mode=ems_share_c")}
                   className="w-full bg-orange-400 hover:bg-orange-500 text-white"
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
-                  Chat with Emiliano
+                  Join Community
                 </Button>
-                <p className="text-sm text-gray-500 mt-2">+234 705 234 5295</p>
+                <p className="text-sm text-gray-500 mt-2">WhatsApp Group</p>
               </CardContent>
             </Card>
           </div>
 
-         <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200 mb-8">
+            <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200 mb-8">
   <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
     Follow Us on Social Media
   </h2>
@@ -177,3 +177,14 @@ export default function FreelancerContactPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -132,13 +132,13 @@ export default function FreelancerPolicyPage() {
           </div>
 
           {/* Approval Section */}
-          <div className="mt-12 pt-8 border-t border-gray-200">
+          {/* <div className="mt-12 pt-8 border-t border-gray-200">
             <div className="text-center">
               <p className="text-gray-600 mb-2">Approved by:</p>
               <p className="text-lg font-semibold text-orange-500">Emiliano & Mubarak</p>
               <p className="text-gray-600">Founders, Bizimi</p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
