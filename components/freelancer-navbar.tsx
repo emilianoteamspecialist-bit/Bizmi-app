@@ -136,20 +136,9 @@ export default function FreelancerNavbar() {
       // Fetch recent unread messages for notification dropdown (still limited to 7)
       const { data: recentUnreadMessages, error: recentMessagesError } = await supabase
         .from("messages")
-        .select(`
-          id,
-          message_text,
-          created_at,
-          sender_id,
-          conversation_id,
-          sender_profile:profiles!messages_sender_id_fkey (
-            full_name,
-            account_type,
-            company_name,
-            freelancer_logos(file_name),
-            agency_logo(*)
-          )
-        `)
+        .select(
+          `id, message_text, created_at, sender_id, conversation_id, sender_profile:profiles!messages_sender_id_fkey (full_name, account_type, company_name, freelancer_logos(file_name), agency_logo(*))`,
+        )
         .eq("receiver_id", user.id)
         .eq("is_read", false)
         .order("created_at", { ascending: false })
@@ -260,22 +249,6 @@ export default function FreelancerNavbar() {
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Messages
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/freelancer/tutorial")}>
-                  <Play className="mr-2 h-4 w-4" />
-                  Watch Video
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/freelancer/contact")}>
-                  <Phone className="mr-2 h-4 w-4" />
-                  Contact Us
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/freelancer/policy")}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Policy
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/freelancer/profile")}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -373,6 +346,14 @@ export default function FreelancerNavbar() {
                 <DropdownMenuItem onClick={() => router.push("/freelancer/profile")}>
                   <User className="mr-2 h-4 w-4" />
                   Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/freelancer/tutorial")}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Watch Video
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/freelancer/contact")}>
+                  <Phone className="mr-2 h-4 w-4" />
+                  Contact Us
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/freelancer/settings")}>
                   <Settings className="mr-2 h-4 w-4" />
