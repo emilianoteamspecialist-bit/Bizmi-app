@@ -14,7 +14,7 @@ export default function FreelancerTutorial() {
       id: 1,
       title: "How to place a bid",
       description: "Learn the best practices for submitting competitive bids that win projects",
-      thumbnail: "/placeholder.svg?height=200&width=300&text=How+to+place+a+bid",
+      thumbnail: "https://i.ibb.co/ZzLdP39W/Bizmi-freelancer.jpg",
       videoUrl: "https://youtu.be/DNJ5WnK1Ovw", // Replace with actual video URL
       duration: "5:15",
     },
@@ -22,7 +22,7 @@ export default function FreelancerTutorial() {
       id: 2,
       title: "How to receive a payout",
       description: "Step-by-step guide on setting up your payment details and receiving payments",
-      thumbnail: "/placeholder.svg?height=200&width=300&text=How+to+receive+a+payout",
+      thumbnail: "https://i.ibb.co/ZzLdP39W/Bizmi-freelancer.jpg",
       videoUrl: "https://youtu.be/V3vrl_SBebw", // Replace with actual video URL
       duration: "4:23",
     },
@@ -30,7 +30,7 @@ export default function FreelancerTutorial() {
       id: 3,
       title: "How to buy credits",
       description: "Discover how to buy credits",
-      thumbnail: "/placeholder.svg?height=200&width=300&text=Strategies+to+winning+proposals",
+      thumbnail: "https://i.ibb.co/ZzLdP39W/Bizmi-freelancer.jpg",
       videoUrl: "https://youtu.be/QZM-ojGMws4", // Replace with actual video URL
       duration: "13:12",
     },
