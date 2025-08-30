@@ -731,7 +731,9 @@ export default function FreelancerDashboard() {
           <CardContent className="p-4 sm:p-6 relative z-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex-1">
-                <h2 className="text-xl sm:text-2xl font-bold mb-2">Welcome back, freelancer!</h2>
+               <h2 className="text-xl sm:text-2xl font-bold mb-2">
+                  Welcome back, {profile?.username || profile?.full_name || "Freelancer"}!
+                </h2>
                 <p className="text-orange-100 mb-4 text-sm sm:text-base">
                   Discover amazing opportunities and grow your freelance career
                 </p>
