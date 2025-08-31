@@ -161,14 +161,22 @@ export default function SignUpPage() {
         return
       }
 
-      if (accountType === "freelancer") {
-        const { data: existingNIN } = await supabase
-          .from("profiles")
-          .select("nin")
-          .eq("nin", identityData.ninNumber)
-          .single()
+      const { data: existingUser, error: emailCheckError } = await supabase.auth.admin.listUsers()
 
-        if (existingNIN) {
+      if (emailCheckError) {
+        console.error("Error checking existing users:", emailCheckError)
+      } else if (existingUser?.users?.some((user) => user.email === formData.email.trim())) {
+        setSignupStatus({ type: "error", message: "This email is already registered" })
+        setIsLoading(false)
+        return
+      }
+
+      if (accountType === "freelancer") {
+        const { data: allUsers, error: ninCheckError } = await supabase.auth.admin.listUsers()
+
+        if (ninCheckError) {
+          console.error("Error checking NIN:", ninCheckError)
+        } else if (allUsers?.users?.some((user) => user.user_metadata?.nin === identityData.ninNumber)) {
           setSignupStatus({ type: "error", message: "This NIN number is already registered" })
           setIsLoading(false)
           return
@@ -232,6 +240,7 @@ export default function SignUpPage() {
           password: "",
           confirmPassword: "",
           username: "",
+          companyName: "",
           companySize: "",
         })
       } else {
