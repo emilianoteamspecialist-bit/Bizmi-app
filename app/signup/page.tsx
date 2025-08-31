@@ -178,7 +178,11 @@ export default function SignUpPage() {
       const userMetadata = {
         full_name: formData.fullName.trim(),
         account_type: accountType,
-        ...(accountType === "freelancer" && { username: formData.username.trim() }),
+        ...(accountType === "freelancer" && {
+          username: formData.username.trim(),
+          nin: identityData.ninNumber,
+          skills: selectedSkills,
+        }),
         ...(accountType === "agency" && {
           company_name: formData.companyName.trim(),
           company_size: formData.companySize,
@@ -202,21 +206,6 @@ export default function SignUpPage() {
         const errorMessage = handleSupabaseError(authError)
         setSignupStatus({ type: "error", message: errorMessage })
       } else if (authData.user && accountType === "freelancer") {
-        setSignupStatus({ type: "info", message: "Saving profile information..." })
-
-        const userId = authData.user.id
-        if (!userId) {
-          throw new Error("User ID not available")
-        }
-
-        const { error: profileError } = await supabase.from("profiles").insert({
-          id: userId,
-          nin: identityData.ninNumber,
-          skrilex: selectedSkills,
-        })
-
-        if (profileError) throw profileError
-
         const successMessage =
           "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
         setSignupStatus({ type: "success", message: successMessage })
@@ -243,7 +232,6 @@ export default function SignUpPage() {
           password: "",
           confirmPassword: "",
           username: "",
-          companyName: "",
           companySize: "",
         })
       } else {
