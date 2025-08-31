@@ -6,19 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Eye,
-  EyeOff,
-  User,
-  Building2,
-  Loader2,
-  Gift,
-  CheckCircle,
-  AlertCircle,
-  X,
-  Upload,
-  FileText,
-} from "lucide-react"
+import { Eye, EyeOff, User, Building2, Loader2, Gift, CheckCircle, AlertCircle, X } from "lucide-react"
 import Link from "next/link"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -26,21 +14,19 @@ import { useRouter } from "next/navigation"
 type AccountType = "freelancer" | "agency"
 
 const AVAILABLE_SKILLS = [
-"Web Development",
-      "Mobile App Development",
-      "Frontend Development",
-      "Backend Development",
-      "Full-Stack Development",
-      "UI/UX Design",
-      "Software Development",
-      "Game Development",
-      "Blockchain Development",
-      "Smart Contracts",
-      "Cybersecurity",
-      "Cloud Computing",
-      "DevOps",
-    
-    
+  "Web Development",
+  "Mobile App Development",
+  "Frontend Development",
+  "Backend Development",
+  "Full-Stack Development",
+  "UI/UX Design",
+  "Software Development",
+  "Game Development",
+  "Blockchain Development",
+  "Smart Contracts",
+  "Cybersecurity",
+  "Cloud Computing",
+  "DevOps",
 ]
 
 export default function SignUpPage() {
@@ -67,8 +53,6 @@ export default function SignUpPage() {
 
   const [identityData, setIdentityData] = useState({
     ninNumber: "",
-    frontIdFile: null as File | null,
-    backIdFile: null as File | null,
   })
 
   const router = useRouter()
@@ -81,30 +65,11 @@ export default function SignUpPage() {
     }
   }
 
-  const handleFileUpload = (file: File, type: "front" | "back") => {
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
-      setSignupStatus({ type: "error", message: "File size must be less than 5MB" })
-      return
-    }
-
-    if (!file.type.startsWith("image/")) {
-      setSignupStatus({ type: "error", message: "Please upload an image file" })
-      return
-    }
-
-    setIdentityData((prev) => ({
-      ...prev,
-      [type === "front" ? "frontIdFile" : "backIdFile"]: file,
-    }))
-  }
-
   const validateNIN = (nin: string) => {
     return /^[0-9]{11}$/.test(nin)
   }
 
   const isFormValid = () => {
-    // Basic required fields for all account types
     const basicFieldsValid =
       formData.fullName.trim() !== "" &&
       formData.email.trim() !== "" &&
@@ -114,20 +79,16 @@ export default function SignUpPage() {
 
     if (!basicFieldsValid) return false
 
-    // Additional validation for freelancers
     if (accountType === "freelancer") {
       const freelancerFieldsValid =
         formData.username.trim() !== "" &&
         selectedSkills.length > 0 &&
         identityData.ninNumber.trim() !== "" &&
-        validateNIN(identityData.ninNumber) &&
-        identityData.frontIdFile !== null &&
-        identityData.backIdFile !== null
+        validateNIN(identityData.ninNumber)
 
       return freelancerFieldsValid
     }
 
-    // Additional validation for agencies
     if (accountType === "agency") {
       const agencyFieldsValid = formData.companyName.trim() !== "" && formData.companySize !== ""
 
@@ -167,10 +128,6 @@ export default function SignUpPage() {
         setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
         return false
       }
-      if (!identityData.frontIdFile || !identityData.backIdFile) {
-        setSignupStatus({ type: "error", message: "Please upload both front and back of your national ID" })
-        return false
-      }
     }
     if (accountType === "agency") {
       if (!formData.companyName.trim()) {
@@ -206,9 +163,9 @@ export default function SignUpPage() {
 
       if (accountType === "freelancer") {
         const { data: existingNIN } = await supabase
-          .from("Freelancer_identitie")
-          .select("nin_number")
-          .eq("nin_number", identityData.ninNumber)
+          .from("profiles")
+          .select("nin")
+          .eq("nin", identityData.ninNumber)
           .single()
 
         if (existingNIN) {
@@ -245,58 +202,25 @@ export default function SignUpPage() {
         const errorMessage = handleSupabaseError(authError)
         setSignupStatus({ type: "error", message: errorMessage })
       } else if (authData.user && accountType === "freelancer") {
-        setSignupStatus({ type: "info", message: "Uploading identity documents..." })
+        setSignupStatus({ type: "info", message: "Saving profile information..." })
 
         const userId = authData.user.id
         if (!userId) {
           throw new Error("User ID not available")
         }
 
-        // Upload front ID
-        const frontFileName = `${userId}/front-id-${Date.now()}.${identityData.frontIdFile!.name.split(".").pop()}`
-        const { data: frontUpload, error: frontError } = await supabase.storage
-          .from("identity-documents")
-          .upload(frontFileName, identityData.frontIdFile!)
+        const { error: profileError } = await supabase.from("profiles").insert({
+          user_id: userId,
+          nin: identityData.ninNumber,
+          skrilex: selectedSkills,
+        })
 
-        if (frontError) throw frontError
-
-        // Upload back ID
-        const backFileName = `${userId}/back-id-${Date.now()}.${identityData.backIdFile!.name.split(".").pop()}`
-        const { data: backUpload, error: backError } = await supabase.storage
-          .from("identity-documents")
-          .upload(backFileName, identityData.backIdFile!)
-
-        if (backError) throw backError
-
-        // Get public URLs
-        const { data: frontUrl } = supabase.storage.from("identity-documents").getPublicUrl(frontFileName)
-        const { data: backUrl } = supabase.storage.from("identity-documents").getPublicUrl(backFileName)
-
-      // Save identity data
-const { error: identityError } = await supabase.from("Freelancer_identitie").insert({
-  nin_number: identityData.ninNumber,
-  front_id_url: frontUrl.publicUrl,
-  back_id_url: backUrl.publicUrl,
-})
-
-if (identityError) throw identityError
-
-// Save skills
-const skillsData = selectedSkills.map((skill) => ({
-  skill_name: skill,
-}))
-
-const { error: skillsError } = await supabase
-  .from("freelancer_skills")
-  .insert(skillsData)
-
-if (skillsError) throw skillsError
+        if (profileError) throw profileError
 
         const successMessage =
           "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
         setSignupStatus({ type: "success", message: successMessage })
 
-        // Clear form
         setFormData({
           fullName: "",
           email: "",
@@ -307,7 +231,7 @@ if (skillsError) throw skillsError
           companySize: "",
         })
         setSelectedSkills([])
-        setIdentityData({ ninNumber: "", frontIdFile: null, backIdFile: null })
+        setIdentityData({ ninNumber: "" })
       } else if (authData.user) {
         const successMessage =
           "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
@@ -385,7 +309,6 @@ if (skillsError) throw skillsError
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-6">
-            {/* Account Type Selection */}
             <div className="space-y-3">
               <Label>I want to join as:</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -422,7 +345,6 @@ if (skillsError) throw skillsError
               </div>
             </div>
 
-            {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name *</Label>
@@ -495,7 +417,6 @@ if (skillsError) throw skillsError
                   <p className="text-sm text-gray-600">Search and choose your skills, or select Others.</p>
                 </div>
 
-                {/* Selected Skills */}
                 {selectedSkills.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {selectedSkills.map((skill) => (
@@ -517,7 +438,6 @@ if (skillsError) throw skillsError
                   </div>
                 )}
 
-                {/* Skill Search */}
                 <Input
                   type="text"
                   placeholder="Search skills..."
@@ -526,7 +446,6 @@ if (skillsError) throw skillsError
                   disabled={isLoading}
                 />
 
-                {/* Available Skills */}
                 <div className="max-h-40 overflow-y-auto border rounded-md p-2">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {filteredSkills.slice(0, 12).map((skill) => (
@@ -555,10 +474,9 @@ if (skillsError) throw skillsError
               <div className="space-y-4">
                 <div>
                   <Label>Identity Verification *</Label>
-                  <p className="text-sm text-gray-600">Upload your national ID and provide your NIN for verification</p>
+                  <p className="text-sm text-gray-600">Provide your NIN for verification</p>
                 </div>
 
-                {/* NIN Number */}
                 <div className="space-y-2">
                   <Label htmlFor="ninNumber">NIN Number * (11 digits)</Label>
                   <Input
@@ -578,107 +496,9 @@ if (skillsError) throw skillsError
                     <p className="text-sm text-red-600">NIN must be exactly 11 digits</p>
                   )}
                 </div>
-
-                {/* ID Upload */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Front ID */}
-                  <div className="space-y-2">
-                    <Label>Front of National ID *</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      {identityData.frontIdFile ? (
-                        <div className="space-y-2">
-                          <FileText className="h-8 w-8 mx-auto text-green-600" />
-                          <p className="text-sm text-green-600">{identityData.frontIdFile.name}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIdentityData((prev) => ({ ...prev, frontIdFile: null }))}
-                            disabled={isLoading}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                          <p className="text-sm text-gray-600">Upload front of ID</p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleFileUpload(file, "front")
-                            }}
-                            className="hidden"
-                            id="frontId"
-                            disabled={isLoading}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById("frontId")?.click()}
-                            disabled={isLoading}
-                          >
-                            Choose File
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Back ID */}
-                  <div className="space-y-2">
-                    <Label>Back of National ID *</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      {identityData.backIdFile ? (
-                        <div className="space-y-2">
-                          <FileText className="h-8 w-8 mx-auto text-green-600" />
-                          <p className="text-sm text-green-600">{identityData.backIdFile.name}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIdentityData((prev) => ({ ...prev, backIdFile: null }))}
-                            disabled={isLoading}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                          <p className="text-sm text-gray-600">Upload back of ID</p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleFileUpload(file, "back")
-                            }}
-                            className="hidden"
-                            id="backId"
-                            disabled={isLoading}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById("backId")?.click()}
-                            disabled={isLoading}
-                          >
-                            Choose File
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
-            {/* Email and Password */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address *</Label>
