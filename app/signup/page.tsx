@@ -210,7 +210,7 @@ export default function SignUpPage() {
         }
 
         const { error: profileError } = await supabase.from("profiles").insert({
-          user_id: userId,
+          id: userId,
           nin: identityData.ninNumber,
           skrilex: selectedSkills,
         })
