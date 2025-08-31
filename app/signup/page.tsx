@@ -26,39 +26,21 @@ import { useRouter } from "next/navigation"
 type AccountType = "freelancer" | "agency"
 
 const AVAILABLE_SKILLS = [
-  "Web Development",
-  "Mobile App Development",
-  "UI/UX Design",
-  "Graphic Design",
-  "Content Writing",
-  "Digital Marketing",
-  "SEO",
-  "Social Media Management",
-  "Data Analysis",
-  "Machine Learning",
-  "Python",
-  "JavaScript",
-  "React",
-  "Node.js",
-  "WordPress",
-  "E-commerce",
-  "Video Editing",
-  "Photography",
-  "Translation",
-  "Virtual Assistant",
-  "Project Management",
-  "Accounting",
-  "Legal Services",
-  "Architecture",
-  "3D Modeling",
-  "Animation",
-  "Voice Over",
-  "Music Production",
-  "Copywriting",
-  "Email Marketing",
-  "Brand Strategy",
-  "Logo Design",
-  "Illustration",
+"Web Development",
+      "Mobile App Development",
+      "Frontend Development",
+      "Backend Development",
+      "Full-Stack Development",
+      "UI/UX Design",
+      "Software Development",
+      "Game Development",
+      "Blockchain Development",
+      "Smart Contracts",
+      "Cybersecurity",
+      "Cloud Computing",
+      "DevOps",
+    
+    
 ]
 
 export default function SignUpPage() {
@@ -265,8 +247,13 @@ export default function SignUpPage() {
       } else if (authData.user && accountType === "freelancer") {
         setSignupStatus({ type: "info", message: "Uploading identity documents..." })
 
+        const userId = authData.user.id
+        if (!userId) {
+          throw new Error("User ID not available")
+        }
+
         // Upload front ID
-        const frontFileName = `${authData.user.id}/front-id-${Date.now()}.${identityData.frontIdFile!.name.split(".").pop()}`
+        const frontFileName = `${userId}/front-id-${Date.now()}.${identityData.frontIdFile!.name.split(".").pop()}`
         const { data: frontUpload, error: frontError } = await supabase.storage
           .from("identity-documents")
           .upload(frontFileName, identityData.frontIdFile!)
@@ -274,7 +261,7 @@ export default function SignUpPage() {
         if (frontError) throw frontError
 
         // Upload back ID
-        const backFileName = `${authData.user.id}/back-id-${Date.now()}.${identityData.backIdFile!.name.split(".").pop()}`
+        const backFileName = `${userId}/back-id-${Date.now()}.${identityData.backIdFile!.name.split(".").pop()}`
         const { data: backUpload, error: backError } = await supabase.storage
           .from("identity-documents")
           .upload(backFileName, identityData.backIdFile!)
@@ -285,25 +272,25 @@ export default function SignUpPage() {
         const { data: frontUrl } = supabase.storage.from("identity-documents").getPublicUrl(frontFileName)
         const { data: backUrl } = supabase.storage.from("identity-documents").getPublicUrl(backFileName)
 
-        // Save identity data
-        const { error: identityError } = await supabase.from("Freelancer_identitie").insert({
-          user_id: authData.user.id,
-          nin_number: identityData.ninNumber,
-          front_id_url: frontUrl.publicUrl,
-          back_id_url: backUrl.publicUrl,
-        })
+      // Save identity data
+const { error: identityError } = await supabase.from("Freelancer_identitie").insert({
+  nin_number: identityData.ninNumber,
+  front_id_url: frontUrl.publicUrl,
+  back_id_url: backUrl.publicUrl,
+})
 
-        if (identityError) throw identityError
+if (identityError) throw identityError
 
-        // Save skills
-        const skillsData = selectedSkills.map((skill) => ({
-          user_id: authData.user.id,
-          skill_name: skill,
-        }))
+// Save skills
+const skillsData = selectedSkills.map((skill) => ({
+  skill_name: skill,
+}))
 
-        const { error: skillsError } = await supabase.from("freelancer_skills").insert(skillsData)
+const { error: skillsError } = await supabase
+  .from("freelancer_skills")
+  .insert(skillsData)
 
-        if (skillsError) throw skillsError
+if (skillsError) throw skillsError
 
         const successMessage =
           "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
@@ -505,7 +492,7 @@ export default function SignUpPage() {
               <div className="space-y-4">
                 <div>
                   <Label>Select Your Skills * (Max 10)</Label>
-                  <p className="text-sm text-gray-600">Choose skills that best describe your expertise</p>
+                  <p className="text-sm text-gray-600">Search and choose your skills, or select Others.</p>
                 </div>
 
                 {/* Selected Skills */}
