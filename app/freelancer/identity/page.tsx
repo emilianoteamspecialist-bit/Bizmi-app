@@ -244,7 +244,7 @@ export default function IdentityPage() {
                       }`}
                     >
                       NIN: {existingVerification.nin}
-                      {existingVerification.status === "pending" && " - Will be verified automatically"}
+                      {existingVerification.status === "pending" && " - Verification in Progress"}
                     </p>
                   </div>
                 </div>
