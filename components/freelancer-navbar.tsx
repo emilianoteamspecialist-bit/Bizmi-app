@@ -251,7 +251,7 @@ export default function FreelancerNavbar() {
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Messages
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/identity")}>
+                <DropdownMenuItem onClick={() => router.push("/freelancer/identity")}>
                   <Shield className="mr-2 h-4 w-4" />
                   Identity
                 </DropdownMenuItem>
