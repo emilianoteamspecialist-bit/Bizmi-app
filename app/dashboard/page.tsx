@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import {
   Eye,
   Calendar,
-  X,
   MapPin,
   Clock,
   Users,
@@ -18,7 +17,6 @@ import {
   Search,
   Wallet,
   CreditCard,
-  Upload,
   Send,
   Loader2,
   Briefcase,
@@ -27,9 +25,6 @@ import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { supabase } from "@/lib/supabase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const JOBS_PER_PAGE = 100 // New constant for pagination
 
@@ -515,6 +510,23 @@ export default function FreelancerDashboard() {
       setSelectedAgency(job.agencyInfo)
       setShowAgencyModal(true)
     } else if (action === "placeBid") {
+      try {
+        const { data: verification, error } = await supabase
+          .from("freelancer_verification")
+          .select("status")
+          .eq("user_id", currentUser?.id)
+          .eq("status", "verified")
+          .single()
+
+        if (error || !verification) {
+          alert("NIN isn't verify yet, please add and verify")
+          return
+        }
+      } catch (error) {
+        alert("NIN isn't verify yet, please add and verify")
+        return
+      }
+
       // Check if user has sufficient credits before opening modal
       if (creditBalance < job.credit_cost) {
         alert(
@@ -596,6 +608,19 @@ export default function FreelancerDashboard() {
     setIsSubmittingBid(true)
 
     try {
+      const { data: verification, error: verificationError } = await supabase
+        .from("freelancer_verification")
+        .select("status")
+        .eq("user_id", currentUser.id)
+        .eq("status", "verified")
+        .single()
+
+      if (verificationError || !verification) {
+        alert("NIN isn't verify yet, please add and verify")
+        setIsSubmittingBid(false)
+        return
+      }
+
       // Double-check if user has sufficient credits
       if (creditBalance < selectedJob.credit_cost) {
         alert(`Insufficient credits! You need ${selectedJob.credit_cost} credits but only have ${creditBalance}.`)
@@ -1048,340 +1073,6 @@ export default function FreelancerDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Filter Modal */}
-      {showFilterModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Filter Jobs</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setShowFilterModal(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Keywords</label>
-                <Input
-                  placeholder="Search by title, company, or skills..."
-                  value={filters.keywords}
-                  onChange={(e) => setFilters({ ...filters, keywords: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Min Budget</label>
-                  <Input
-                    type="number"
-                    placeholder="₦0"
-                    value={filters.minBudget}
-                    onChange={(e) => setFilters({ ...filters, minBudget: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Max Budget</label>
-                  <Input
-                    type="number"
-                    placeholder="₦1,000,000"
-                    value={filters.maxBudget}
-                    onChange={(e) => setFilters({ ...filters, maxBudget: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Max Credits</label>
-                <Select value={filters.credits} onValueChange={(value) => setFilters({ ...filters, credits: value })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select max credits" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">Up to 5 credits</SelectItem>
-                    <SelectItem value="10">Up to 10 credits</SelectItem>
-                    <SelectItem value="15">Up to 15 credits</SelectItem>
-                    <SelectItem value="20">Up to 20 credits</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex space-x-2 pt-4">
-                <Button variant="outline" className="flex-1 bg-transparent" onClick={resetFilters}>
-                  Reset
-                </Button>
-                <Button className="flex-1 bg-orange-500 hover:bg-orange-600" onClick={applyFilters}>
-                  Apply Filters
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Agency Profile Modal */}
-      {showAgencyModal && selectedAgency && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={selectedAgency.logo || "/placeholder.svg"} alt="Agency Logo" />
-                    <AvatarFallback className="text-lg font-semibold bg-orange-500 text-white">
-                      {selectedAgency.fullName?.charAt(0).toUpperCase() ||
-                        selectedAgency.companyName?.charAt(0).toUpperCase() ||
-                        selectedAgency.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <CardTitle className="text-xl">{selectedAgency.name}</CardTitle>
-                      <img src="/images/verified-tick.png" alt="Verified" className="h-5 w-5" />
-                    </div>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowAgencyModal(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h4 className="font-semibold mb-2">About</h4>
-                <p className="text-sm text-muted-foreground">{selectedAgency.description}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-1">Location</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.location}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Total Jobs</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.totalJobs}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Team Size</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.employees}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-1">Member Since</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.memberSince}</p>
-                </div>
-              </div>
-              {selectedAgency.phone && (
-                <div>
-                  <h4 className="font-semibold mb-1">Phone</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.phone}</p>
-                </div>
-              )}
-              {selectedAgency.website && (
-                <div>
-                  <h4 className="font-semibold mb-1">Website</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.website}</p>
-                </div>
-              )}
-              {selectedAgency.email && (
-                <div>
-                  <h4 className="font-semibold mb-1">Email</h4>
-                  <p className="text-sm text-muted-foreground">{selectedAgency.email}</p>
-                </div>
-              )}
-              {selectedAgency.companyName &&
-                selectedAgency.fullName &&
-                selectedAgency.companyName !== selectedAgency.fullName && (
-                  <div>
-                    <h4 className="font-semibold mb-1">Contact Person</h4>
-                    <p className="text-sm text-muted-foreground">{selectedAgency.fullName}</p>
-                  </div>
-                )}
-              <div className="flex justify-center pt-4">
-                <Button variant="outline" className="bg-transparent" onClick={() => setShowAgencyModal(false)}>
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Place Bid Modal */}
-      {showPlaceBidModal && selectedJob && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-md h-full overflow-y-auto animate-in slide-in-from-right">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Place Your Bid</h3>
-                <Button variant="ghost" size="icon" onClick={() => setShowPlaceBidModal(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-4 mb-6">
-                <div>
-                  <h4 className="font-semibold mb-2">{selectedJob.title}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">{selectedJob.agencyInfo.name}</p>
-                  <div className="flex items-center space-x-4 text-sm">
-                    <span className="flex items-center">
-                      <span className="text-orange-500 mr-1">₦</span>
-                      {selectedJob.budget.replace("₦", "")}
-                    </span>
-                    <span className="flex items-center">
-                      <CreditCard className="h-4 w-4 mr-1 text-blue-500" />
-                      {selectedJob.credit_cost} credits
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Your Proposal</label>
-                  <Textarea
-                    placeholder="Describe your approach to this project..."
-                    value={bidData.proposal}
-                    onChange={(e) => setBidData({ ...bidData, proposal: e.target.value })}
-                    rows={4}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Timeline</label>
-                  <Input
-                    placeholder="e.g., 2 weeks"
-                    value={bidData.timeline}
-                    onChange={(e) => setBidData({ ...bidData, timeline: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Your Budget</label>
-                  <Input
-                    placeholder="₦0"
-                    value={bidData.budget}
-                    onChange={(e) => setBidData({ ...bidData, budget: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Attachments</label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-                    <input type="file" multiple onChange={handleFileSelect} className="hidden" id="file-upload" />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <div className="text-center">
-                        <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm text-muted-foreground">Click to upload files</p>
-                      </div>
-                    </label>
-                  </div>
-                  {selectedFiles.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {selectedFiles.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded"
-                        >
-                          <span className="text-sm truncate">{file.name}</span>
-                          <Button variant="ghost" size="sm" onClick={() => removeFile(index)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {/* Credit Balance Display */}
-                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Your Credit Balance:</span>
-                    <span className="text-lg font-bold text-orange-600">{creditBalance}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Credits Required:</span>
-                    <span className="text-lg font-bold text-orange-600">{selectedJob.credit_cost}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-orange-200 dark:border-orange-800">
-                    <span className="text-sm font-medium">Remaining After:</span>
-                    <span
-                      className={`text-lg font-bold ${creditBalance >= selectedJob.credit_cost ? "text-green-600" : "text-red-600"}`}
-                    >
-                      {Math.max(0, creditBalance - selectedJob.credit_cost)}
-                    </span>
-                  </div>
-                  {creditBalance < selectedJob.credit_cost && (
-                    <p className="text-xs text-red-500 mt-2">
-                      Insufficient credits! You need {selectedJob.credit_cost - creditBalance} more credits.
-                    </p>
-                  )}
-                </div>
-                <Button
-                  className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  onClick={submitBid}
-                  disabled={
-                    !bidData.proposal ||
-                    !bidData.timeline ||
-                    !bidData.budget ||
-                    creditBalance < selectedJob.credit_cost ||
-                    isSubmittingBid
-                  }
-                >
-                  {isSubmittingBid ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  {isSubmittingBid ? "Submitting..." : "Submit Proposal"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Latest/Date Filter Modal */}
-      {showLatestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Filter by Date</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setShowLatestModal(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">From Date</label>
-                <Input
-                  type="date"
-                  value={dateFilters.fromDate}
-                  onChange={(e) => setDateFilters({ ...dateFilters, fromDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">To Date</label>
-                <Input
-                  type="date"
-                  value={dateFilters.toDate}
-                  onChange={(e) => setDateFilters({ ...dateFilters, toDate: e.target.value })}
-                />
-              </div>
-              <div className="flex space-x-2 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                  onClick={() => {
-                    setDateFilters({ fromDate: "", toDate: "" })
-                    setJobsOffset(0)
-                    setHasMoreJobs(true)
-                    loadJobs(0, searchQuery, false)
-                    setShowLatestModal(false)
-                  }}
-                >
-                  Reset
-                </Button>
-                <Button className="flex-1 bg-orange-500 hover:bg-orange-600" onClick={applyDateFilters}>
-                  Apply
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   )
 }
