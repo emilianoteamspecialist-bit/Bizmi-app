@@ -46,7 +46,6 @@ export default function SignUpPage() {
     username: "",
     companyName: "",
     companySize: "",
-    ninNumber: "",
   })
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -62,10 +61,6 @@ export default function SignUpPage() {
     }
   }
 
-  const validateNIN = (nin: string) => {
-    return /^[0-9]{11}$/.test(nin)
-  }
-
   const isFormValid = () => {
     const basicFieldsValid =
       formData.fullName.trim() !== "" &&
@@ -77,11 +72,7 @@ export default function SignUpPage() {
     if (!basicFieldsValid) return false
 
     if (accountType === "freelancer") {
-      const freelancerFieldsValid =
-        formData.username.trim() !== "" &&
-        selectedSkills.length > 0 &&
-        formData.ninNumber.trim() !== "" &&
-        validateNIN(formData.ninNumber)
+      const freelancerFieldsValid = formData.username.trim() !== "" && selectedSkills.length > 0
 
       return freelancerFieldsValid
     }
@@ -115,14 +106,6 @@ export default function SignUpPage() {
       }
       if (selectedSkills.length === 0) {
         setSignupStatus({ type: "error", message: "Please select at least one skill" })
-        return false
-      }
-      if (!formData.ninNumber.trim()) {
-        setSignupStatus({ type: "error", message: "NIN number is required" })
-        return false
-      }
-      if (!validateNIN(formData.ninNumber)) {
-        setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
         return false
       }
     }
@@ -163,7 +146,6 @@ export default function SignUpPage() {
         account_type: accountType,
         ...(accountType === "freelancer" && {
           username: formData.username.trim(),
-          nin: formData.ninNumber,
           skills: selectedSkills,
         }),
         ...(accountType === "agency" && {
@@ -208,7 +190,6 @@ export default function SignUpPage() {
           username: "",
           companyName: "",
           companySize: "",
-          ninNumber: "",
         })
         setSelectedSkills([])
       } else if (authData.user) {
@@ -224,7 +205,6 @@ export default function SignUpPage() {
           username: "",
           companyName: "",
           companySize: "",
-          ninNumber: "",
         })
       } else {
         setSignupStatus({ type: "error", message: "An unexpected error occurred during signup. Please try again." })
@@ -447,35 +427,6 @@ export default function SignUpPage() {
                   )}
                 </div>
                 <p className="text-sm text-gray-600">Selected: {selectedSkills.length}/10 skills</p>
-              </div>
-            )}
-
-            {accountType === "freelancer" && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Identity Verification *</Label>
-                  <p className="text-sm text-gray-600">Provide your NIN for verification</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ninNumber">NIN Number * (11 digits)</Label>
-                  <Input
-                    id="ninNumber"
-                    type="text"
-                    placeholder="Enter your 11-digit NIN"
-                    value={formData.ninNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 11)
-                      handleInputChange("ninNumber", value)
-                    }}
-                    maxLength={11}
-                    required
-                    disabled={isLoading}
-                  />
-                  {formData.ninNumber && !validateNIN(formData.ninNumber) && (
-                    <p className="text-sm text-red-600">NIN must be exactly 11 digits</p>
-                  )}
-                </div>
               </div>
             )}
 
