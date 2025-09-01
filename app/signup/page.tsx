@@ -55,6 +55,11 @@ export default function SignUpPage() {
     ninNumber: "",
   })
 
+  const [ninVerification, setNinVerification] = useState({
+    isVerifying: false,
+    isVerified: false,
+  })
+
   const router = useRouter()
 
   const handleSkillToggle = (skill: string) => {
@@ -67,6 +72,42 @@ export default function SignUpPage() {
 
   const validateNIN = (nin: string) => {
     return /^[0-9]{11}$/.test(nin)
+  }
+
+  const handleNinVerification = async () => {
+    if (!validateNIN(identityData.ninNumber)) {
+      setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
+      return
+    }
+
+    setNinVerification({ isVerifying: true, isVerified: false })
+    setSignupStatus({ type: "info", message: "Verifying..." })
+
+    try {
+      // Send NIN to Freelancer_nin table
+      const { error } = await supabase.from("Freelancer_nin").insert([
+        {
+          nin_number: identityData.ninNumber,
+          created_at: new Date().toISOString(),
+        },
+      ])
+
+      if (error) {
+        if (error.message?.includes("duplicate") || error.code === "23505") {
+          setSignupStatus({ type: "error", message: "NIN already exists" })
+        } else {
+          setSignupStatus({ type: "error", message: "Verification failed. Please try again." })
+        }
+        setNinVerification({ isVerifying: false, isVerified: false })
+      } else {
+        setNinVerification({ isVerifying: false, isVerified: true })
+        setSignupStatus({ type: "success", message: "Verified" })
+      }
+    } catch (error) {
+      console.error("NIN verification error:", error)
+      setSignupStatus({ type: "error", message: "Verification failed. Please try again." })
+      setNinVerification({ isVerifying: false, isVerified: false })
+    }
   }
 
   const isFormValid = () => {
@@ -84,7 +125,8 @@ export default function SignUpPage() {
         formData.username.trim() !== "" &&
         selectedSkills.length > 0 &&
         identityData.ninNumber.trim() !== "" &&
-        validateNIN(identityData.ninNumber)
+        validateNIN(identityData.ninNumber) &&
+        ninVerification.isVerified // Added verification requirement
 
       return freelancerFieldsValid
     }
@@ -126,6 +168,10 @@ export default function SignUpPage() {
       }
       if (!validateNIN(identityData.ninNumber)) {
         setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
+        return false
+      }
+      if (!ninVerification.isVerified) {
+        setSignupStatus({ type: "error", message: "NIN verification is required" })
         return false
       }
     }
@@ -198,65 +244,36 @@ export default function SignUpPage() {
         }
 
         setSignupStatus({ type: "error", message: errorMessage })
+      } else if (authData.user && accountType === "freelancer") {
+        const successMessage =
+          "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
+        setSignupStatus({ type: "success", message: successMessage })
+
+        setFormData({
+          fullName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          username: "",
+          companyName: "",
+          companySize: "",
+        })
+        setSelectedSkills([])
+        setIdentityData({ ninNumber: "" })
+        setNinVerification({ isVerifying: false, isVerified: false })
       } else if (authData.user) {
-        try {
-          const profileData = {
-            id: authData.user.id,
-            full_name: formData.fullName.trim(),
-            email: formData.email.trim(),
-            account_type: accountType,
-            ...(accountType === "freelancer" && {
-              username: formData.username.trim(),
-              nin: identityData.ninNumber, // Store NIN in nin column
-              skrilex: selectedSkills, // Store skills in skrilex column
-            }),
-            ...(accountType === "agency" && {
-              company_name: formData.companyName.trim(),
-              company_size: formData.companySize,
-            }),
-          }
+        const successMessage =
+          "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
+        setSignupStatus({ type: "success", message: successMessage })
 
-          const { error: profileError } = await supabase.from("profiles").insert([profileData])
-
-          if (profileError) {
-            console.error("Profile creation error:", profileError)
-            // Don't fail the signup if profile creation fails, but log it
-          }
-        } catch (profileErr) {
-          console.error("Profile insertion error:", profileErr)
-        }
-
-        if (accountType === "freelancer") {
-          const successMessage =
-            "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
-          setSignupStatus({ type: "success", message: successMessage })
-
-          setFormData({
-            fullName: "",
-            email: "",
-            password: "",
-            confirmPassword: "",
-            username: "",
-            companyName: "",
-            companySize: "",
-          })
-          setSelectedSkills([])
-          setIdentityData({ ninNumber: "" })
-        } else {
-          const successMessage =
-            "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
-          setSignupStatus({ type: "success", message: successMessage })
-
-          setFormData({
-            fullName: "",
-            email: "",
-            password: "",
-            confirmPassword: "",
-            username: "",
-            companyName: "",
-            companySize: "",
-          })
-        }
+        setFormData({
+          fullName: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          username: "",
+          companySize: "",
+        })
       } else {
         setSignupStatus({ type: "error", message: "An unexpected error occurred during signup. Please try again." })
       }
@@ -490,19 +507,50 @@ export default function SignUpPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="ninNumber">NIN Number * (11 digits)</Label>
-                  <Input
-                    id="ninNumber"
-                    type="text"
-                    placeholder="Enter your 11-digit NIN"
-                    value={identityData.ninNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 11)
-                      setIdentityData((prev) => ({ ...prev, ninNumber: value }))
-                    }}
-                    maxLength={11}
-                    required
-                    disabled={isLoading}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="ninNumber"
+                      type="text"
+                      placeholder="Enter your 11-digit NIN"
+                      value={identityData.ninNumber}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 11)
+                        setIdentityData((prev) => ({ ...prev, ninNumber: value }))
+                        setNinVerification({ isVerifying: false, isVerified: false })
+                        if (signupStatus.type === "error" || signupStatus.type === "success") {
+                          setSignupStatus({ type: null, message: "" })
+                        }
+                      }}
+                      maxLength={11}
+                      required
+                      disabled={isLoading || ninVerification.isVerifying}
+                      className={ninVerification.isVerified ? "border-green-500" : ""}
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleNinVerification}
+                      disabled={
+                        !validateNIN(identityData.ninNumber) ||
+                        ninVerification.isVerifying ||
+                        ninVerification.isVerified
+                      }
+                      className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400"
+                    >
+                      {ninVerification.isVerifying ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : ninVerification.isVerified ? (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Verified
+                        </>
+                      ) : (
+                        "Verify"
+                      )}
+                    </Button>
+                  </div>
                   {identityData.ninNumber && !validateNIN(identityData.ninNumber) && (
                     <p className="text-sm text-red-600">NIN must be exactly 11 digits</p>
                   )}
