@@ -46,19 +46,11 @@ export default function SignUpPage() {
     username: "",
     companyName: "",
     companySize: "",
+    ninNumber: "",
   })
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [skillSearchTerm, setSkillSearchTerm] = useState("")
-
-  const [identityData, setIdentityData] = useState({
-    ninNumber: "",
-  })
-
-  const [ninVerification, setNinVerification] = useState({
-    isVerifying: false,
-    isVerified: false,
-  })
 
   const router = useRouter()
 
@@ -72,42 +64,6 @@ export default function SignUpPage() {
 
   const validateNIN = (nin: string) => {
     return /^[0-9]{11}$/.test(nin)
-  }
-
-  const handleNinVerification = async () => {
-    if (!validateNIN(identityData.ninNumber)) {
-      setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
-      return
-    }
-
-    setNinVerification({ isVerifying: true, isVerified: false })
-    setSignupStatus({ type: "info", message: "Verifying..." })
-
-    try {
-      // Send NIN to Freelancer_nin table
-      const { error } = await supabase.from("Freelancer_nin").insert([
-        {
-          nin_number: identityData.ninNumber,
-          created_at: new Date().toISOString(),
-        },
-      ])
-
-      if (error) {
-        if (error.message?.includes("duplicate") || error.code === "23505") {
-          setSignupStatus({ type: "error", message: "NIN already exists" })
-        } else {
-          setSignupStatus({ type: "error", message: "Verification failed. Please try again." })
-        }
-        setNinVerification({ isVerifying: false, isVerified: false })
-      } else {
-        setNinVerification({ isVerifying: false, isVerified: true })
-        setSignupStatus({ type: "success", message: "Verified" })
-      }
-    } catch (error) {
-      console.error("NIN verification error:", error)
-      setSignupStatus({ type: "error", message: "Verification failed. Please try again." })
-      setNinVerification({ isVerifying: false, isVerified: false })
-    }
   }
 
   const isFormValid = () => {
@@ -124,9 +80,8 @@ export default function SignUpPage() {
       const freelancerFieldsValid =
         formData.username.trim() !== "" &&
         selectedSkills.length > 0 &&
-        identityData.ninNumber.trim() !== "" &&
-        validateNIN(identityData.ninNumber) &&
-        ninVerification.isVerified // Added verification requirement
+        formData.ninNumber.trim() !== "" &&
+        validateNIN(formData.ninNumber)
 
       return freelancerFieldsValid
     }
@@ -162,16 +117,12 @@ export default function SignUpPage() {
         setSignupStatus({ type: "error", message: "Please select at least one skill" })
         return false
       }
-      if (!identityData.ninNumber.trim()) {
+      if (!formData.ninNumber.trim()) {
         setSignupStatus({ type: "error", message: "NIN number is required" })
         return false
       }
-      if (!validateNIN(identityData.ninNumber)) {
+      if (!validateNIN(formData.ninNumber)) {
         setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
-        return false
-      }
-      if (!ninVerification.isVerified) {
-        setSignupStatus({ type: "error", message: "NIN verification is required" })
         return false
       }
     }
@@ -212,7 +163,7 @@ export default function SignUpPage() {
         account_type: accountType,
         ...(accountType === "freelancer" && {
           username: formData.username.trim(),
-          nin: identityData.ninNumber,
+          nin: formData.ninNumber,
           skills: selectedSkills,
         }),
         ...(accountType === "agency" && {
@@ -257,10 +208,9 @@ export default function SignUpPage() {
           username: "",
           companyName: "",
           companySize: "",
+          ninNumber: "",
         })
         setSelectedSkills([])
-        setIdentityData({ ninNumber: "" })
-        setNinVerification({ isVerifying: false, isVerified: false })
       } else if (authData.user) {
         const successMessage =
           "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
@@ -272,7 +222,9 @@ export default function SignUpPage() {
           password: "",
           confirmPassword: "",
           username: "",
+          companyName: "",
           companySize: "",
+          ninNumber: "",
         })
       } else {
         setSignupStatus({ type: "error", message: "An unexpected error occurred during signup. Please try again." })
@@ -507,51 +459,20 @@ export default function SignUpPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="ninNumber">NIN Number * (11 digits)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="ninNumber"
-                      type="text"
-                      placeholder="Enter your 11-digit NIN"
-                      value={identityData.ninNumber}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, "").slice(0, 11)
-                        setIdentityData((prev) => ({ ...prev, ninNumber: value }))
-                        setNinVerification({ isVerifying: false, isVerified: false })
-                        if (signupStatus.type === "error" || signupStatus.type === "success") {
-                          setSignupStatus({ type: null, message: "" })
-                        }
-                      }}
-                      maxLength={11}
-                      required
-                      disabled={isLoading || ninVerification.isVerifying}
-                      className={ninVerification.isVerified ? "border-green-500" : ""}
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleNinVerification}
-                      disabled={
-                        !validateNIN(identityData.ninNumber) ||
-                        ninVerification.isVerifying ||
-                        ninVerification.isVerified
-                      }
-                      className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400"
-                    >
-                      {ninVerification.isVerifying ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : ninVerification.isVerified ? (
-                        <>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Verified
-                        </>
-                      ) : (
-                        "Verify"
-                      )}
-                    </Button>
-                  </div>
-                  {identityData.ninNumber && !validateNIN(identityData.ninNumber) && (
+                  <Input
+                    id="ninNumber"
+                    type="text"
+                    placeholder="Enter your 11-digit NIN"
+                    value={formData.ninNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 11)
+                      handleInputChange("ninNumber", value)
+                    }}
+                    maxLength={11}
+                    required
+                    disabled={isLoading}
+                  />
+                  {formData.ninNumber && !validateNIN(formData.ninNumber) && (
                     <p className="text-sm text-red-600">NIN must be exactly 11 digits</p>
                   )}
                 </div>
