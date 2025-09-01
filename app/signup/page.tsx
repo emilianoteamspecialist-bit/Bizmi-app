@@ -198,35 +198,65 @@ export default function SignUpPage() {
         }
 
         setSignupStatus({ type: "error", message: errorMessage })
-      } else if (authData.user && accountType === "freelancer") {
-        const successMessage =
-          "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
-        setSignupStatus({ type: "success", message: successMessage })
-
-        setFormData({
-          fullName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          username: "",
-          companyName: "",
-          companySize: "",
-        })
-        setSelectedSkills([])
-        setIdentityData({ ninNumber: "" })
       } else if (authData.user) {
-        const successMessage =
-          "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
-        setSignupStatus({ type: "success", message: successMessage })
+        try {
+          const profileData = {
+            id: authData.user.id,
+            full_name: formData.fullName.trim(),
+            email: formData.email.trim(),
+            account_type: accountType,
+            ...(accountType === "freelancer" && {
+              username: formData.username.trim(),
+              nin: identityData.ninNumber, // Store NIN in nin column
+              skrilex: selectedSkills, // Store skills in skrilex column
+            }),
+            ...(accountType === "agency" && {
+              company_name: formData.companyName.trim(),
+              company_size: formData.companySize,
+            }),
+          }
 
-        setFormData({
-          fullName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          username: "",
-          companySize: "",
-        })
+          const { error: profileError } = await supabase.from("profiles").insert([profileData])
+
+          if (profileError) {
+            console.error("Profile creation error:", profileError)
+            // Don't fail the signup if profile creation fails, but log it
+          }
+        } catch (profileErr) {
+          console.error("Profile insertion error:", profileErr)
+        }
+
+        if (accountType === "freelancer") {
+          const successMessage =
+            "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
+          setSignupStatus({ type: "success", message: successMessage })
+
+          setFormData({
+            fullName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            username: "",
+            companyName: "",
+            companySize: "",
+          })
+          setSelectedSkills([])
+          setIdentityData({ ninNumber: "" })
+        } else {
+          const successMessage =
+            "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
+          setSignupStatus({ type: "success", message: successMessage })
+
+          setFormData({
+            fullName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            username: "",
+            companyName: "",
+            companySize: "",
+          })
+        }
       } else {
         setSignupStatus({ type: "error", message: "An unexpected error occurred during signup. Please try again." })
       }
