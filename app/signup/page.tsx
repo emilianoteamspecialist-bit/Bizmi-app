@@ -170,10 +170,13 @@ export default function SignUpPage() {
       if (authError) {
         let errorMessage = handleSupabaseError(authError)
 
-        if (authError.message?.includes("User already registered")) {
-          errorMessage = "This email is already registered"
-        } else if (authError.message?.includes("email")) {
-          errorMessage = "This email is already registered"
+        if (
+          authError.message?.includes("User already registered") ||
+          authError.message?.includes("email") ||
+          authError.message?.includes("already") ||
+          authError.code === "user_already_exists"
+        ) {
+          errorMessage = "Sorry, email already registered"
         }
 
         setSignupStatus({ type: "error", message: errorMessage })
