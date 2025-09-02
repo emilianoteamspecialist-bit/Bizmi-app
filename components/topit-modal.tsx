@@ -54,9 +54,7 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
       const response = await fetch(
         `/api/credits/verify-credits?reference=${encodeURIComponent(reference)}&amount=${amount}`,
   { method: "GET" },
-        {
-          method: "GET",
-        },
+       
       )
 
       console.log("[v0] Verify response status:", response.status)
