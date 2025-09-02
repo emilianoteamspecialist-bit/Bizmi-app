@@ -52,7 +52,8 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
       console.log("[v0] Verifying payment with reference:", reference)
 
       const response = await fetch(
-        `/credits/verify-credits?reference=${encodeURIComponent(reference)}&amount=${amount}`,
+        `/api/credits/verify-credits?reference=${encodeURIComponent(reference)}&amount=${amount}`,
+  { method: "GET" },
         {
           method: "GET",
         },
