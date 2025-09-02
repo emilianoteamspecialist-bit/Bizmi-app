@@ -25,24 +25,14 @@ export async function GET(req: NextRequest) {
       error: userError,
     } = await supabase.auth.getUser()
     if (userError || !user) {
+      console.log("❌ User authentication failed:", userError)
       return NextResponse.json({ error: "User not authenticated" }, { status: 401 })
     }
 
+    console.log("✅ User authenticated:", user.id)
+
     const amountNum = Number.parseFloat(amount)
     const creditsToAdd = Math.floor(amountNum / 50) // Calculate credits (1 credit = N50)
-
-    const { data: purchaseRecord, error: purchaseError } = await supabase.from("purchase_credits").insert({
-      freelancer_id: user.id, // this links purchase to user
-      credits_amount: creditsToAdd,
-      amount: amountNum,
-      paystack_reference: reference,
-      status: "pending",
-    })
-
-    if (purchaseError) {
-      console.error("❌ Error creating purchase record:", purchaseError)
-      return NextResponse.json({ error: "Failed to create purchase record" }, { status: 500 })
-    }
 
     const { data: existingPurchase } = await supabase
       .from("purchase_credits")
@@ -50,15 +40,13 @@ export async function GET(req: NextRequest) {
       .eq("paystack_reference", reference)
       .single()
 
-    if (existingPurchase) {
-      if (existingPurchase.status === "completed") {
-        console.log("✅ Credits already purchased")
-        return NextResponse.json({
-          success: true,
-          message: "Credits already purchased successfully",
-          credits_added: existingPurchase.credits_amount,
-        })
-      }
+    if (existingPurchase && existingPurchase.status === "completed") {
+      console.log("✅ Credits already purchased")
+      return NextResponse.json({
+        success: true,
+        message: "Credits already purchased successfully",
+        credits_added: existingPurchase.credits_amount,
+      })
     }
 
     const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
@@ -95,14 +83,17 @@ export async function GET(req: NextRequest) {
 
     console.log("💳 Payment verified successfully, recording purchase...")
 
-    const { error: updateError } = await supabase
-      .from("purchase_credits")
-      .update({ status: "completed" })
-      .eq("paystack_reference", reference)
+    const { data: purchaseRecord, error: purchaseError } = await supabase.from("purchase_credits").insert({
+      freelancer_id: user.id,
+      credits_amount: creditsToAdd,
+      amount: amountNum,
+      paystack_reference: reference,
+      status: "completed",
+    })
 
-    if (updateError) {
-      console.error("❌ Error updating purchase status:", updateError)
-      return NextResponse.json({ error: "Failed to update purchase status" }, { status: 500 })
+    if (purchaseError) {
+      console.error("❌ Error creating purchase record:", purchaseError)
+      return NextResponse.json({ error: "Failed to create purchase record" }, { status: 500 })
     }
 
     const { data: userProfile, error: profileError } = await supabase
@@ -204,19 +195,6 @@ export async function POST(req: NextRequest) {
       // Allow small floating point differences
       console.error("❌ Amount mismatch:", { paid: paidAmount, expected: amount })
       return NextResponse.json({ error: "Payment amount mismatch" }, { status: 400 })
-    }
-
-    const { data: purchaseRecord, error: purchaseError } = await supabase.from("purchase_credits").insert({
-      freelancer_id: user.id, // this links purchase to user
-      credits_amount: creditsToAdd,
-      amount: amount,
-      paystack_reference: reference,
-      status: "pending",
-    })
-
-    if (purchaseError) {
-      console.error("❌ Error creating purchase record:", purchaseError)
-      return NextResponse.json({ error: "Failed to create purchase record" }, { status: 500 })
     }
 
     const { data: existingPurchase } = await supabase
