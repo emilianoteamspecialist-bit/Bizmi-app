@@ -177,6 +177,12 @@ export default function BizpalPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bizpal</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your payments and credits</p>
           </div>
+          <Button
+            onClick={() => window.open("https://paystack.shop/pay/m7uebavu00", "_blank")}
+            className="bg-orange-500 hover:bg-orange-600 border-orange-500 text-white"
+          >
+            Buy Credits
+          </Button>
         </div>
 
         {/* Available Credits Card */}
