@@ -510,11 +510,38 @@ export default function FreelancerDashboard() {
     document.documentElement.classList.toggle("dark")
   }
 
+  const checkNINVerification = async (userId: string): Promise<boolean> => {
+    try {
+      const { data: verificationData, error } = await supabase
+        .from("freelancer_verification")
+        .select("status")
+        .eq("freelancer_id", userId)
+        .eq("status", "verified")
+        .single()
+
+      if (error) {
+        console.error("Error checking NIN verification:", error)
+        return false
+      }
+
+      return !!verificationData
+    } catch (error) {
+      console.error("Error checking NIN verification:", error)
+      return false
+    }
+  }
+
   const handleJobAction = async (job: any, action: "bookmark" | "like" | "view" | "placeBid") => {
     if (action === "view") {
       setSelectedAgency(job.agencyInfo)
       setShowAgencyModal(true)
     } else if (action === "placeBid") {
+      const isNINVerified = await checkNINVerification(currentUser.id)
+      if (!isNINVerified) {
+        alert("NIN isn't verify yet, please add and verify")
+        return
+      }
+
       // Check if user has sufficient credits before opening modal
       if (creditBalance < job.credit_cost) {
         alert(
@@ -924,13 +951,13 @@ export default function FreelancerDashboard() {
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{job.description}</p>
 
                       {job.comments && (
-                      <div className="mb-4 p-3 rounded-lg">
-                    <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-1">
-                                 Extra Info
-                            </p>
-                    <p className="text-sm sm:text-base text-gray-700 break-words">
-                            {job.comments}
-                          </p>
+                        <div className="mb-4 p-3 rounded-lg">
+  <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-1">
+    Additional Details
+  </p>
+  <p className="text-sm sm:text-base md:text-lg text-gray-700 break-words">
+    {job.comments}
+  </p>
 </div>
 
                       )}

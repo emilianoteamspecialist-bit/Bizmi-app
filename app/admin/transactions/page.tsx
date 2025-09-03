@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
@@ -38,6 +39,7 @@ export default function AdminTransactions() {
   const [agencyTransactions, setAgencyTransactions] = useState<GroupedTransactions>({})
   const [freelancerTransactions, setFreelancerTransactions] = useState<GroupedTransactions>({})
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     loadTransactions()
@@ -54,29 +56,22 @@ export default function AdminTransactions() {
 
       const transactions = transactionsData || []
 
-      // Get unique agency and freelancer IDs
       const agencyIds = [...new Set(transactions.map((t) => t.agency_id).filter(Boolean))]
       const freelancerIds = [...new Set(transactions.map((t) => t.freelancer_id).filter(Boolean))]
 
-      // Fetch agency profiles
       const { data: agencyProfiles } = await supabase.from("profiles").select("id, full_name").in("id", agencyIds)
-
-      // Fetch freelancer profiles
       const { data: freelancerProfiles } = await supabase
         .from("profiles")
         .select("id, full_name")
         .in("id", freelancerIds)
 
-      // Create lookup maps
       const agencyMap = new Map(agencyProfiles?.map((p) => [p.id, p]) || [])
       const freelancerMap = new Map(freelancerProfiles?.map((p) => [p.id, p]) || [])
 
-      // Group transactions by agency
       const groupedAgencies: GroupedTransactions = {}
       const groupedFreelancers: GroupedTransactions = {}
 
       transactions.forEach((transaction) => {
-        // Group by agency
         if (transaction.agency_id) {
           const agency = agencyMap.get(transaction.agency_id)
           const agencyId = transaction.agency_id
@@ -95,7 +90,6 @@ export default function AdminTransactions() {
           groupedAgencies[agencyId].total_amount += transaction.amount || 0
         }
 
-        // Group by freelancer
         if (transaction.freelancer_id) {
           const freelancer = freelancerMap.get(transaction.freelancer_id)
           const freelancerId = transaction.freelancer_id
@@ -136,7 +130,6 @@ export default function AdminTransactions() {
 
       if (error) throw error
 
-      // Reload transactions
       loadTransactions()
     } catch (error) {
       console.error("Error marking job as done:", error)
@@ -152,7 +145,6 @@ export default function AdminTransactions() {
 
       if (error) throw error
 
-      // Reload transactions
       loadTransactions()
     } catch (error) {
       console.error("Error processing payout:", error)
@@ -259,6 +251,42 @@ export default function AdminTransactions() {
     </div>
   )
 
+  const filterTransactions = (groupedData: GroupedTransactions, type: "agency" | "freelancer") => {
+    if (!searchTerm.trim()) return groupedData
+
+    const filtered: GroupedTransactions = {}
+
+    Object.entries(groupedData).forEach(([userId, group]) => {
+      const matchingTransactions = group.transactions.filter((transaction) => {
+        const searchLower = searchTerm.toLowerCase()
+
+        const matchesRefId = transaction.reference_id?.toLowerCase().includes(searchLower)
+        const matchesJobId = transaction.job_id?.toLowerCase().includes(searchLower)
+
+        const matchesUserName =
+          type === "agency"
+            ? transaction.agency_name?.toLowerCase().includes(searchLower)
+            : transaction.freelancer_name?.toLowerCase().includes(searchLower)
+
+        return matchesRefId || matchesJobId || matchesUserName
+      })
+
+      const userNameMatches = group.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+
+      if (matchingTransactions.length > 0 || userNameMatches) {
+        filtered[userId] = {
+          ...group,
+          transactions: userNameMatches ? group.transactions : matchingTransactions,
+          total_amount: userNameMatches
+            ? group.total_amount
+            : matchingTransactions.reduce((sum, t) => sum + (t.amount || 0), 0),
+        }
+      }
+    })
+
+    return filtered
+  }
+
   if (loading) {
     return (
       <SidebarProvider>
@@ -282,28 +310,40 @@ export default function AdminTransactions() {
             <p className="text-gray-600">Monitor and manage all platform transactions</p>
           </div>
 
+          <div className="mb-6">
+            <Input
+              placeholder="Search by reference ID, job ID, or user name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md border-orange-200 focus:border-orange-500 focus:ring-orange-500"
+            />
+          </div>
+
           <Tabs defaultValue="agencies" className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-orange-100">
               <TabsTrigger
                 value="agencies"
                 className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
               >
-                Agencies ({Object.keys(agencyTransactions).length})
+                Agencies ({Object.keys(filterTransactions(agencyTransactions, "agency")).length})
               </TabsTrigger>
               <TabsTrigger
                 value="freelancers"
                 className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
               >
-                Freelancers ({Object.keys(freelancerTransactions).length})
+                Freelancers ({Object.keys(filterTransactions(freelancerTransactions, "freelancer")).length})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="agencies" className="mt-6">
-              <TransactionGroup groupedData={agencyTransactions} type="agency" />
+              <TransactionGroup groupedData={filterTransactions(agencyTransactions, "agency")} type="agency" />
             </TabsContent>
 
             <TabsContent value="freelancers" className="mt-6">
-              <TransactionGroup groupedData={freelancerTransactions} type="freelancer" />
+              <TransactionGroup
+                groupedData={filterTransactions(freelancerTransactions, "freelancer")}
+                type="freelancer"
+              />
             </TabsContent>
           </Tabs>
         </div>

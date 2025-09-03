@@ -177,6 +177,12 @@ export default function BizpalPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bizpal</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your payments and credits</p>
           </div>
+          <Button
+            onClick={() => window.open("https://paystack.shop/pay/m7uebavu00", "_blank")}
+            className="bg-orange-500 hover:bg-orange-600 border-orange-500 text-white"
+          >
+            Buy Credits
+          </Button>
         </div>
 
         {/* Available Credits Card */}
@@ -358,28 +364,29 @@ export default function BizpalPage() {
                     <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       2
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">You click on the 'Biz' button for confirmation</p>
+                    <p className="text-gray-700 dark:text-gray-300">You click on 'verify' button, to verify payment</p>
                   </div>
 
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       3
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">Upon successful job delivery</p>
+                
+                    <p className="text-gray-700 dark:text-gray-300">    You click on the 'Biz' button for confirmation</p>
                   </div>
 
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       4
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">Agency clicks on 'job done' on their side</p>
+                    <p className="text-gray-700 dark:text-gray-300">Upon successful job delivery</p>
                   </div>
 
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       5
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">'Payout' button becomes visible</p>
+                    <p className="text-gray-700 dark:text-gray-300">Agency clicks on 'job done' on their side</p>
                   </div>
 
                   <div className="flex items-start gap-3">
@@ -387,7 +394,16 @@ export default function BizpalPage() {
                       6
                     </div>
                     <p className="text-gray-700 dark:text-gray-300">
-                      Click on 'payout' button, fill in your correct bank details and withdraw
+                    'Payout' button becomes visible
+                    </p>
+                  </div>
+
+                   <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                      6
+                    </div>
+                    <p className="text-gray-700 dark:text-gray-300">
+              Click on 'payout' button, fill in your correct bank details and withdraw
                     </p>
                   </div>
                 </div>

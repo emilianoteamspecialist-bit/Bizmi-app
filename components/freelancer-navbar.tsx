@@ -22,6 +22,8 @@ import {
   Bookmark,
   Play,
   Phone,
+  CreditCard,
+  Shield,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -242,12 +244,16 @@ export default function FreelancerNavbar() {
                   ₦<span className="ml-1">Funded Jobs</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/freelancer/bizpal")}>
-                  <MessageCircle className="mr-2 h-4 w-4" />
+                  <CreditCard className="mr-2 h-4 w-4" />
                   Bizpal
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/freelancer/messages")}>
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Messages
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/freelancer/identity")}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  Identity
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

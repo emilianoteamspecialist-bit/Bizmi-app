@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type React from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle, Coins, X } from "lucide-react"
+import { Loader2, AlertCircle, Coins, X, CheckCircle } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 interface TopItModalProps {
   isOpen: boolean
@@ -16,73 +17,131 @@ interface TopItModalProps {
 }
 
 export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalProps) {
-  const [credits, setCredits] = useState("")
+  const [amountPaid, setAmountPaid] = useState("")
+  const [reference, setReference] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const [userId, setUserId] = useState<string | null>(null)
 
-  const CREDITS_RATE = 50 // ₦50 per credit
-  const MIN_CREDITS = 10 // Minimum 10 credits
+  const CREDITS_RATE = 50 // ₦50 per credit (10 credits = ₦500)
+  const MIN_AMOUNT = 500 // Minimum ₦500 (10 credits)
 
-  const calculateAmount = (creditsAmount: number) => {
-    return creditsAmount * CREDITS_RATE
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+      }
+    }
+
+    if (isOpen) {
+      getCurrentUser()
+    }
+  }, [isOpen])
+
+  const calculateCredits = (amount: number) => {
+    return Math.floor(amount / CREDITS_RATE)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setSuccess("")
 
-    const creditsAmount = Number.parseInt(credits)
+    const amount = Number.parseFloat(amountPaid)
 
-    if (!creditsAmount || creditsAmount < MIN_CREDITS) {
-      setError(`Minimum purchase is ${MIN_CREDITS} credits`)
+    if (!amount || amount < MIN_AMOUNT) {
+      setError(`Minimum amount is ₦${MIN_AMOUNT.toLocaleString()}`)
+      return
+    }
+
+    if (!reference.trim()) {
+      setError("Reference ID is required")
+      return
+    }
+
+    if (!userId) {
+      setError("User not authenticated. Please refresh and try again.")
       return
     }
 
     setLoading(true)
 
     try {
-      const amount = calculateAmount(creditsAmount)
+      console.log("[v0] Checking if reference already exists:", reference)
 
-      console.log("🚀 Initiating credits purchase:", { amount, credits_amount: creditsAmount })
+      const [purchaseCheck, fundedJobsCheck] = await Promise.all([
+        supabase.from("purchase_credits").select("id").eq("paystack_reference", reference).single(),
+        supabase.from("Funded_jobs101").select("id").eq("reference_id", reference).single(),
+      ])
 
-      const response = await fetch("/api/credits/initialize-payment", {
+      // Check if reference exists in purchase_credits table
+      if (purchaseCheck.error && purchaseCheck.error.code !== "PGRST116") {
+        console.error("[v0] Error checking purchase_credits reference:", purchaseCheck.error)
+        throw new Error("Failed to check reference ID")
+      }
+
+      // Check if reference exists in Funded_jobs101 table
+      if (fundedJobsCheck.error && fundedJobsCheck.error.code !== "PGRST116") {
+        console.error("[v0] Error checking Funded_jobs101 reference:", fundedJobsCheck.error)
+        throw new Error("Failed to check reference ID")
+      }
+
+      // If reference exists in either table, show error
+      if (purchaseCheck.data || fundedJobsCheck.data) {
+        setError("This reference ID has already been used and cannot be used again.")
+        return
+      }
+
+      const credits_amount = calculateCredits(amount)
+
+      console.log("[v0] Verifying payment with reference:", reference)
+      const response = await fetch("/api/verify-transaction", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          amount,
-          credits_amount: creditsAmount,
-        }),
+        body: JSON.stringify({ user_id: userId, reference, credits_amount, amount }),
       })
 
-      console.log("📥 Response status:", response.status)
+      console.log("[v0] Verify response status:", response.status)
+
+      const responseText = await response.text()
+      console.log("[v0] Raw response:", responseText.substring(0, 500))
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("❌ Response not ok:", errorText)
+        console.error("[v0] Verification failed with status:", response.status)
+        console.error("[v0] Response text:", responseText)
 
         try {
-          const errorData = JSON.parse(errorText)
-          throw new Error(errorData.error || "Failed to initialize payment")
+          const errorData = JSON.parse(responseText)
+          throw new Error(errorData.error || "Verification failed")
         } catch (parseError) {
-          throw new Error(`Server error: ${response.status}`)
+          throw new Error(`API route not found or returned HTML instead of JSON. Status: ${response.status}`)
         }
       }
 
-      const data = await response.json()
-      console.log("📥 Initialize payment response:", data)
+      const data = JSON.parse(responseText)
+      console.log("[v0] Verification successful:", data)
 
-      // Redirect to Paystack payment page
-      if (data.success && data.authorization_url) {
-        console.log("🔗 Redirecting to:", data.authorization_url)
-        window.location.href = data.authorization_url
+      if (data.success) {
+        setSuccess(
+          `Successfully verified! ${data.credits_added || calculateCredits(amount)} credits added to your account.`,
+        )
+        setTimeout(() => {
+          onSuccess()
+          handleClose()
+        }, 2000)
       } else {
-        throw new Error(data.error || "No payment URL received")
+        throw new Error(data.error || "Verification failed")
       }
     } catch (error) {
-      console.error("💥 Payment initialization error:", error)
-      setError(error instanceof Error ? error.message : "Failed to initialize payment")
+      console.error("[v0] Verification error:", error)
+      setError(error instanceof Error ? error.message : "Failed to verify payment")
     } finally {
       setLoading(false)
     }
@@ -90,23 +149,26 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
 
   const handleClose = () => {
     if (!loading) {
-      setCredits("")
+      setAmountPaid("")
+      setReference("")
       setError("")
+      setSuccess("")
       onClose()
     }
   }
 
-  const creditsAmount = Number.parseInt(credits) || 0
-  const totalAmount = calculateAmount(creditsAmount)
+  const amount = Number.parseFloat(amountPaid) || 0
+  const totalCredits = calculateCredits(amount)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg mx-auto p-4 sm:p-6">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-orange-500" />
-              Top It - Buy Credits
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Coins className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+              <span className="hidden sm:inline">Top It - Verify Credits</span>
+              <span className="sm:hidden">Verify Credits</span>
             </DialogTitle>
             <Button variant="ghost" size="sm" onClick={handleClose} disabled={loading}>
               <X className="h-4 w-4" />
@@ -114,74 +176,108 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleVerify} className="space-y-3 sm:space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="credits">Number of Credits</Label>
+            <Label htmlFor="amount" className="text-sm sm:text-base">
+              Amount Paid (₦)
+            </Label>
             <Input
-              id="credits"
+              id="amount"
               type="number"
-              min={MIN_CREDITS}
-              value={credits}
-              onChange={(e) => setCredits(e.target.value)}
-              placeholder={`Minimum ${MIN_CREDITS} credits`}
+              min={MIN_AMOUNT}
+              step="0.01"
+              value={amountPaid}
+              onChange={(e) => setAmountPaid(e.target.value)}
+              placeholder={`Minimum ₦${MIN_AMOUNT.toLocaleString()}`}
               disabled={loading}
               required
+              className="text-sm sm:text-base h-10 sm:h-11"
             />
-            <p className="text-xs text-gray-500">
-              Rate: ₦{CREDITS_RATE} per credit • Minimum: {MIN_CREDITS} credits
+            <p className="text-xs sm:text-sm text-gray-500">
+              Rate: 10 credits = ₦500 • Minimum: ₦{MIN_AMOUNT.toLocaleString()}
             </p>
           </div>
 
-          {creditsAmount >= MIN_CREDITS && (
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="space-y-2 text-sm">
+          {amount >= MIN_AMOUNT && (
+            <div className="p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Credits:</span>
-                  <span className="font-medium">{creditsAmount.toLocaleString()}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Amount Paid:</span>
+                  <span className="font-medium">₦{amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Rate:</span>
-                  <span className="font-medium">₦{CREDITS_RATE} per credit</span>
+                  <span className="font-medium">10 credits = ₦500</span>
                 </div>
                 <div className="flex justify-between border-t border-orange-200 dark:border-orange-700 pt-2">
-                  <span className="font-medium text-orange-700 dark:text-orange-300">Total Amount:</span>
+                  <span className="font-medium text-orange-700 dark:text-orange-300">Total Credits:</span>
                   <span className="font-bold text-orange-700 dark:text-orange-300">
-                    ₦{totalAmount.toLocaleString()}
+                    {totalCredits.toLocaleString()} credits
                   </span>
                 </div>
               </div>
             </div>
           )}
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+          <div className="space-y-2">
+            <Label htmlFor="reference" className="text-sm sm:text-base">
+              Payment Reference ID
+            </Label>
+            <Input
+              id="reference"
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Enter your payment reference ID"
+              disabled={loading}
+              required
+              className="text-sm sm:text-base h-10 sm:h-11"
+            />
+            <p className="text-xs sm:text-sm text-gray-500">Enter the reference ID from your payment confirmation</p>
+          </div>
+
+          {success && (
+            <Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-700 dark:text-green-300 text-sm sm:text-base">
+                {success}
+              </AlertDescription>
             </Alert>
           )}
 
-          <div className="flex gap-3">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-sm sm:text-base">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={loading}
-              className="flex-1 bg-transparent"
+              className="w-full sm:flex-1 bg-transparent h-10 sm:h-11 text-sm sm:text-base"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={loading || creditsAmount < MIN_CREDITS}
-              className="flex-1 bg-orange-500 hover:bg-orange-600"
+              disabled={loading || amount < MIN_AMOUNT || !reference.trim()}
+              className="w-full sm:flex-1 bg-orange-500 hover:bg-orange-600 h-10 sm:h-11 text-sm sm:text-base"
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <span className="hidden sm:inline">Verifying...</span>
+                  <span className="sm:hidden">Verifying</span>
                 </>
               ) : (
-                "Buy Credits"
+                <>
+                  <span className="hidden sm:inline">Verify Payment</span>
+                  <span className="sm:hidden">Verify</span>
+                </>
               )}
             </Button>
           </div>

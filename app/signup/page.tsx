@@ -6,19 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Eye,
-  EyeOff,
-  User,
-  Building2,
-  Loader2,
-  Gift,
-  CheckCircle,
-  AlertCircle,
-  X,
-  Upload,
-  FileText,
-} from "lucide-react"
+import { Eye, EyeOff, User, Building2, Loader2, Gift, CheckCircle, AlertCircle, X } from "lucide-react"
 import Link from "next/link"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -26,236 +14,19 @@ import { useRouter } from "next/navigation"
 type AccountType = "freelancer" | "agency"
 
 const AVAILABLE_SKILLS = [
-"Web Development",
-      "Mobile App Development",
-      "Frontend Development",
-      "Backend Development",
-      "Full-Stack Development",
-      "UI/UX Design",
-      "Software Development",
-      "Game Development",
-      "Blockchain Development",
-      "Smart Contracts",
-      "Cybersecurity",
-      "Cloud Computing",
-      "DevOps",
-      "Database Management",
-      "API Development",
-      "WordPress Development",
-      "Shopify Development",
-      "E-commerce Development",
-      "SaaS Development",
-      "AR/VR Development",
-      "Machine Learning",
-      "Artificial Intelligence",
-      "Data Science",
-      "Django",
-      "Express.js",
-      "MongoDB",
-      "MySQL",
-      "PostgreSQL",
-      "Firebase",
-      "AWS",
-      "Docker",
-      "Git",
-      "Figma",
-      "Adobe XD",
-      "Photoshop",
-       "Mobile Development",
-         "Flutter",
-           "React Native",
-      "Data Analysis",
-      "Python Programming",
-      "JavaScript Development",
-      "React.js Development",
-      "Node.js Development",
-      "PHP Development",
-      "Java Development",
-      "C++ Development",
-      "C# Development",
-      "Go (Golang) Development",
-      "Ruby on Rails Development",
-      "Kotlin Development",
-      "Swift (iOS) Development",
-      "Android Development",
-      "Flutter Development",
-      "Rust Development",
-      "Penetration Testing",
-      "Ethical Hacking",
-      "Bug Bounty Research",
-      "IoT Development",
-      "Embedded Systems",
-      "Firmware Development",
-      "Robotics Programming",
-      "MATLAB",
-      "Simulations & Modeling",
-      "QA Testing / Software Testing",
-      "Automation Scripting",
-      "Web Scraping",
-      "Chatbot Development",
-      "API Integration",
-      "CRM Development (Salesforce, HubSpot, Zoho)",
-      "ERP Development (SAP, Oracle, Odoo)",
-      "Game Design (Unity, Unreal Engine)",
-      "Database Optimization",
-      "Big Data Engineering",
-      "Cloud Architecture (AWS, Azure, GCP)",
-      "Server Management",
-      "Linux System Administration",
-      "Network Administration",
-      "IT Support",
-      "Graphic Design",
-      "Logo Design",
-      "Illustration",
-      "Print Design",
-      "Business Card Design",
-      "Flyer & Brochure Design",
-      "Poster Design",
-      "Infographic Design",
-      "UI/UX Wireframing",
-      "Product Design",
-      "Industrial Design",
-      "Fashion Design",
-      "Jewelry Design",
-      "Interior Design",
-      "Architecture Design",
-      "3D Modeling",
-      "3D Rendering",
-      "Animation (2D/3D)",
-      "Motion Graphics",
-      "Character Design",
-      "Video Editing",
-      "Photography",
-      "Photo Editing / Retouching",
-      "Image Manipulation",
-      "NFT Art",
-      "Storyboarding",
-      "T-shirt Design",
-      "Merchandise Design",
-      "Packaging Design",
-      "Label Design",
-      "Tattoo Design",
-      "Book Cover Design",
-      "Album Cover Design",
-      "Presentation Design (PowerPoint, Keynote)",
-      "Infographic Video Creation",
-      "Architectural Visualization",
-      "Landscape Design",
-      "Set Design (Theater/Film)",
-      "Story Illustration",
-      "Typography Design",
-      "Calligraphy",
-      "Comic / Manga Art",
-      "Caricature Drawing",
-      "Content Writing",
-      "Copywriting",
-      "Creative Writing",
-      "Technical Writing",
-      "Blog Writing",
-      "Ghostwriting",
-      "Script Writing (Film/Video)",
-      "Resume Writing",
-      "Cover Letter Writing",
-      "White Papers",
-      "Academic Writing",
-      "Research Writing",
-      "Proofreading & Editing",
-      "Grant Writing",
-      "eBook Writing",
-      "Speech Writing",
-      "Song Lyrics Writing",
-      "Product Descriptions",
-      "Ad Copywriting",
-      "Case Studies",
-      "UX Writing",
-      "Press Releases",
-      "Medical Writing",
-      "Legal Writing",
-      "Grant Proposals",
-      "Business Proposals",
-      "Newsletter Writing",
-      "Review Writing (Books, Products, Movies)",
-      "Social Media Captions",
-      "Digital Marketing",
-      "SEO (Search Engine Optimization)",
-      "SEM (Search Engine Marketing)",
-      "Social Media Marketing",
-      "Social Media Management",
-      "Influencer Marketing",
-      "Content Marketing",
-      "Email Marketing",
-      "Affiliate Marketing",
-      "PPC Campaigns (Google, Facebook Ads)",
-      "Marketing Strategy",
-      "Brand Strategy",
-      "Lead Generation",
-      "Sales Funnel Design",
-      "PR (Public Relations)",
-      "Voice Over",
-      "Music Production",
-      "Audio Editing",
-      "Podcast Editing",
-      "Sound Design",
-      "DJ Services",
-      "Singing / Songwriting",
-      "Acting",
-      "Dance Choreography",
-      "Comedy / Stand-up",
-      "Video Production",
-      "Storytelling",
-      "Modeling",
-      "Event Hosting",
-      "Translation (All Languages)",
-      "Transcription",
-      "Subtitling / Captioning",
-      "Language Tutoring",
-      "Localization Services",
-      "Sign Language",
-      "Online Tutoring",
-      "Test Preparation (SAT, IELTS, GRE, etc.)",
-      "Academic Coaching",
-      "Career Counseling",
-      "Life Coaching",
-      "Personal Development",
-      "E-learning Course Creation",
-      "Educational Content Writing",
-      "Corporate Training",
-      "Virtual Assistant",
-      "Data Entry",
-      "Customer Support",
-      "Technical Support",
-      "Project Management",
-      "Business Consulting",
-      "Financial Consulting",
-      "Accounting & Bookkeeping",
-      "HR & Recruiting",
-      "Market Research",
-      "Business Plan Writing",
-      "Grant Proposal Writing",
-      "Legal Writing",
-      "Contract Drafting",
-      "Intellectual Property",
-      "Business Law",
-      "Tax Law",
-      "Immigration Law",
-      "Paralegal Services",
-      "CAD Design",
-      "Civil Engineering",
-      "Mechanical Engineering",
-      "Electrical Engineering",
-      "Architecture",
-      "Structural Engineering",
-      "Product Engineering",
-      "Lifestyle Coaching",
-      "Fitness Training",
-      "Nutrition Coaching",
-      "Cooking Lessons",
-      "Travel Planning",
-      "Astrology Services",
-      "Gaming Coaching (eSports)",
-      "Online Therapy / Counseling",
-      "Others",
-    
+  "Web Development",
+  "Mobile App Development",
+  "Frontend Development",
+  "Backend Development",
+  "Full-Stack Development",
+  "UI/UX Design",
+  "Software Development",
+  "Game Development",
+  "Blockchain Development",
+  "Smart Contracts",
+  "Cybersecurity",
+  "Cloud Computing",
+  "DevOps",
 ]
 
 export default function SignUpPage() {
@@ -280,12 +51,6 @@ export default function SignUpPage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [skillSearchTerm, setSkillSearchTerm] = useState("")
 
-  const [identityData, setIdentityData] = useState({
-    ninNumber: "",
-    frontIdFile: null as File | null,
-    backIdFile: null as File | null,
-  })
-
   const router = useRouter()
 
   const handleSkillToggle = (skill: string) => {
@@ -296,30 +61,7 @@ export default function SignUpPage() {
     }
   }
 
-  const handleFileUpload = (file: File, type: "front" | "back") => {
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
-      setSignupStatus({ type: "error", message: "File size must be less than 5MB" })
-      return
-    }
-
-    if (!file.type.startsWith("image/")) {
-      setSignupStatus({ type: "error", message: "Please upload an image file" })
-      return
-    }
-
-    setIdentityData((prev) => ({
-      ...prev,
-      [type === "front" ? "frontIdFile" : "backIdFile"]: file,
-    }))
-  }
-
-  const validateNIN = (nin: string) => {
-    return /^[0-9]{11}$/.test(nin)
-  }
-
   const isFormValid = () => {
-    // Basic required fields for all account types
     const basicFieldsValid =
       formData.fullName.trim() !== "" &&
       formData.email.trim() !== "" &&
@@ -329,20 +71,12 @@ export default function SignUpPage() {
 
     if (!basicFieldsValid) return false
 
-    // Additional validation for freelancers
     if (accountType === "freelancer") {
-      const freelancerFieldsValid =
-        formData.username.trim() !== "" &&
-        selectedSkills.length > 0 &&
-        identityData.ninNumber.trim() !== "" &&
-        validateNIN(identityData.ninNumber) &&
-        identityData.frontIdFile !== null &&
-        identityData.backIdFile !== null
+      const freelancerFieldsValid = formData.username.trim() !== "" && selectedSkills.length > 0
 
       return freelancerFieldsValid
     }
 
-    // Additional validation for agencies
     if (accountType === "agency") {
       const agencyFieldsValid = formData.companyName.trim() !== "" && formData.companySize !== ""
 
@@ -372,18 +106,6 @@ export default function SignUpPage() {
       }
       if (selectedSkills.length === 0) {
         setSignupStatus({ type: "error", message: "Please select at least one skill" })
-        return false
-      }
-      if (!identityData.ninNumber.trim()) {
-        setSignupStatus({ type: "error", message: "NIN number is required" })
-        return false
-      }
-      if (!validateNIN(identityData.ninNumber)) {
-        setSignupStatus({ type: "error", message: "NIN must be exactly 11 digits" })
-        return false
-      }
-      if (!identityData.frontIdFile || !identityData.backIdFile) {
-        setSignupStatus({ type: "error", message: "Please upload both front and back of your national ID" })
         return false
       }
     }
@@ -419,24 +141,13 @@ export default function SignUpPage() {
         return
       }
 
-      if (accountType === "freelancer") {
-        const { data: existingNIN } = await supabase
-          .from("Freelancer_identitie")
-          .select("nin_number")
-          .eq("nin_number", identityData.ninNumber)
-          .single()
-
-        if (existingNIN) {
-          setSignupStatus({ type: "error", message: "This NIN number is already registered" })
-          setIsLoading(false)
-          return
-        }
-      }
-
       const userMetadata = {
         full_name: formData.fullName.trim(),
         account_type: accountType,
-        ...(accountType === "freelancer" && { username: formData.username.trim() }),
+        ...(accountType === "freelancer" && {
+          username: formData.username.trim(),
+          skills: selectedSkills,
+        }),
         ...(accountType === "agency" && {
           company_name: formData.companyName.trim(),
           company_size: formData.companySize,
@@ -457,61 +168,23 @@ export default function SignUpPage() {
       })
 
       if (authError) {
-        const errorMessage = handleSupabaseError(authError)
-        setSignupStatus({ type: "error", message: errorMessage })
-      } else if (authData.user && accountType === "freelancer") {
-        setSignupStatus({ type: "info", message: "Uploading identity documents..." })
+        let errorMessage = handleSupabaseError(authError)
 
-        const userId = authData.user.id
-        if (!userId) {
-          throw new Error("User ID not available")
+        if (
+          authError.message?.includes("User already registered") ||
+          authError.message?.includes("email") ||
+          authError.message?.includes("already") ||
+          authError.code === "user_already_exists"
+        ) {
+          errorMessage = "Sorry, email already registered"
         }
 
-        // Upload front ID
-        const frontFileName = `${userId}/front-id-${Date.now()}.${identityData.frontIdFile!.name.split(".").pop()}`
-        const { data: frontUpload, error: frontError } = await supabase.storage
-          .from("identity-documents")
-          .upload(frontFileName, identityData.frontIdFile!)
-
-        if (frontError) throw frontError
-
-        // Upload back ID
-        const backFileName = `${userId}/back-id-${Date.now()}.${identityData.backIdFile!.name.split(".").pop()}`
-        const { data: backUpload, error: backError } = await supabase.storage
-          .from("identity-documents")
-          .upload(backFileName, identityData.backIdFile!)
-
-        if (backError) throw backError
-
-        // Get public URLs
-        const { data: frontUrl } = supabase.storage.from("identity-documents").getPublicUrl(frontFileName)
-        const { data: backUrl } = supabase.storage.from("identity-documents").getPublicUrl(backFileName)
-
-        // Save identity data
-        const { error: identityError } = await supabase.from("Freelancer_identitie").insert({
-          user_id: userId,
-          nin_number: identityData.ninNumber,
-          front_id_url: frontUrl.publicUrl,
-          back_id_url: backUrl.publicUrl,
-        })
-
-        if (identityError) throw identityError
-
-        // Save skills
-        const skillsData = selectedSkills.map((skill) => ({
-          user_id: userId,
-          skill_name: skill,
-        }))
-
-        const { error: skillsError } = await supabase.from("freelancer_skills").insert(skillsData)
-
-        if (skillsError) throw skillsError
-
+        setSignupStatus({ type: "error", message: errorMessage })
+      } else if (authData.user && accountType === "freelancer") {
         const successMessage =
           "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
         setSignupStatus({ type: "success", message: successMessage })
 
-        // Clear form
         setFormData({
           fullName: "",
           email: "",
@@ -522,7 +195,6 @@ export default function SignUpPage() {
           companySize: "",
         })
         setSelectedSkills([])
-        setIdentityData({ ninNumber: "", frontIdFile: null, backIdFile: null })
       } else if (authData.user) {
         const successMessage =
           "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
@@ -600,7 +272,6 @@ export default function SignUpPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-6">
-            {/* Account Type Selection */}
             <div className="space-y-3">
               <Label>I want to join as:</Label>
               <div className="grid grid-cols-2 gap-3">
@@ -637,7 +308,6 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name *</Label>
@@ -710,7 +380,6 @@ export default function SignUpPage() {
                   <p className="text-sm text-gray-600">Search and choose your skills, or select Others.</p>
                 </div>
 
-                {/* Selected Skills */}
                 {selectedSkills.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {selectedSkills.map((skill) => (
@@ -732,7 +401,6 @@ export default function SignUpPage() {
                   </div>
                 )}
 
-                {/* Skill Search */}
                 <Input
                   type="text"
                   placeholder="Search skills..."
@@ -741,7 +409,6 @@ export default function SignUpPage() {
                   disabled={isLoading}
                 />
 
-                {/* Available Skills */}
                 <div className="max-h-40 overflow-y-auto border rounded-md p-2">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {filteredSkills.slice(0, 12).map((skill) => (
@@ -766,134 +433,6 @@ export default function SignUpPage() {
               </div>
             )}
 
-            {accountType === "freelancer" && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Identity Verification *</Label>
-                  <p className="text-sm text-gray-600">Upload your national ID and provide your NIN for verification</p>
-                </div>
-
-                {/* NIN Number */}
-                <div className="space-y-2">
-                  <Label htmlFor="ninNumber">NIN Number * (11 digits)</Label>
-                  <Input
-                    id="ninNumber"
-                    type="text"
-                    placeholder="Enter your 11-digit NIN"
-                    value={identityData.ninNumber}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 11)
-                      setIdentityData((prev) => ({ ...prev, ninNumber: value }))
-                    }}
-                    maxLength={11}
-                    required
-                    disabled={isLoading}
-                  />
-                  {identityData.ninNumber && !validateNIN(identityData.ninNumber) && (
-                    <p className="text-sm text-red-600">NIN must be exactly 11 digits</p>
-                  )}
-                </div>
-
-                {/* ID Upload */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Front ID */}
-                  <div className="space-y-2">
-                    <Label>Front of National ID *</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      {identityData.frontIdFile ? (
-                        <div className="space-y-2">
-                          <FileText className="h-8 w-8 mx-auto text-green-600" />
-                          <p className="text-sm text-green-600">{identityData.frontIdFile.name}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIdentityData((prev) => ({ ...prev, frontIdFile: null }))}
-                            disabled={isLoading}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                          <p className="text-sm text-gray-600">Upload front of ID</p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleFileUpload(file, "front")
-                            }}
-                            className="hidden"
-                            id="frontId"
-                            disabled={isLoading}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById("frontId")?.click()}
-                            disabled={isLoading}
-                          >
-                            Choose File
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Back ID */}
-                  <div className="space-y-2">
-                    <Label>Back of National ID *</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                      {identityData.backIdFile ? (
-                        <div className="space-y-2">
-                          <FileText className="h-8 w-8 mx-auto text-green-600" />
-                          <p className="text-sm text-green-600">{identityData.backIdFile.name}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIdentityData((prev) => ({ ...prev, backIdFile: null }))}
-                            disabled={isLoading}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                          <p className="text-sm text-gray-600">Upload back of ID</p>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) handleFileUpload(file, "back")
-                            }}
-                            className="hidden"
-                            id="backId"
-                            disabled={isLoading}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => document.getElementById("backId")?.click()}
-                            disabled={isLoading}
-                          >
-                            Choose File
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Email and Password */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address *</Label>

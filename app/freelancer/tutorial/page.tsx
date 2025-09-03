@@ -31,8 +31,8 @@ export default function FreelancerTutorial() {
       title: "How to buy credits",
       description: "Discover how to buy credits",
       thumbnail: "https://i.ibb.co/ZzLdP39W/Bizmi-freelancer.jpg",
-      videoUrl: "https://youtu.be/QZM-ojGMws4", // Replace with actual video URL
-      duration: "13:12",
+      videoUrl: "https://youtu.be/0pbkiwu2EyM", // Replace with actual video URL
+      duration: "2:39",
     },
   ]
 
