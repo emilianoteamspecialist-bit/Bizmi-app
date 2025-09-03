@@ -121,7 +121,7 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
           const errorData = JSON.parse(responseText)
           throw new Error(errorData.error || "Verification failed")
         } catch (parseError) {
-          throw new Error(`API route not found or returned HTML instead of JSON. Status: ${response.status}`)
+          throw new Error(`Invalid ref ID or failed transactions.`)
         }
       }
 
