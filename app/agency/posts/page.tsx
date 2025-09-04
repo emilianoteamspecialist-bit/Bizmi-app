@@ -48,13 +48,12 @@ export default function AgencyPostsPage() {
   const [freelancerImages, setFreelancerImages] = useState<{ [key: string]: string }>({})
   const [messageInputOpenForProposalId, setMessageInputOpenForProposalId] = useState<string | null>(null)
   const [currentMessageText, setCurrentMessageText] = useState<string>("")
+  const [proposalSearchTerm, setProposalSearchTerm] = useState("")
 
-  // Payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedJobForPayment, setSelectedJobForPayment] = useState<JobPost | null>(null)
   const [selectedFreelancerForPayment, setSelectedFreelancerForPayment] = useState<any>(null)
 
-  // Debounce searchTerm
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm)
@@ -198,6 +197,7 @@ export default function AgencyPostsPage() {
 
       setSelectedJobProposals(proposalsData || [])
       setSelectedJob(job)
+      setProposalSearchTerm("")
       const freelancerIds = proposalsData?.map((proposal) => proposal.freelancer_id) || []
       if (freelancerIds.length > 0) {
         await loadFreelancerImages(freelancerIds)
@@ -298,14 +298,12 @@ export default function AgencyPostsPage() {
   const handleFundFreelancerClick = (job: JobPost, freelancer: any) => {
     setSelectedJobForPayment(job)
     setSelectedFreelancerForPayment(freelancer)
-    setShowProposalsModal(false) // Close proposals modal
-    setShowPaymentModal(true) // Open payment modal
+    setShowProposalsModal(false)
+    setShowPaymentModal(true)
   }
 
   const handlePaymentSuccess = () => {
-    // Reload jobs to update funding status
     loadJobs(0, debouncedSearchTerm, false)
-    // Reload proposals to update funding status
     if (selectedJob) {
       handleViewProposals(selectedJob)
     }
@@ -327,7 +325,7 @@ export default function AgencyPostsPage() {
 
       if (response.ok && data.success) {
         alert("Job marked as completed!")
-        loadJobs(0, debouncedSearchTerm, false) // Reload to update status
+        loadJobs(0, debouncedSearchTerm, false)
       } else {
         alert("Error marking job as done: " + (data.error || "Unknown error"))
       }
@@ -358,7 +356,6 @@ export default function AgencyPostsPage() {
     }
   }
 
-  // Check if freelancer has been funded for this job
   const checkIfFreelancerFunded = async (jobId: string, freelancerId: string) => {
     try {
       const { data, error } = await supabase
@@ -409,6 +406,23 @@ export default function AgencyPostsPage() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
   }
+
+  const filteredProposals = selectedJobProposals.filter((proposal) => {
+    if (!proposalSearchTerm) return true
+
+    const searchLower = proposalSearchTerm.toLowerCase()
+    const freelancerName = proposal.profiles?.full_name?.toLowerCase() || ""
+    const freelancerLocation = proposal.profiles?.location?.toLowerCase() || ""
+    const freelancerBio = proposal.profiles?.bio?.toLowerCase() || ""
+    const proposalText = proposal.proposal_text?.toLowerCase() || ""
+
+    return (
+      freelancerName.includes(searchLower) ||
+      freelancerLocation.includes(searchLower) ||
+      freelancerBio.includes(searchLower) ||
+      proposalText.includes(searchLower)
+    )
+  })
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -520,7 +534,6 @@ export default function AgencyPostsPage() {
         </div>
       </main>
 
-      {/* Payment Modal */}
       {selectedJobForPayment && selectedFreelancerForPayment && (
         <PaymentModal
           isOpen={showPaymentModal}
@@ -558,17 +571,35 @@ export default function AgencyPostsPage() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              <div className="mt-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search freelancers by name, location, or proposal..."
+                    value={proposalSearchTerm}
+                    onChange={(e) => setProposalSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2"
+                  />
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-6">
-              {selectedJobProposals.length === 0 ? (
+              {filteredProposals.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No Proposals Yet</h3>
-                  <p className="text-muted-foreground">Freelancers haven't submitted any proposals for this job yet.</p>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {proposalSearchTerm ? "No Matching Proposals" : "No Proposals Yet"}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {proposalSearchTerm
+                      ? "No proposals match your search criteria. Try different keywords."
+                      : "Freelancers haven't submitted any proposals for this job yet."}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {selectedJobProposals.map((proposal) => (
+                  {filteredProposals.map((proposal) => (
                     <div key={proposal.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
