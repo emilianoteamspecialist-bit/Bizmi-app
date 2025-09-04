@@ -245,7 +245,7 @@ export default function FreelancerNavbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/freelancer/bizpal")}>
                   <CreditCard className="mr-2 h-4 w-4" />
-                  Bizpal
+                  Buy Credits
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/freelancer/messages")}>
                   <MessageCircle className="mr-2 h-4 w-4" />
