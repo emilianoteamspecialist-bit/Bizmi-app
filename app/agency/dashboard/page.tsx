@@ -27,6 +27,7 @@ import {
   Users,
   CheckCircle,
   XCircle,
+  Search,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -281,6 +282,7 @@ export default function AgencyDashboard() {
   const [loadingProposals, setLoadingProposals] = useState(false)
   const [selectedJobProposals, setSelectedJobProposals] = useState<any[]>([])
   const [freelancerImages, setFreelancerImages] = useState<{ [key: string]: string }>({})
+  const [proposalSearchTerm, setProposalSearchTerm] = useState("")
   const [jobFormData, setJobFormData] = useState({
     title: "",
     description: "",
@@ -748,6 +750,23 @@ export default function AgencyDashboard() {
   const closedJobs = agencyJobs.filter((job) => job.status === "closed").length
   const totalProposals = agencyJobs.reduce((sum, job) => sum + job.proposals, 0)
 
+  const filteredProposals = selectedJobProposals.filter((proposal) => {
+    if (!proposalSearchTerm) return true
+
+    const searchLower = proposalSearchTerm.toLowerCase()
+    const freelancerName = proposal.profiles?.full_name?.toLowerCase() || ""
+    const freelancerLocation = proposal.profiles?.location?.toLowerCase() || ""
+    const freelancerBio = proposal.profiles?.bio?.toLowerCase() || ""
+    const proposalText = proposal.proposal_text?.toLowerCase() || ""
+
+    return (
+      freelancerName.includes(searchLower) ||
+      freelancerLocation.includes(searchLower) ||
+      freelancerBio.includes(searchLower) ||
+      proposalText.includes(searchLower)
+    )
+  })
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -865,9 +884,6 @@ export default function AgencyDashboard() {
                     <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
                     <span className="truncate">Across all jobs</span>
                   </p>
-                </div>
-                <div className="bg-orange-100 dark:bg-orange-900/20 p-3 rounded-full flex-shrink-0 ml-3">
-                  <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -1058,11 +1074,30 @@ export default function AgencyDashboard() {
                   <CardTitle className="text-xl">Proposals for "{selectedJob.title}"</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
                     {selectedJobProposals.length} proposal{selectedJobProposals.length !== 1 ? "s" : ""} received
+                    {proposalSearchTerm && <span> • {filteredProposals.length} matching</span>}
                   </p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setShowProposalsModal(false)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setShowProposalsModal(false)
+                    setProposalSearchTerm("")
+                  }}
+                >
                   <X className="h-4 w-4" />
                 </Button>
+              </div>
+              <div className="mt-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search freelancers by name, location, bio, or proposal..."
+                    value={proposalSearchTerm}
+                    onChange={(e) => setProposalSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1077,9 +1112,17 @@ export default function AgencyDashboard() {
                   <h3 className="text-lg font-semibold mb-2">No Proposals Yet</h3>
                   <p className="text-muted-foreground">Freelancers haven't submitted any proposals for this job yet.</p>
                 </div>
+              ) : filteredProposals.length === 0 ? (
+                <div className="text-center py-8">
+                  <Search className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">No Matching Proposals</h3>
+                  <p className="text-muted-foreground">
+                    No proposals match your search criteria. Try different keywords.
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-6">
-                  {selectedJobProposals.map((proposal) => (
+                  {filteredProposals.map((proposal) => (
                     <div key={proposal.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
