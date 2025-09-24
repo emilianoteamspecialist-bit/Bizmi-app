@@ -81,7 +81,6 @@ export default function LandingPage() {
               </div>
               <span className="text-xl font-bold text-orange-500">Bizimi</span>
             </div>
-
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link href="#features" className="text-gray-600 hover:text-orange-500 transition-colors">
