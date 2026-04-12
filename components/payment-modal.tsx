@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, DollarSign, User, Briefcase, AlertCircle, Loader2 } from "lucide-react"
+import { X, DollarSign, User, Briefcase, AlertCircle, Loader2, ShieldCheck, CreditCard } from "lucide-react"
 import { toast } from "sonner"
 
 interface PaymentModalProps {
@@ -38,15 +37,12 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
 
   useEffect(() => {
     const getCurrentUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       setCurrentUser(user)
     }
     getCurrentUser()
   }, [])
 
-  // Debounced reference ID check
   useEffect(() => {
     if (!referenceId.trim()) {
       setReferenceExists(false)
@@ -57,72 +53,33 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
     const timeoutId = setTimeout(async () => {
       setIsCheckingReference(true)
       setReferenceError("")
-
       try {
-        const { data, error } = await supabase
-          .from("Funded_jobs101")
-          .select("id")
-          .eq("reference_id", referenceId.trim())
-          .limit(1)
-
-        if (error) {
-          console.error("Error checking reference ID:", error)
-          setReferenceError("Error checking reference ID")
-          return
-        }
-
+        const { data, error } = await supabase.from("Funded_jobs101").select("id").eq("reference_id", referenceId.trim()).limit(1)
+        if (error) throw error
         if (data && data.length > 0) {
           setReferenceExists(true)
-          setReferenceError("This reference ID already exists. Please use a unique reference ID.")
+          setReferenceError("This reference ID has already been used.")
         } else {
           setReferenceExists(false)
-          setReferenceError("")
         }
       } catch (error) {
-        console.error("Error checking reference ID:", error)
-        setReferenceError("Error checking reference ID")
+        console.error(error)
       } finally {
         setIsCheckingReference(false)
       }
     }, 500)
-
     return () => clearTimeout(timeoutId)
   }, [referenceId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!amount || !referenceId) {
-      toast.error("Please fill in all fields")
-      return
-    }
-
-    if (referenceExists) {
-      toast.error("Please use a unique reference ID")
-      return
-    }
-
-    if (isCheckingReference) {
-      toast.error("Please wait while we verify the reference ID")
-      return
-    }
+    if (!amount || !referenceId || referenceExists || isCheckingReference) return
 
     setIsSubmitting(true)
-
     try {
-      if (!currentUser) {
-        toast.error("User not authenticated")
-        return
-      }
+      if (!currentUser) throw new Error("Not authenticated")
+      const { data: agencyProfile } = await supabase.from("profiles").select("full_name").eq("id", currentUser.id).single()
 
-      // Get agency profile
-      const { data: agencyProfile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", currentUser.id)
-        .single()
-
-      // Insert funded job record
       const { error: insertError } = await supabase.from("Funded_jobs101").insert({
         job_id: jobData.id,
         agency_id: currentUser.id,
@@ -133,25 +90,17 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
         reference_id: referenceId.trim(),
         status: "pending_verification",
         funded_at: new Date().toISOString(),
-        job_confirmed: false,
-        job_completed: false,
       })
 
-      if (insertError) {
-        console.error("Error inserting funded job:", insertError)
-        toast.error("Failed to fund job")
-        return
-      }
+      if (insertError) throw insertError
 
-      toast.success("Job funded successfully! Freelancer can now verify the payment.")
+      toast.success("Job funded successfully!")
       onSuccess()
       onClose()
-
-      // Reset form
       setAmount("")
       setReferenceId("")
     } catch (error) {
-      console.error("Error funding job:", error)
+      console.error(error)
       toast.error("Failed to fund job")
     } finally {
       setIsSubmitting(false)
@@ -161,122 +110,100 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <CardHeader className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-2 top-2"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-orange-500" />
-            Fund Job
-          </CardTitle>
-          <CardDescription>Fund this job for the freelancer to start working</CardDescription>
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      <Card className="w-full max-w-lg rounded-[2.5rem] border-none shadow-2xl overflow-hidden bg-white">
+        <CardHeader className="p-8 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <CreditCard className="h-6 w-6 text-orange-500" />
+                Fund Project
+              </CardTitle>
+              <CardDescription className="font-medium text-slate-400">Lock funds in escrow to start the project.</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose} disabled={isSubmitting} className="rounded-full">
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Job Details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-gray-500" />
-              <span className="font-medium">{jobData.title}</span>
+        <CardContent className="p-8 pt-0 space-y-8">
+          {/* Project Summary */}
+          <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 space-y-4">
+            <div className="flex items-start gap-4">
+               <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                  <Briefcase className="h-5 w-5 text-orange-500" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project</p>
+                  <p className="font-black text-slate-900">{jobData.title}</p>
+               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">
-                {jobData.freelancer.name} ({jobData.freelancer.email})
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-600">Suggested Amount: ₦{jobData.amount.toLocaleString()}</span>
+            <div className="flex items-start gap-4">
+               <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                  <User className="h-5 w-5 text-blue-500" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Freelancer</p>
+                  <p className="font-black text-slate-900">{jobData.freelancer.name}</p>
+                  <p className="text-xs text-slate-500 font-medium">{jobData.freelancer.email}</p>
+               </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount (₦)</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="Enter amount to fund"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                min="1"
-                step="0.01"
-                required
-                disabled={isSubmitting}
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="space-y-2">
+                 <Label htmlFor="amount" className="font-bold text-slate-700">Contract Amount (₦)</Label>
+                 <Input
+                   id="amount"
+                   type="number"
+                   placeholder={jobData.amount.toString()}
+                   className="h-12 rounded-xl border-slate-200"
+                   value={amount}
+                   onChange={(e) => setAmount(e.target.value)}
+                   required
+                   disabled={isSubmitting}
+                 />
+                 <p className="text-[10px] font-medium text-slate-400 italic">Suggested: ₦{jobData.amount.toLocaleString()}</p>
+               </div>
+
+               <div className="space-y-2">
+                 <Label htmlFor="referenceId" className="font-bold text-slate-700">Payment Reference</Label>
+                 <div className="relative">
+                   <Input
+                     id="referenceId"
+                     placeholder="Enter TXN ID"
+                     className={`h-12 rounded-xl border-slate-200 ${referenceExists ? "border-red-500 bg-red-50" : ""}`}
+                     value={referenceId}
+                     onChange={(e) => setReferenceId(e.target.value)}
+                     required
+                     disabled={isSubmitting}
+                   />
+                   {isCheckingReference && <Loader2 className="absolute right-3 top-3 h-6 w-6 animate-spin text-slate-300" />}
+                 </div>
+                 {referenceError && <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">{referenceError}</p>}
+               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="referenceId">Payment Reference ID</Label>
-              <div className="relative">
-                <Input
-                  id="referenceId"
-                  type="text"
-                  placeholder="Enter payment reference ID"
-                  value={referenceId}
-                  onChange={(e) => setReferenceId(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  className={`${
-                    referenceExists ? "border-red-500 focus:border-red-500" : ""
-                  } ${isCheckingReference ? "pr-8" : ""}`}
-                />
-                {isCheckingReference && (
-                  <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
-                )}
-              </div>
-              {referenceError && (
-                <div className="flex items-center gap-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {referenceError}
-                </div>
-              )}
-              {!referenceError && referenceId && !isCheckingReference && !referenceExists && (
-                <div className="flex items-center gap-1 text-sm text-green-600">
-                  <span>✓ Reference ID is available</span>
-                </div>
-              )}
+            <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 flex gap-3">
+               <ShieldCheck className="h-5 w-5 text-orange-600 shrink-0" />
+               <p className="text-[11px] font-medium text-orange-800 leading-relaxed">
+                  Funds will be held in our secure <strong>Escrow System</strong>. They will only be released to the freelancer once you approve the final submission in the Workspace.
+               </p>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Make sure you have completed the payment transaction and have the correct
-                reference ID before submitting. The freelancer will verify this payment.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="flex-1 bg-transparent"
-              >
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="flex-1 h-14 rounded-2xl font-bold bg-transparent">
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || referenceExists || isCheckingReference || !referenceId.trim()}
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                disabled={isSubmitting || referenceExists || isCheckingReference || !referenceId.trim() || !amount}
+                className="flex-1 h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-xl shadow-orange-500/25"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Funding...
-                  </>
-                ) : (
-                  "Fund Job"
-                )}
+                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <DollarSign className="h-5 w-5 mr-2" />}
+                Confirm Funding
               </Button>
             </div>
           </form>

@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, Clock, AlertCircle, Eye, Loader2, X, Briefcase } from "lucide-react"
+import { CheckCircle, Clock, AlertCircle, Eye, Loader2, X, Briefcase, ShieldAlert } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import FreelancerNavbar from "@/components/freelancer-navbar"
 import PayoutModal from "@/components/payout-modal"
 
@@ -46,6 +50,13 @@ export default function FundedJobsPage() {
 
   const [showPayoutModal, setShowPayoutModal] = useState(false)
   const [selectedJob, setSelectedJob] = useState<FundedJob | null>(null)
+  
+  const [showDisputeModal, setShowDisputeModal] = useState(false)
+  const [disputeForm, setDisputeForm] = useState({
+    type: "client_abandonment",
+    description: "",
+  })
+  const router = useRouter()
 
   const fetchFundedJobs = async () => {
     try {
@@ -233,6 +244,45 @@ export default function FundedJobsPage() {
     setShowPayoutModal(false)
     setSelectedJob(null)
     fetchFundedJobs() // Refresh the jobs list to update balance
+  }
+
+  const handleCreateDispute = async () => {
+    if (!disputeForm.description.trim()) {
+      toast.error("Please provide a description for the dispute.");
+      return;
+    }
+    
+    if (!selectedJob) return;
+
+    try {
+      const response = await fetch('/api/disputes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_id: selectedJob.job_id,
+          initiator_id: currentUser.id,
+          respondent_id: selectedJob.agency_id,
+          dispute_type: disputeForm.type,
+          description: disputeForm.description,
+          amount_disputed: selectedJob.amount,
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to create dispute");
+
+      const { dispute } = await response.json();
+      
+      setShowDisputeModal(false);
+      setDisputeForm({ type: "client_abandonment", description: "" });
+      toast.success("Dispute opened successfully");
+      
+      // Redirect to the dispute room
+      router.push(`/disputes/${dispute.id}`);
+      
+    } catch (error) {
+      console.error("Error creating dispute:", error);
+      toast.error("An error occurred while opening the dispute.");
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -502,10 +552,32 @@ export default function FundedJobsPage() {
                             </div>
                           )}
                           {job.status === "verified" && !job.job_completed && (
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Verified
-                            </Badge>
+                            <div className="flex flex-col gap-2">
+                              <Badge className="bg-green-100 text-green-800 w-fit">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Verified
+                              </Badge>
+                              <Button
+                                size="sm"
+                                onClick={() => router.push(`/workspace/${job.job_id}`)}
+                                className="bg-gray-900 hover:bg-gray-800 text-white"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Workspace
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedJob(job);
+                                  setShowDisputeModal(true);
+                                }}
+                                className="text-red-600 border-red-200 hover:bg-red-50"
+                              >
+                                <ShieldAlert className="w-3 h-3 mr-1" />
+                                Dispute
+                              </Button>
+                            </div>
                           )}
                           {job.status === "failed" && (
                             <Badge className="bg-red-100 text-red-800">
@@ -539,6 +611,76 @@ export default function FundedJobsPage() {
             }}
             onSuccess={handlePayoutSuccess}
           />
+        )}
+        {/* Dispute Modal */}
+        {showDisputeModal && selectedJob && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <ShieldAlert className="text-red-500 h-5 w-5" />
+                    Open a Dispute
+                  </CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setShowDisputeModal(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-red-50 p-3 rounded-lg border border-red-100">
+                    <p className="text-xs text-red-800">
+                      Opening a dispute will flag the job <strong>{selectedJob.job_title}</strong>. 
+                      You and the client will have 3-7 days to resolve it in the Dispute Room before an admin steps in.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Reason for Dispute</Label>
+                    <Select
+                      value={disputeForm.type}
+                      onValueChange={(val) => setDisputeForm(prev => ({ ...prev, type: val }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a reason" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="client_abandonment">Client Abandonment - "Client ghosted after submission"</SelectItem>
+                        <SelectItem value="extra_work">Scope Creep - "Client is asking for extra work"</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Describe the Issue</Label>
+                    <Textarea 
+                      rows={4}
+                      placeholder="Provide details about the issue. Be clear about what was agreed upon versus what is happening now."
+                      value={disputeForm.description}
+                      onChange={(e) => setDisputeForm(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="flex space-x-2 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowDisputeModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                      onClick={handleCreateDispute}
+                    >
+                      Open Dispute
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

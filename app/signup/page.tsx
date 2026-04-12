@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, User, Building2, Loader2, Gift, CheckCircle, AlertCircle, X } from "lucide-react"
+import { Eye, EyeOff, User, Building2, Loader2, CheckCircle, AlertCircle, X, ArrowLeft, ShieldCheck, Sparkles, Search, ChevronRight, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
@@ -15,234 +15,17 @@ import { trackSignUp } from "@/lib/fbpixel"
 type AccountType = "freelancer" | "agency"
 
 const AVAILABLE_SKILLS = [
-  "Web Development",
-  "Mobile App Development",
-  "Frontend Development",
-  "Backend Development",
-  "Full-Stack Development",
-  "UI/UX Design",
-  "Software Development",
-  "Game Development",
-  "Blockchain Development",
-  "Smart Contracts",
-  "Cybersecurity",
-  "Cloud Computing",
-  "DevOps",
-  "Database Management",
-  "API Development",
-  "WordPress Development",
-  "Shopify Development",
-  "E-commerce Development",
-  "SaaS Development",
-  "AR/VR Development",
-  "Machine Learning",
-  "Artificial Intelligence",
-  "Data Science",
-  "Django",
-  "Express.js",
-  "MongoDB",
-  "MySQL",
-  "PostgreSQL",
-  "Firebase",
-  "AWS",
-  "Docker",
-  "Git",
-  "Figma",
-  "Adobe XD",
-  "Photoshop",
-  "Mobile Development",
-  "Flutter",
-  "React Native",
-  "Data Analysis",
-  "Python Programming",
-  "JavaScript Development",
-  "React.js Development",
-  "Node.js Development",
-  "PHP Development",
-  "Java Development",
-  "C++ Development",
-  "C# Development",
-  "Go (Golang) Development",
-  "Ruby on Rails Development",
-  "Kotlin Development",
-  "Swift (iOS) Development",
-  "Android Development",
-  "Flutter Development",
-  "Rust Development",
-  "Penetration Testing",
-  "Ethical Hacking",
-  "Bug Bounty Research",
-  "IoT Development",
-  "Embedded Systems",
-  "Firmware Development",
-  "Robotics Programming",
-  "MATLAB",
-  "Simulations & Modeling",
-  "QA Testing / Software Testing",
-  "Automation Scripting",
-  "Web Scraping",
-  "Chatbot Development",
-  "API Integration",
-  "CRM Development (Salesforce, HubSpot, Zoho)",
-  "ERP Development (SAP, Oracle, Odoo)",
-  "Game Design (Unity, Unreal Engine)",
-  "Database Optimization",
-  "Big Data Engineering",
-  "Cloud Architecture (AWS, Azure, GCP)",
-  "Server Management",
-  "Linux System Administration",
-  "Network Administration",
-  "IT Support",
-  "Graphic Design",
-  "Logo Design",
-  "Illustration",
-  "Print Design",
-  "Business Card Design",
-  "Flyer & Brochure Design",
-  "Poster Design",
-  "Infographic Design",
-  "UI/UX Wireframing",
-  "Product Design",
-  "Industrial Design",
-  "Fashion Design",
-  "Jewelry Design",
-  "Interior Design",
-  "Architecture Design",
-  "3D Modeling",
-  "3D Rendering",
-  "Animation (2D/3D)",
-  "Motion Graphics",
-  "Character Design",
-  "Video Editing",
-  "Photography",
-  "Photo Editing / Retouching",
-  "Image Manipulation",
-  "NFT Art",
-  "Storyboarding",
-  "T-shirt Design",
-  "Merchandise Design",
-  "Packaging Design",
-  "Label Design",
-  "Tattoo Design",
-  "Book Cover Design",
-  "Album Cover Design",
-  "Presentation Design (PowerPoint, Keynote)",
-  "Infographic Video Creation",
-  "Architectural Visualization",
-  "Landscape Design",
-  "Set Design (Theater/Film)",
-  "Story Illustration",
-  "Typography Design",
-  "Calligraphy",
-  "Comic / Manga Art",
-  "Caricature Drawing",
-  "Content Writing",
-  "Copywriting",
-  "Creative Writing",
-  "Technical Writing",
-  "Blog Writing",
-  "Ghostwriting",
-  "Script Writing (Film/Video)",
-  "Resume Writing",
-  "Cover Letter Writing",
-  "White Papers",
-  "Academic Writing",
-  "Research Writing",
-  "Proofreading & Editing",
-  "Grant Writing",
-  "eBook Writing",
-  "Speech Writing",
-  "Song Lyrics Writing",
-  "Product Descriptions",
-  "Ad Copywriting",
-  "Case Studies",
-  "UX Writing",
-  "Press Releases",
-  "Medical Writing",
-  "Legal Writing",
-  "Grant Proposals",
-  "Business Proposals",
-  "Newsletter Writing",
-  "Review Writing (Books, Products, Movies)",
-  "Social Media Captions",
-  "Digital Marketing",
-  "SEO (Search Engine Optimization)",
-  "SEM (Search Engine Marketing)",
-  "Social Media Marketing",
-  "Social Media Management",
-  "Influencer Marketing",
-  "Content Marketing",
-  "Email Marketing",
-  "Affiliate Marketing",
-  "PPC Campaigns (Google, Facebook Ads)",
-  "Marketing Strategy",
-  "Brand Strategy",
-  "Lead Generation",
-  "Sales Funnel Design",
-  "PR (Public Relations)",
-  "Voice Over",
-  "Music Production",
-  "Audio Editing",
-  "Podcast Editing",
-  "Sound Design",
-  "DJ Services",
-  "Singing / Songwriting",
-  "Acting",
-  "Dance Choreography",
-  "Comedy / Stand-up",
-  "Video Production",
-  "Storytelling",
-  "Modeling",
-  "Event Hosting",
-  "Translation (All Languages)",
-  "Transcription",
-  "Subtitling / Captioning",
-  "Language Tutoring",
-  "Localization Services",
-  "Sign Language",
-  "Online Tutoring",
-  "Test Preparation (SAT, IELTS, GRE, etc.)",
-  "Academic Coaching",
-  "Career Counseling",
-  "Life Coaching",
-  "Personal Development",
-  "E-learning Course Creation",
-  "Educational Content Writing",
-  "Corporate Training",
-  "Virtual Assistant",
-  "Data Entry",
-  "Customer Support",
-  "Technical Support",
-  "Project Management",
-  "Business Consulting",
-  "Financial Consulting",
-  "Accounting & Bookkeeping",
-  "HR & Recruiting",
-  "Market Research",
-  "Business Plan Writing",
-  "Grant Proposal Writing",
-  "Legal Writing",
-  "Contract Drafting",
-  "Intellectual Property",
-  "Business Law",
-  "Tax Law",
-  "Immigration Law",
-  "Paralegal Services",
-  "CAD Design",
-  "Civil Engineering",
-  "Mechanical Engineering",
-  "Electrical Engineering",
-  "Architecture",
-  "Structural Engineering",
-  "Product Engineering",
-  "Lifestyle Coaching",
-  "Fitness Training",
-  "Nutrition Coaching",
-  "Cooking Lessons",
-  "Travel Planning",
-  "Astrology Services",
-  "Gaming Coaching (eSports)",
-  "Online Therapy / Counseling",
+  "Web Development", "Mobile App Development", "Frontend Development", "Backend Development", "Full-Stack Development",
+  "UI/UX Design", "Software Development", "Game Development", "Blockchain Development", "Smart Contracts",
+  "Cybersecurity", "Cloud Computing", "DevOps", "Database Management", "API Development",
+  "WordPress Development", "Shopify Development", "E-commerce Development", "SaaS Development", "AR/VR Development",
+  "Machine Learning", "Artificial Intelligence", "Data Science", "Django", "Express.js",
+  "MongoDB", "MySQL", "PostgreSQL", "Firebase", "AWS", "Docker", "Git", "Figma", "Adobe XD", "Photoshop",
+  "Mobile Development", "Flutter", "React Native", "Data Analysis", "Python Programming", "JavaScript Development",
+  "React.js Development", "Node.js Development", "PHP Development", "Java Development", "C++ Development",
+  "C# Development", "Go (Golang) Development", "Ruby on Rails Development", "Kotlin Development", "Swift (iOS) Development",
+  "Android Development", "Flutter Development", "Rust Development", "Penetration Testing", "Ethical Hacking",
+  "Bug Bounty Research", "IoT Development", "Embedded Systems", "Firmware Development", "Robotics Programming",
   "Others",
 ]
 
@@ -250,11 +33,14 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [accountType, setAccountType] = useState<AccountType>("freelancer")
+  const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  
   const [signupStatus, setSignupStatus] = useState<{
     type: "success" | "error" | "info" | null
     message: string
   }>({ type: null, message: "" })
+  
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -278,86 +64,61 @@ export default function SignUpPage() {
     }
   }
 
-  const isFormValid = () => {
-    const basicFieldsValid =
-      formData.fullName.trim() !== "" &&
-      formData.email.trim() !== "" &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
-      formData.password.length >= 6 &&
-      formData.password === formData.confirmPassword
-
-    if (!basicFieldsValid) return false
-
-    if (accountType === "freelancer") {
-      const freelancerFieldsValid = formData.username.trim() !== "" && selectedSkills.length > 0
-
-      return freelancerFieldsValid
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+    if (signupStatus.type === "error") {
+      setSignupStatus({ type: null, message: "" })
     }
-
-    if (accountType === "agency") {
-      const agencyFieldsValid = formData.companyName.trim() !== "" && formData.companySize !== ""
-
-      return agencyFieldsValid
-    }
-
-    return true
   }
 
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      setSignupStatus({ type: "error", message: "Full name is required" })
-      return false
+  const steps = accountType === "freelancer" 
+    ? ["Account Type", "Details", "Skills", "Security"]
+    : ["Account Type", "Details", "Security"]
+
+  const validateCurrentStep = () => {
+    if (currentStep === 1) return true
+
+    if (currentStep === 2) {
+      if (!formData.fullName.trim()) return false
+      if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) return false
+      if (accountType === "freelancer" && !formData.username.trim()) return false
+      if (accountType === "agency" && (!formData.companyName.trim() || !formData.companySize)) return false
+      return true
     }
-    if (!formData.email.trim()) {
-      setSignupStatus({ type: "error", message: "Email is required" })
-      return false
+
+    if (accountType === "freelancer" && currentStep === 3) {
+      return selectedSkills.length > 0
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setSignupStatus({ type: "error", message: "Please enter a valid email address" })
-      return false
+
+    // Security step validation (Step 4 for freelancer, Step 3 for agency)
+    return formData.password.length >= 6 && formData.password === formData.confirmPassword
+  }
+
+  const handleNext = () => {
+    if (validateCurrentStep()) {
+      setCurrentStep((prev) => prev + 1)
+      setSignupStatus({ type: null, message: "" })
+    } else {
+      setSignupStatus({ type: "error", message: "Please complete all required fields correctly." })
     }
-    if (accountType === "freelancer") {
-      if (!formData.username.trim()) {
-        setSignupStatus({ type: "error", message: "Username is required for freelancers" })
-        return false
-      }
-      if (selectedSkills.length === 0) {
-        setSignupStatus({ type: "error", message: "Please select at least one skill" })
-        return false
-      }
-    }
-    if (accountType === "agency") {
-      if (!formData.companyName.trim()) {
-        setSignupStatus({ type: "error", message: "Company name is required for agencies" })
-        return false
-      }
-      if (!formData.companySize) {
-        setSignupStatus({ type: "error", message: "Company size is required for agencies" })
-        return false
-      }
-    }
-    if (formData.password.length < 6) {
-      setSignupStatus({ type: "error", message: "Password must be at least 6 characters long" })
-      return false
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setSignupStatus({ type: "error", message: "Passwords don't match" })
-      return false
-    }
-    return true
+  }
+
+  const handleBack = () => {
+    setCurrentStep((prev) => prev - 1)
+    setSignupStatus({ type: null, message: "" })
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateCurrentStep()) {
+      setSignupStatus({ type: "error", message: "Please ensure your passwords match and are at least 6 characters." })
+      return
+    }
+
     setIsLoading(true)
-    setSignupStatus({ type: null, message: "" })
+    setSignupStatus({ type: "info", message: "Creating your account..." })
 
     try {
-      if (!validateForm()) {
-        setIsLoading(false)
-        return
-      }
-
       const userMetadata = {
         full_name: formData.fullName.trim(),
         account_type: accountType,
@@ -370,8 +131,6 @@ export default function SignUpPage() {
           company_size: formData.companySize,
         }),
       }
-
-      setSignupStatus({ type: "info", message: "Creating your account..." })
 
       const redirectUrl = `${window.location.origin}/login?confirmed=true`
 
@@ -386,7 +145,6 @@ export default function SignUpPage() {
 
       if (authError) {
         let errorMessage = handleSupabaseError(authError)
-
         if (
           authError.message?.includes("User already registered") ||
           authError.message?.includes("email") ||
@@ -395,59 +153,23 @@ export default function SignUpPage() {
         ) {
           errorMessage = "Sorry, email already registered"
         }
-
         setSignupStatus({ type: "error", message: errorMessage })
-      } else if (authData.user && accountType === "freelancer") {
-        trackSignUp()
-
-        const successMessage =
-          "🎉 Account created successfully! You've received 80 free credits! Please check your email and click the confirmation link to activate your account."
-        setSignupStatus({ type: "success", message: successMessage })
-
-        setFormData({
-          fullName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          username: "",
-          companyName: "",
-          companySize: "",
-        })
-        setSelectedSkills([])
       } else if (authData.user) {
         trackSignUp()
-
-        const successMessage =
-          "✅ Account created successfully! Please check your email and click the confirmation link to activate your account."
+        const successMessage = accountType === "freelancer" 
+          ? "🎉 Account created successfully! You've received 80 free credits! Please check your email to activate."
+          : "✅ Account created successfully! Please check your email to activate your account."
+        
         setSignupStatus({ type: "success", message: successMessage })
-
-        setFormData({
-          fullName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          username: "",
-          companyName: "",
-          companySize: "",
-        })
-      } else {
-        setSignupStatus({ type: "error", message: "An unexpected error occurred during signup. Please try again." })
       }
     } catch (error) {
       console.error("💥 Unexpected signup error:", error)
       setSignupStatus({
         type: "error",
-        message: "An unexpected error occurred. Please try again or contact support.",
+        message: "An unexpected error occurred. Please try again.",
       })
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    if (signupStatus.type === "error") {
-      setSignupStatus({ type: null, message: "" })
     }
   }
 
@@ -455,296 +177,374 @@ export default function SignUpPage() {
     (skill) => skill.toLowerCase().includes(skillSearchTerm.toLowerCase()) && !selectedSkills.includes(skill),
   )
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-orange-500">Join Bizimi</CardTitle>
-          <CardDescription>Create your account and start your journey</CardDescription>
+  const isFinalStep = currentStep === steps.length
 
-          {signupStatus.type && (
-            <div
-              className={`rounded-lg p-3 flex items-start gap-2 mt-2 text-left ${
-                signupStatus.type === "success"
-                  ? "bg-green-50 border border-green-200"
-                  : signupStatus.type === "error"
-                    ? "bg-red-50 border border-red-200"
-                    : "bg-blue-50 border border-blue-200"
-              }`}
-            >
-              {signupStatus.type === "success" && (
-                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-              )}
-              {signupStatus.type === "error" && <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />}
-              {signupStatus.type === "info" && <Gift className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />}
-              <span
-                className={`text-sm ${
-                  signupStatus.type === "success"
-                    ? "text-green-700"
-                    : signupStatus.type === "error"
-                      ? "text-red-700"
-                      : "text-blue-700"
-                }`}
-              >
-                {signupStatus.message}
-              </span>
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 selection:bg-orange-100 selection:text-orange-900 py-20">
+      <Link 
+        href="/" 
+        className="fixed top-8 left-8 flex items-center text-sm font-bold text-slate-500 hover:text-orange-500 transition-colors z-50"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Home
+      </Link>
+
+      <div className="w-full max-w-[640px] space-y-8">
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex items-center space-x-2 group">
+            <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <span className="text-white font-bold text-2xl">B</span>
             </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignUp} className="space-y-6">
-            <div className="space-y-3">
-              <Label>I want to join as:</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  variant={accountType === "freelancer" ? "default" : "outline"}
-                  className={`h-20 flex flex-col items-center justify-center space-y-2 ${
-                    accountType === "freelancer" ? "bg-orange-500 hover:bg-orange-600" : "hover:bg-orange-50"
-                  }`}
-                  onClick={() => setAccountType("freelancer")}
-                  disabled={isLoading}
-                >
-                  <User className="h-6 w-6" />
-                  <div className="text-center">
-                    <span className="text-sm">Freelancer</span>
-                    <div className="flex items-center gap-1 text-xs text-green-600">
-                      <Gift className="h-3 w-3" />
-                      <span>+80 credits</span>
+          </Link>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900 pt-4">Start Your Journey</h1>
+          <p className="text-slate-500 font-medium max-w-sm mx-auto">Join the most secure marketplace for high-impact Nigerian talent.</p>
+        </div>
+
+        <Card className="border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-white">
+          <CardHeader className="px-8 pt-10 pb-0 border-b border-slate-50">
+            {/* Stepper Progress */}
+            <div className="flex gap-2 mb-8">
+              {steps.map((step, idx) => {
+                const isActive = currentStep >= idx + 1
+                return (
+                  <div key={step} className="flex-1">
+                    <div className={`h-2 rounded-full transition-colors duration-300 ${isActive ? 'bg-orange-500' : 'bg-slate-100'}`} />
+                    <p className={`text-[10px] mt-2 font-black uppercase tracking-widest transition-colors duration-300 ${isActive ? 'text-orange-500' : 'text-slate-300'}`}>
+                      {step}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {signupStatus.type && (
+              <div className={`rounded-2xl p-4 flex items-start gap-3 mb-6 text-left border ${
+                signupStatus.type === "success" ? "bg-green-50 border-green-100 text-green-800" :
+                signupStatus.type === "error" ? "bg-red-50 border-red-100 text-red-800" :
+                "bg-blue-50 border-blue-100 text-blue-800"
+              }`}>
+                {signupStatus.type === "success" && <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />}
+                {signupStatus.type === "error" && <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />}
+                {signupStatus.type === "info" && <Loader2 className="h-5 w-5 text-blue-500 animate-spin flex-shrink-0" />}
+                <p className="text-sm font-bold leading-snug">{signupStatus.message}</p>
+              </div>
+            )}
+          </CardHeader>
+
+          <CardContent className="px-8 py-8">
+            <form onSubmit={handleSignUp} className="space-y-8">
+              
+              {/* STEP 1: Account Type */}
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <div className="space-y-1 mb-6">
+                     <h2 className="text-2xl font-black text-slate-900">Choose Account Type</h2>
+                     <p className="text-slate-500 font-medium text-sm">How do you want to use Bizimi?</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setAccountType("freelancer")}
+                      className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
+                        accountType === "freelancer" ? "border-orange-500 bg-orange-50/50" : "border-slate-100 hover:border-orange-200"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
+                        accountType === "freelancer" ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"
+                      }`}>
+                        <User className="h-5 w-5" />
+                      </div>
+                      <p className="font-black text-slate-900">Freelancer</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">I want to work and earn.</p>
+                      {accountType === "freelancer" && (
+                        <div className="absolute top-4 right-4 bg-green-500 text-white p-1 rounded-full">
+                          <CheckCircle className="h-3 w-3" />
+                        </div>
+                      )}
+                      <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                        <Sparkles className="h-3 w-3" />
+                        80 Free Credits
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAccountType("agency")}
+                      className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
+                        accountType === "agency" ? "border-orange-500 bg-orange-50/50" : "border-slate-100 hover:border-orange-200"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
+                        accountType === "agency" ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"
+                      }`}>
+                        <Building2 className="h-5 w-5" />
+                      </div>
+                      <p className="font-black text-slate-900">Agency</p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">I want to hire talent.</p>
+                      {accountType === "agency" && (
+                        <div className="absolute top-4 right-4 bg-green-500 text-white p-1 rounded-full">
+                          <CheckCircle className="h-3 w-3" />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Basic Info */}
+              {currentStep === 2 && (
+                <div className="space-y-4">
+                  <div className="space-y-1 mb-6">
+                     <h2 className="text-2xl font-black text-slate-900">Personal Details</h2>
+                     <p className="text-slate-500 font-medium text-sm">Tell us a bit about yourself.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName" className="text-sm font-bold text-slate-700">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        placeholder="John Doe"
+                        className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                        value={formData.fullName}
+                        onChange={(e) => handleInputChange("fullName", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-sm font-bold text-slate-700">Email Address</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="john@example.com"
+                        className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        required
+                      />
                     </div>
                   </div>
-                </Button>
-                <Button
-                  type="button"
-                  variant={accountType === "agency" ? "default" : "outline"}
-                  className={`h-20 flex flex-col items-center justify-center space-y-2 ${
-                    accountType === "agency" ? "bg-orange-500 hover:bg-orange-600" : "hover:bg-orange-50"
-                  }`}
-                  onClick={() => setAccountType("agency")}
-                  disabled={isLoading}
-                >
-                  <Building2 className="h-6 w-6" />
-                  <span className="text-sm">Agency</span>
-                </Button>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name *</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
+                  {accountType === "freelancer" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="username" className="text-sm font-bold text-slate-700">Username</Label>
+                      <Input
+                        id="username"
+                        placeholder="johndoe_creative"
+                        className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                        value={formData.username}
+                        onChange={(e) => handleInputChange("username", e.target.value)}
+                        required
+                      />
+                    </div>
+                  )}
 
-              {accountType === "freelancer" && (
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username *</Label>
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="Choose a unique username"
-                    value={formData.username}
-                    onChange={(e) => handleInputChange("username", e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
+                  {accountType === "agency" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="companyName" className="text-sm font-bold text-slate-700">Company Name</Label>
+                        <Input
+                          id="companyName"
+                          placeholder="Bizimi Creative"
+                          className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                          value={formData.companyName}
+                          onChange={(e) => handleInputChange("companyName", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="companySize" className="text-sm font-bold text-slate-700">Company Size</Label>
+                        <select
+                          id="companySize"
+                          className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                          value={formData.companySize}
+                          onChange={(e) => handleInputChange("companySize", e.target.value)}
+                          required
+                        >
+                          <option value="">Select size</option>
+                          <option value="1-10">1-10 Employees</option>
+                          <option value="11-50">11-50 Employees</option>
+                          <option value="51-200">51-200 Employees</option>
+                          <option value="200+">200+ Employees</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {accountType === "agency" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">Company Name *</Label>
-                    <Input
-                      id="companyName"
-                      type="text"
-                      placeholder="Enter your company name"
-                      value={formData.companyName}
-                      onChange={(e) => handleInputChange("companyName", e.target.value)}
-                      required
-                      disabled={isLoading}
-                    />
+              {/* STEP 3: Skills (Freelancer Only) */}
+              {currentStep === 3 && accountType === "freelancer" && (
+                <div className="space-y-4">
+                  <div className="space-y-1 mb-6">
+                     <h2 className="text-2xl font-black text-slate-900">Your Expertise</h2>
+                     <p className="text-slate-500 font-medium text-sm">Select up to 10 skills that define your work.</p>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="companySize">Company Size *</Label>
-                    <select
-                      id="companySize"
-                      className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                      value={formData.companySize}
-                      onChange={(e) => handleInputChange("companySize", e.target.value)}
-                      required
-                      disabled={isLoading}
-                    >
-                      <option value="">Select company size</option>
-                      <option value="1-10">1-10 employees</option>
-                      <option value="11-50">11-50 employees</option>
-                      <option value="51-200">51-200 employees</option>
-                      <option value="201-500">201-500 employees</option>
-                      <option value="500+">500+ employees</option>
-                    </select>
+                  
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-black uppercase tracking-widest text-slate-400">Selected Skills</Label>
+                    <span className="text-xs font-bold text-orange-500">{selectedSkills.length}/10</span>
                   </div>
-                </>
-              )}
-            </div>
-
-            {accountType === "freelancer" && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Select Your Skills * (Max 10)</Label>
-                  <p className="text-sm text-gray-600">Search and choose your skills, or select Others.</p>
-                </div>
-
-                {selectedSkills.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  
+                  <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[60px]">
+                    {selectedSkills.length === 0 && <span className="text-xs text-slate-400 font-medium m-2 italic">No skills selected yet.</span>}
                     {selectedSkills.map((skill) => (
                       <span
                         key={skill}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-900 rounded-lg text-xs font-bold shadow-sm"
                       >
                         {skill}
                         <button
                           type="button"
                           onClick={() => handleSkillToggle(skill)}
-                          className="hover:bg-orange-200 rounded-full p-0.5"
-                          disabled={isLoading}
+                          className="text-slate-400 hover:text-red-500 transition-colors"
                         >
                           <X className="h-3 w-3" />
                         </button>
                       </span>
                     ))}
                   </div>
-                )}
 
-                <Input
-                  type="text"
-                  placeholder="Search skills..."
-                  value={skillSearchTerm}
-                  onChange={(e) => setSkillSearchTerm(e.target.value)}
-                  disabled={isLoading}
-                />
+                  <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search skills (e.g. Web Development)"
+                      className="h-12 pl-11 border-slate-200 rounded-xl"
+                      value={skillSearchTerm}
+                      onChange={(e) => setSkillSearchTerm(e.target.value)}
+                    />
+                  </div>
 
-                <div className="max-h-40 overflow-y-auto border rounded-md p-2">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {filteredSkills.slice(0, 12).map((skill) => (
+                  <div className="max-h-[160px] overflow-y-auto p-2 bg-slate-50/50 rounded-2xl border border-slate-100 grid grid-cols-2 gap-2">
+                    {filteredSkills.slice(0, 20).map((skill) => (
                       <button
                         key={skill}
                         type="button"
                         onClick={() => handleSkillToggle(skill)}
-                        disabled={selectedSkills.length >= 10 || isLoading}
-                        className="text-left p-2 text-sm border rounded hover:bg-orange-50 hover:border-orange-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={selectedSkills.length >= 10}
+                        className="text-left px-3 py-2 text-xs font-bold bg-white border border-slate-100 rounded-lg hover:border-orange-500 hover:text-orange-500 transition-all disabled:opacity-30"
                       >
                         {skill}
                       </button>
                     ))}
-                  </div>
-                  {filteredSkills.length === 0 && skillSearchTerm && (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      No skills found matching "{skillSearchTerm}"
-                    </p>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">Selected: {selectedSkills.length}/10 skills</p>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a password (min 6 characters)"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
-                      required
-                      disabled={isLoading}
-                      minLength={6}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
+                    {filteredSkills.length === 0 && (
+                      <p className="col-span-2 text-center py-4 text-xs font-medium text-slate-400 italic">No skills found matching your search</p>
+                    )}
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                      required
-                      disabled={isLoading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      disabled={isLoading}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={isLoading || !isFormValid()}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                `Create ${accountType === "agency" ? "Agency" : "Freelancer"} Account`
               )}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <Link href="/login" className="text-orange-500 hover:underline">
-              Sign in
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+
+              {/* FINAL STEP: Security */}
+              {isFinalStep && (
+                <div className="space-y-4">
+                  <div className="space-y-1 mb-6">
+                     <h2 className="text-2xl font-black text-slate-900">Secure Your Account</h2>
+                     <p className="text-slate-500 font-medium text-sm">Choose a strong password to protect your data.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="password text-sm font-bold text-slate-700">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          className="h-12 border-slate-200 rounded-xl pr-12"
+                          value={formData.password}
+                          onChange={(e) => handleInputChange("password", e.target.value)}
+                          required
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-sm font-bold text-slate-700">Confirm Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="h-12 border-slate-200 rounded-xl pr-12"
+                          value={formData.confirmPassword}
+                          onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex gap-4 pt-4 mt-8 border-t border-slate-50">
+                {currentStep > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleBack}
+                    className="h-14 px-6 rounded-2xl font-bold border-slate-200"
+                    disabled={isLoading || signupStatus.type === 'success'}
+                  >
+                    <ChevronLeft className="w-5 h-5 mr-1" /> Back
+                  </Button>
+                )}
+                
+                {!isFinalStep ? (
+                  <Button
+                    type="button"
+                    onClick={handleNext}
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 h-14 rounded-2xl text-lg font-black text-white shadow-xl shadow-slate-900/20"
+                    disabled={!validateCurrentStep()}
+                  >
+                    Next Step <ChevronRight className="w-5 h-5 ml-1" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-orange-500 hover:bg-orange-600 h-14 rounded-2xl text-lg font-black shadow-xl shadow-orange-500/25"
+                    disabled={isLoading || !validateCurrentStep() || signupStatus.type === 'success'}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Complete Signup`
+                    )}
+                  </Button>
+                )}
+              </div>
+            </form>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm font-medium text-slate-500">
+                Already have an account?{" "}
+                <Link href="/login" className="text-orange-500 font-bold hover:underline underline-offset-4">
+                  Sign in instead
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security Trust Footer */}
+        <div className="flex items-center justify-center gap-2 text-slate-400 pb-10">
+          <ShieldCheck className="h-4 w-4" />
+          <span className="text-xs font-bold uppercase tracking-widest">Secure Platform Certification</span>
+        </div>
+      </div>
     </div>
   )
 }

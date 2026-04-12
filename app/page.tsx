@@ -3,97 +3,89 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Users, Briefcase, Star, Shield, Zap, Globe, MessageCircle, Menu, X } from "lucide-react"
+import { 
+  ArrowRight, 
+  Users, 
+  Briefcase, 
+  Star, 
+  Shield, 
+  Zap, 
+  Globe, 
+  MessageCircle, 
+  Menu, 
+  X,
+  Code2,
+  Palette,
+  PenTool,
+  Search,
+  CheckCircle2,
+  TrendingUp,
+  Award
+} from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  const categories = [
+    { name: "Programming", icon: <Code2 className="h-5 w-5" />, count: "12k+ Jobs" },
+    { name: "Design", icon: <Palette className="h-5 w-5" />, count: "8k+ Jobs" },
+    { name: "Writing", icon: <PenTool className="h-5 w-5" />, count: "5k+ Jobs" },
+    { name: "Marketing", icon: <TrendingUp className="h-5 w-5" />, count: "7k+ Jobs" },
+  ]
 
   const features = [
     {
-      icon: <Users className="h-8 w-8 text-orange-500" />,
+      icon: <Users className="h-10 w-10 text-orange-500" />,
       title: "Find Top Talent",
-      description: "Connect with skilled freelancers from around the world, vetted for quality and expertise.",
+      description: "Connect with the top 3% of Nigerian and global freelancers, vetted for absolute quality.",
     },
     {
-      icon: <Briefcase className="h-8 w-8 text-orange-500" />,
-      title: "Secure Payments",
-      description: "Safe and secure payment system with escrow protection for both clients and freelancers.",
+      icon: <Shield className="h-10 w-10 text-orange-500" />,
+      title: "Secure Escrow",
+      description: "Our milestone-based escrow system ensures you only pay for work you've approved.",
     },
     {
-      icon: <Shield className="h-8 w-8 text-orange-500" />,
-      title: "Quality Assurance",
-      description: "All freelancers are verified and rated by previous clients to ensure top-quality work.",
-    },
-    {
-      icon: <Zap className="h-8 w-8 text-orange-500" />,
-      title: "Fast Delivery",
-      description: "Get your projects completed quickly with our efficient matching and communication system.",
-    },
-    {
-      icon: <Globe className="h-8 w-8 text-orange-500" />,
-      title: "Global Reach",
-      description: "Access talent from around the world, working across different time zones and cultures.",
-    },
-    {
-      icon: <MessageCircle className="h-8 w-8 text-orange-500" />,
-      title: "24/7 Support",
-      description: "Round-the-clock customer support to help you with any questions or issues.",
-    },
-  ]
-
-  const stats = [
-    { number: "50K+", label: "Active Freelancers" },
-    { number: "10K+", label: "Projects Completed" },
-    { number: "98%", label: "Client Satisfaction" },
-    { number: "150+", label: "Countries" },
-  ]
-
-  const steps = [
-    {
-      step: "1",
-      title: "Create Your Account",
-      description: "Sign up as a freelancer or client in just a few minutes.",
-    },
-    {
-      step: "2",
-      title: "Post or Browse Projects",
-      description: "Clients post projects, freelancers browse and submit proposals.",
-    },
-    {
-      step: "3",
-      title: "Work & Get Paid",
-      description: "Complete the work, get approved, and receive secure payments.",
+      icon: <Zap className="h-10 w-10 text-orange-500" />,
+      title: "Fast Matching",
+      description: "Our AI-powered matching algorithm connects you with the right talent in minutes, not days.",
     },
   ]
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 selection:bg-orange-100 selection:text-orange-900">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
+      <nav className={`fixed top-0 z-50 w-full transition-all duration-300 ${
+        scrolled ? "bg-white/80 backdrop-blur-md shadow-sm border-b" : "bg-transparent"
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">B</span>
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <span className="text-white font-bold text-xl">B</span>
               </div>
-              <span className="text-xl font-bold text-orange-500">Bizimi</span>
-            </div>
+              <span className="text-2xl font-black tracking-tight text-slate-900">Bizimi</span>
+            </Link>
+
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="#features" className="text-gray-600 hover:text-orange-500 transition-colors">
-                Features
-              </Link>
-              <Link href="#how-it-works" className="text-gray-600 hover:text-orange-500 transition-colors">
-                How it Works
-              </Link>
-              <Link href="/login" className="text-gray-600 hover:text-orange-500 transition-colors">
-                Sign In
-              </Link>
+            <div className="hidden md:flex items-center space-x-10">
+              <Link href="#features" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">Features</Link>
+              <Link href="#how-it-works" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">Marketplace</Link>
+              <div className="h-6 w-px bg-slate-200"></div>
+              <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-orange-500 transition-colors">Sign In</Link>
               <Link href="/signup">
-                <Button className="bg-orange-500 hover:bg-orange-600">Get Started</Button>
+                <Button className="bg-orange-500 hover:bg-orange-600 shadow-lg shadow-orange-500/25 px-6 rounded-full font-bold">
+                  Start Hiring
+                </Button>
               </Link>
             </div>
 
@@ -104,233 +96,194 @@ export default function LandingPage() {
               </Button>
             </div>
           </div>
+        </div>
 
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <div className="flex flex-col space-y-4">
-                <Link href="#features" className="text-gray-600 hover:text-orange-500 transition-colors">
-                  Features
-                </Link>
-                <Link href="#how-it-works" className="text-gray-600 hover:text-orange-500 transition-colors">
-                  How it Works
-                </Link>
-                <Link href="/login" className="text-gray-600 hover:text-orange-500 transition-colors">
-                  Sign In
-                </Link>
-                <Link href="/signup">
-                  <Button className="bg-orange-500 hover:bg-orange-600 w-full">Get Started</Button>
-                </Link>
-              </div>
+        {/* Mobile Navigation */}
+        <div className={`md:hidden absolute w-full bg-white border-b transition-all duration-300 ${
+          isMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 pointer-events-none"
+        }`}>
+          <div className="px-4 py-6 space-y-4">
+            <Link href="#features" className="block text-lg font-medium text-slate-600">Features</Link>
+            <Link href="#how-it-works" className="block text-lg font-medium text-slate-600">How it Works</Link>
+            <div className="pt-4 border-t flex flex-col gap-3">
+              <Link href="/login" className="text-center py-2 font-medium">Sign In</Link>
+              <Link href="/signup">
+                <Button className="bg-orange-500 hover:bg-orange-600 w-full py-6 text-lg">Get Started</Button>
+              </Link>
             </div>
-          )}
+          </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 to-white py-20 sm:py-32">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Badge className="mb-4 bg-orange-100 text-orange-700 hover:bg-orange-200">
-              🎉 Join 50,000+ freelancers and agencies
-            </Badge>
-            <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-6">
-              Find the perfect
-              <span className="text-orange-500"> freelancer </span>
-              for your project
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Connect with top-rated freelancers and agencies from around the world. Get your projects done faster,
-              better, and more affordably.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/signup">
-                <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-lg px-8 py-3">
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-3 bg-transparent">
-                Browse Talent
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section className="relative pt-32 pb-20 sm:pt-48 sm:pb-32 overflow-hidden">
+        {/* Background blobs */}
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-orange-500 mb-2">{stat.number}</div>
-                <div className="text-gray-600">{stat.label}</div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Badge className="mb-6 py-1.5 px-4 bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100 transition-colors uppercase tracking-wider font-bold text-[10px]">
+            The #1 Marketplace for Nigerian Talent
+          </Badge>
+          <h1 className="text-5xl sm:text-7xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight">
+            The world's <span className="text-orange-500 relative inline-block">
+              best work
+              <svg className="absolute -bottom-2 left-0 w-full" height="10" viewBox="0 0 100 10" preserveAspectRatio="none">
+                <path d="M0 5 Q 25 0, 50 5 T 100 5" fill="none" stroke="#f97316" strokeWidth="4" />
+              </svg>
+            </span> happens here
+          </h1>
+          <p className="text-xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Connect with vetted freelancers who specialize in building the future. 
+            From smart contracts to brand identity, we've got you covered.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+            <Link href="/signup">
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-lg px-10 py-7 rounded-full shadow-2xl shadow-orange-500/40 group">
+                Hire Talent
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <Button size="lg" variant="outline" className="text-lg px-10 py-7 rounded-full border-slate-200 bg-white hover:bg-slate-50">
+              Apply as Freelancer
+            </Button>
+          </div>
+
+          {/* Categories Quick Links */}
+          <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            {categories.map((cat, i) => (
+              <div key={i} className="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 hover:border-orange-500/50 hover:bg-white transition-all cursor-pointer group shadow-sm">
+                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                  {cat.icon}
+                </div>
+                <h3 className="font-bold text-slate-900">{cat.name}</h3>
+                <p className="text-xs text-slate-500">{cat.count}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Partnership Section */}
-      <section className="py-12 bg-orange-50">
+      {/* Trust Section */}
+      <section className="py-12 bg-white border-y border-slate-100 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-600 mb-6">Trusted Partner</h3>
-            <div className="flex justify-center items-center">
-              <div className="bg-white rounded-lg p-6 shadow-sm border">
-                <svg width="120" height="48" viewBox="0 0 120 48" className="h-12 w-auto">
-                  {/* Rounded square with "1" */}
-                  <rect x="0" y="8" width="32" height="32" rx="8" fill="#f97316" />
-                  <text
-                    x="16"
-                    y="30"
-                    textAnchor="middle"
-                    fill="white"
-                    fontSize="20"
-                    fontWeight="bold"
-                    fontFamily="Arial, sans-serif"
-                  >
-                    1
-                  </text>
-
-                  {/* "APP" text */}
-                  <text x="44" y="32" fill="#f97316" fontSize="24" fontWeight="bold" fontFamily="Arial, sans-serif">
-                    APP
-                  </text>
-                </svg>
-              </div>
-            </div>
+          <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Powering local & international brands</p>
+          <div className="flex flex-wrap justify-center items-center gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+             <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-orange-600 rounded flex items-center justify-center text-white font-bold">1</div>
+                <span className="text-2xl font-bold tracking-tighter">1APP</span>
+             </div>
+             <div className="text-2xl font-bold italic tracking-tighter text-slate-900">Flutterwave</div>
+             <div className="text-2xl font-bold tracking-tighter text-slate-900">PAYSTACK</div>
+             <div className="text-2xl font-black tracking-tighter text-slate-900 uppercase">Interswitch</div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Why choose Bizimi?</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We provide everything you need to successfully complete your projects and grow your business.
-            </p>
+      <section id="features" className="py-24 sm:py-32 bg-slate-900 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-500/10 to-transparent"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="max-w-2xl mb-20">
+            <h2 className="text-orange-500 font-bold uppercase tracking-widest text-sm mb-4">The Bizimi Advantage</h2>
+            <h3 className="text-4xl sm:text-5xl font-black mb-6">Built for speed, <br/>secured by escrow.</h3>
+            <p className="text-slate-400 text-lg">We've removed the friction from freelancing. No more ghosting, no more payment disputes.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-6">
-                  <div className="mb-4">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works Section */}
-      <section id="how-it-works" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">How it works</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Getting started is simple. Follow these three easy steps to begin your journey.
-            </p>
-          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {steps.map((step, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-orange-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  {step.step}
+            {features.map((f, i) => (
+              <div key={i} className="group p-8 rounded-3xl bg-slate-800/50 border border-slate-700 hover:border-orange-500/50 transition-all">
+                <div className="mb-6 p-4 bg-slate-700 rounded-2xl inline-block group-hover:bg-orange-500 transition-colors">
+                  {f.icon}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{step.title}</h3>
-                <p className="text-gray-600">{step.description}</p>
+                <h4 className="text-xl font-bold mb-4">{f.title}</h4>
+                <p className="text-slate-400 leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What our users say</h2>
+      {/* Testimonials */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 mb-8 bg-slate-50 px-4 py-2 rounded-full border">
+             <div className="flex -space-x-2">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-slate-200"></div>
+                ))}
+             </div>
+             <span className="text-sm font-bold text-slate-700">Join 50k+ Happy Users</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Morounkeji Alabi",
-                role: "Marketing Director",
-                content:
-                  "Bizimi helped me find the perfect developer for my project. The quality of work was exceptional!",
-                rating: 5,
-              },
-              {
-                name: "Ayodele Adeyemi",
-                role: "Freelance Designer",
-                content: "As a freelancer, Bizimi has been amazing for finding consistent, high-quality projects.",
-                rating: 5,
-              },
-              {
-                name: "Ifeanyi Eze",
-                role: "Startup Founder",
-                content: "The platform is intuitive and the talent pool is incredible. Highly recommend!",
-                rating: 5,
-              },
-            ].map((testimonial, index) => (
-              <Card key={index} className="border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
-                  <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-sm text-gray-500">{testimonial.role}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <h2 className="text-4xl sm:text-5xl font-black text-slate-900 mb-16 italic tracking-tight">
+            "Bizimi is the first platform that truly understands <br className="hidden md:block" /> the African creative ecosystem."
+          </h2>
+          <div className="flex items-center justify-center gap-4">
+             <div className="text-left">
+                <p className="font-black text-slate-900 text-lg">Tunde Mason</p>
+                <p className="text-slate-500 text-sm">Product Manager at 1App</p>
+             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-orange-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Ready to get started?</h2>
-          <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of freelancers and clients who trust Bizimi for their projects.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-                Start as Freelancer
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto rounded-[3rem] bg-orange-500 p-12 sm:p-24 text-center text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <h2 className="text-4xl sm:text-6xl font-black mb-6 leading-tight">Ready to hire the <br/> future of Nigeria?</h2>
+            <p className="text-orange-100 text-xl mb-12 max-w-2xl mx-auto">Join the most secure marketplace for high-impact projects.</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-12 py-8 rounded-full font-black shadow-xl">
+                Get Started
               </Button>
-            </Link>
-            <Link href="/signup">
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-3 text-white border-white hover:bg-white hover:text-orange-500 bg-transparent"
-              >
-                Hire Talent
+              <Button size="lg" variant="outline" className="text-white border-white/50 hover:bg-white/10 text-lg px-12 py-8 rounded-full font-black bg-transparent">
+                Contact Sales
               </Button>
-            </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-gray-400">
-            <p>&copy; 2025 Bizimi. All rights reserved.</p>
+      <footer className="bg-white py-20 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-12">
+          <div className="col-span-2">
+            <Link href="/" className="flex items-center space-x-2 mb-6">
+              <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+                <span className="text-white font-bold">B</span>
+              </div>
+              <span className="text-xl font-bold tracking-tight">Bizimi</span>
+            </Link>
+            <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
+              The premier marketplace connecting high-impact Nigerian talent with global opportunities. 
+              Secure, fast, and professional.
+            </p>
           </div>
+          <div className="space-y-4 text-sm font-medium">
+            <h4 className="text-slate-900 font-bold">Marketplace</h4>
+            <Link href="#" className="block text-slate-500 hover:text-orange-500">Programming</Link>
+            <Link href="#" className="block text-slate-500 hover:text-orange-500">Design</Link>
+            <Link href="#" className="block text-slate-500 hover:text-orange-500">Writing</Link>
+          </div>
+          <div className="space-y-4 text-sm font-medium">
+            <h4 className="text-slate-900 font-bold">Company</h4>
+            <Link href="#" className="block text-slate-500 hover:text-orange-500">About</Link>
+            <Link href="#" className="block text-slate-500 hover:text-orange-500">Careers</Link>
+            <Link href="#" className="block text-slate-500 hover:text-orange-500">Privacy</Link>
+          </div>
+          <div className="col-span-2 flex flex-col items-start md:items-end">
+            <p className="text-sm font-bold text-slate-900 mb-4">Nigeria's Talent Engine</p>
+            <div className="flex gap-4">
+               <div className="w-10 h-10 rounded-full bg-slate-50 border flex items-center justify-center text-slate-600 hover:bg-orange-500 hover:text-white transition-colors cursor-pointer"><Globe className="h-5 w-5"/></div>
+               <div className="w-10 h-10 rounded-full bg-slate-50 border flex items-center justify-center text-slate-600 hover:bg-orange-500 hover:text-white transition-colors cursor-pointer"><MessageCircle className="h-5 w-5"/></div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 pt-8 border-t border-slate-50 text-center text-slate-400 text-xs font-medium">
+          &copy; 2026 Bizimi. All rights reserved. Registered in Nigeria.
         </div>
       </footer>
     </div>

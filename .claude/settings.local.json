@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep:*)",
+      "Bash(grep -r \"CREATE TABLE.*jobs\\\\|CREATE TABLE.*proposals\\\\|CREATE TABLE.*Funded\" /c/Users/Etti Taiwo/Documents/GitHub/WORK/BIZIMI/Bizmi-app/scripts/*.sql)",
+      "Bash(npx next:*)",
+      "Bash(cd:*)",
+      "Bash(rm -rf .next)",
+      "Bash(rmdir /s /q .next)",
+      "Bash(taskkill //F //IM node.exe)"
+    ]
+  }
+}

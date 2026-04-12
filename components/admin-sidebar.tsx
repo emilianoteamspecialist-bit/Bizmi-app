@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, CreditCard, DollarSign, BarChart3, LogOut, Menu, X } from "lucide-react"
+import { LayoutDashboard, CreditCard, DollarSign, BarChart3, LogOut, Menu, X, ShieldAlert } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 const navigation = [
@@ -11,6 +11,7 @@ const navigation = [
   { name: "Transactions", href: "/admin/transactions", icon: CreditCard },
   { name: "Credits", href: "/admin/credits", icon: DollarSign },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { name: "Disputes", href: "/admin/disputes", icon: ShieldAlert },
 ]
 
 export default function AdminSidebar() {

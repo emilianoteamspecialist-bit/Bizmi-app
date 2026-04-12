@@ -1,0 +1,76 @@
+====================================================================
+BIZIMI ESCROW & RESOLUTION POLICY OPTIONS
+====================================================================
+
+Below are the 4 major edge-cases for the Escrow system and the proposed 
+solutions. Please review them and let me know your decisions so they 
+can be implemented.
+
+--------------------------------------------------------------------
+SCENARIO 1: Client Ghosting (Post-Submission)
+The freelancer submits the work, but the client never logs back in 
+to approve or request changes.
+--------------------------------------------------------------------
+Option A (Auto-Release - Upwork Style): 
+If the client doesn't respond within 5 days, the system automatically 
+marks it as "Approved" and releases the funds to the freelancer.
+
+Option B (Auto-Escalate to Admin - Safer for new platforms): 
+After 5 days of silence, the system automatically creates a "Client 
+Abandonment" Dispute. An Admin looks at the work, compares it to the 
+scope, and manually releases or refunds.
+
+*Recommendation: Option B (Safer while Bizimi is growing)*
+
+
+--------------------------------------------------------------------
+SCENARIO 2: Freelancer Ghosting (Post-Funding, Pre-Submission)
+The client funds the job, but the freelancer disappears and never 
+submits any work, missing the deadline.
+--------------------------------------------------------------------
+Option A (Client-Triggered Refund): 
+If the deadline passes, a "Cancel & Refund" button appears for the 
+client. If clicked, the freelancer has 48 hours to object. If no 
+objection, the money returns to the client.
+
+Option B (Strict Deadline Auto-Refund): 
+If the job duration was "2 weeks", and 3 weeks pass with absolutely 
+no submission in the Workspace, the system automatically refunds the 
+client and penalizes the freelancer.
+
+*Recommendation: Option A (Allows for informal deadline extensions)*
+
+
+--------------------------------------------------------------------
+SCENARIO 3: The "Infinite Revision" Loop
+The freelancer submits work. The client clicks "Request Changes". 
+This repeats infinitely. The freelancer is trapped; the money is stuck.
+--------------------------------------------------------------------
+Option A (Revision Caps): 
+Hardcode a limit (e.g., max 3 revision requests). After the 3rd 
+request, the client can only "Approve" or "Open Dispute".
+
+Option B (Time-Based Dispute Lock): 
+No limit on revisions, but after 14 days of being in the "Changes 
+Requested" loop, either party can forcefully click "Escalate to Admin" 
+to break the stalemate.
+
+*Recommendation: Option B (More flexible for complex projects)*
+
+
+--------------------------------------------------------------------
+SCENARIO 4: Mutual Cancellation (No-Fault)
+Halfway through, both parties realize the project must stop (e.g. 
+technical limitations). Neither is angry, they just want to cancel.
+--------------------------------------------------------------------
+Option A (Manual Dispute): 
+They have to open a Dispute, write "We agreed to stop", and wait 
+for an Admin to read it and refund the client.
+
+Option B (Mutual Cancel Button): 
+An "End Contract" button exists. If the client clicks it, they can 
+propose a split (e.g., "Take 20% for your time, refund me 80%"). If 
+the freelancer clicks "Accept", the money moves instantly without 
+Admin intervention.
+
+*Recommendation: Option B (Saves Admins from unnecessary support tickets)*

@@ -28,6 +28,7 @@ import {
   CheckCircle,
   XCircle,
   Search,
+  ShieldAlert,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -424,6 +425,55 @@ export default function AgencyDashboard() {
         console.error("Error updating job:", error)
         alert("Error updating job. Please try again.")
       }
+    }
+  }
+
+  const handleCreateDispute = async () => {
+    if (!disputeForm.description.trim()) {
+      alert("Please provide a description for the dispute.");
+      return;
+    }
+
+    try {
+      // Find the accepted proposal to get the freelancer ID
+      const { data: proposal } = await supabase
+        .from("proposals")
+        .select("freelancer_id")
+        .eq("job_id", selectedJob.id)
+        .eq("status", "accepted")
+        .single();
+
+      if (!proposal) {
+        alert("Cannot open a dispute: No accepted freelancer found for this job.");
+        return;
+      }
+
+      const response = await fetch('/api/disputes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_id: selectedJob.id,
+          initiator_id: profile.id,
+          respondent_id: proposal.freelancer_id,
+          dispute_type: disputeForm.type,
+          description: disputeForm.description,
+          amount_disputed: selectedJob.budget_max || 0,
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to create dispute");
+
+      const { dispute } = await response.json();
+      
+      setShowDisputeModal(false);
+      setDisputeForm({ type: "quality", description: "" });
+      
+      // Redirect to the dispute room
+      router.push(`/disputes/${dispute.id}`);
+      
+    } catch (error) {
+      console.error("Error creating dispute:", error);
+      alert("An error occurred while opening the dispute.");
     }
   }
 
@@ -1045,7 +1095,7 @@ export default function AgencyDashboard() {
                         </div>
                       </div>
                       {/* Action Button */}
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 flex flex-col gap-2">
                         <Button
                           variant="outline"
                           className="w-full sm:w-auto bg-transparent border-orange-500 text-orange-500 hover:bg-orange-50"
@@ -1054,6 +1104,15 @@ export default function AgencyDashboard() {
                           <Eye className="h-4 w-4 mr-2" />
                           View Proposals ({job.proposals})
                         </Button>
+                        {(job.status === "active" || job.status === "closed") && (
+                          <Button
+                            className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white"
+                            onClick={() => router.push(`/workspace/${job.id}`)}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Workspace
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1755,6 +1814,76 @@ export default function AgencyDashboard() {
                     {actionType === "edit" && "Edit Job"}
                     {actionType === "pause" && (selectedJob.status === "paused" ? "Resume" : "Pause")}
                     {actionType === "close" && "Close Job"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {/* Dispute Modal */}
+      {showDisputeModal && selectedJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShieldAlert className="text-orange-500 h-5 w-5" />
+                  Open a Dispute
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowDisputeModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                  <p className="text-xs text-orange-800">
+                    Opening a dispute will freeze the escrow funds for <strong>{selectedJob.title}</strong>. 
+                    You and the freelancer will have 3-7 days to resolve it in the Dispute Room before an admin steps in.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Reason for Dispute</Label>
+                  <Select
+                    value={disputeForm.type}
+                    onValueChange={(val) => setDisputeForm(prev => ({ ...prev, type: val }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a reason" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quality">Quality Issue - "This isn't what I asked for"</SelectItem>
+                      <SelectItem value="non_delivery">Non-delivery - "Freelancer disappeared"</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Describe the Issue</Label>
+                  <Textarea 
+                    rows={4}
+                    placeholder="Provide details about what went wrong. This will be visible to the freelancer and admins."
+                    value={disputeForm.description}
+                    onChange={(e) => setDisputeForm(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+
+                <div className="flex space-x-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowDisputeModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-orange-500 hover:bg-orange-600"
+                    onClick={handleCreateDispute}
+                  >
+                    Open Dispute
                   </Button>
                 </div>
               </div>

@@ -1,15 +1,14 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle, CheckCircle } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle, Wallet, Building2, User, Landmark, ShieldCheck, ArrowRight } from "lucide-react"
 
 interface Bank {
   id: number
@@ -44,62 +43,45 @@ export default function PayoutModal({ isOpen, onClose, jobData, onSuccess }: Pay
     bank_name: "",
   })
 
-  // Load banks when modal opens
   useEffect(() => {
-    if (isOpen) {
-      loadBanks()
-    }
+    if (isOpen) loadBanks()
   }, [isOpen])
 
   const loadBanks = async () => {
     try {
       setBanksLoading(true)
-      const response = await fetch("/api/banks")
-      const data = await response.json()
-
-      if (data.status && data.data) {
-        setBanks(data.data)
-      } else {
-        setError("Failed to load banks")
-      }
+      const res = await fetch("/api/banks")
+      const data = await res.json()
+      if (data.status && data.data) setBanks(data.data)
+      else setError("Failed to load banks")
     } catch (error) {
-      console.error("Error loading banks:", error)
       setError("Failed to load banks")
     } finally {
       setBanksLoading(false)
     }
   }
 
-  const handleBankSelect = (bankCode: string) => {
-    const selectedBank = banks.find((bank) => bank.code === bankCode)
-    setFormData({
-      ...formData,
-      bank_code: bankCode,
-      bank_name: selectedBank?.name || "",
-    })
+  const handleBankSelect = (code: string) => {
+    const bank = banks.find((b) => b.code === code)
+    setFormData({ ...formData, bank_code: code, bank_name: bank?.name || "" })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
-
     try {
-      const response = await fetch("/api/payout", {
+      const res = await fetch("/api/payout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           account_number: formData.account_number,
           bank_code: formData.bank_code,
-          amount: jobData.amount * 100, // Convert to kobo
+          amount: jobData.amount * 100,
           freelancer_name: formData.freelancer_name,
         }),
       })
-
-      const data = await response.json()
-
+      const data = await res.json()
       if (data.success) {
         setSuccess(true)
         setTimeout(() => {
@@ -107,162 +89,155 @@ export default function PayoutModal({ isOpen, onClose, jobData, onSuccess }: Pay
           onClose()
           resetForm()
         }, 2000)
-      } else {
-        setError(data.error || "Payout failed")
-      }
+      } else setError(data.error || "Payout failed")
     } catch (error) {
-      console.error("Payout error:", error)
-      setError("Something went wrong. Please try again.")
+      setError("Something went wrong.")
     } finally {
       setLoading(false)
     }
   }
 
   const resetForm = () => {
-    setFormData({
-      freelancer_name: "",
-      account_number: "",
-      bank_code: "",
-      bank_name: "",
-    })
+    setFormData({ freelancer_name: "", account_number: "", bank_code: "", bank_name: "" })
     setError("")
     setSuccess(false)
-  }
-
-  const handleClose = () => {
-    if (!loading) {
-      onClose()
-      resetForm()
-    }
   }
 
   const platformFee = jobData.amount * 0.15
   const payoutAmount = jobData.amount - platformFee
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Payout Request</DialogTitle>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg border-none rounded-[2.5rem] p-0 overflow-hidden bg-white shadow-2xl">
+        <DialogHeader className="p-8 pb-4">
+          <div className="space-y-1">
+             <DialogTitle className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <Wallet className="h-6 w-6 text-orange-500" />
+                Withdraw Funds
+             </DialogTitle>
+             <DialogDescription className="font-medium text-slate-400">Request your earnings for the completed project.</DialogDescription>
+          </div>
         </DialogHeader>
 
-        {success ? (
-          <div className="text-center py-6">
-            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-lg font-semibold text-green-600 mb-2">Payout Successful!</h3>
-            <p className="text-gray-600">Your payout has been processed successfully.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Job Details */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-2">Job Details</h4>
-              <p className="text-sm text-gray-600 mb-1">
-                <strong>Job:</strong> {jobData.job_title}
-              </p>
-              <p className="text-sm text-gray-600 mb-1">
-                <strong>Agency:</strong> {jobData.agency_name}
-              </p>
-              <p className="text-sm text-gray-600 mb-1">
-                <strong>Total Amount:</strong> ₦{jobData.amount.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-600 mb-1">
-                <strong>Platform Fee (15%):</strong> ₦{platformFee.toLocaleString()}
-              </p>
-              <p className="text-sm font-semibold text-green-600">
-                <strong>You'll Receive:</strong> ₦{payoutAmount.toLocaleString()}
-              </p>
+        <div className="p-8 pt-0 space-y-8">
+          {success ? (
+            <div className="py-12 text-center space-y-4">
+              <div className="w-20 h-20 bg-green-50 rounded-[2rem] flex items-center justify-center mx-auto border border-green-100">
+                <CheckCircle className="h-10 w-10 text-green-500" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-2xl font-black text-slate-900">Transfer Initiated</h3>
+                <p className="text-slate-500 font-medium">Your payout of <span className="text-slate-900 font-bold">₦{payoutAmount.toLocaleString()}</span> is being processed.</p>
+              </div>
             </div>
-
-            {/* Form Fields */}
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="freelancer_name">Full Name</Label>
-                <Input
-                  id="freelancer_name"
-                  type="text"
-                  value={formData.freelancer_name}
-                  onChange={(e) => setFormData({ ...formData, freelancer_name: e.target.value })}
-                  placeholder="Enter your full name"
-                  required
-                  disabled={loading}
-                />
+          ) : (
+            <>
+              <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 space-y-4">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                       <div className="p-2 bg-white rounded-xl border border-slate-200">
+                          <Building2 className="h-4 w-4 text-slate-400" />
+                       </div>
+                       <p className="text-sm font-bold text-slate-700">{jobData.agency_name}</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none font-black text-[10px] uppercase tracking-wider">Completed</Badge>
+                 </div>
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project Title</p>
+                    <p className="font-black text-slate-900 line-clamp-1">{jobData.job_title}</p>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200/50">
+                    <div className="space-y-1">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Escrow</p>
+                       <p className="text-sm font-bold text-slate-900">₦{jobData.amount.toLocaleString()}</p>
+                    </div>
+                    <div className="space-y-1">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Platform Fee (15%)</p>
+                       <p className="text-sm font-bold text-red-500">- ₦{platformFee.toLocaleString()}</p>
+                    </div>
+                 </div>
+                 <div className="pt-3 bg-orange-50 -mx-6 -mb-6 px-6 py-4 flex items-center justify-between border-t border-orange-100">
+                    <p className="text-xs font-black uppercase tracking-widest text-orange-800">You Receive</p>
+                    <p className="text-xl font-black text-orange-900">₦{payoutAmount.toLocaleString()}</p>
+                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="bank">Select Bank</Label>
-                <Select value={formData.bank_code} onValueChange={handleBankSelect} disabled={loading || banksLoading}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={banksLoading ? "Loading banks..." : "Select your bank"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {banks.map((bank) => (
-                      <SelectItem key={bank.code} value={bank.code}>
-                        {bank.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-slate-700">Account Holder Name</Label>
+                    <div className="relative">
+                       <User className="absolute left-4 top-3.5 h-5 w-5 text-slate-300" />
+                       <Input
+                         className="h-12 pl-11 rounded-xl border-slate-200"
+                         value={formData.freelancer_name}
+                         onChange={(e) => setFormData({ ...formData, freelancer_name: e.target.value })}
+                         placeholder="Enter full name on account"
+                         required
+                         disabled={loading}
+                       />
+                    </div>
+                  </div>
 
-              {formData.bank_code && (
-                <div>
-                  <Label htmlFor="bank_code_display">Bank Code</Label>
-                  <Input
-                    id="bank_code_display"
-                    type="text"
-                    value={formData.bank_code}
-                    placeholder="Bank code will appear here"
-                    disabled
-                    className="bg-gray-100"
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-bold text-slate-700">Select Bank</Label>
+                      <Select value={formData.bank_code} onValueChange={handleBankSelect} disabled={loading || banksLoading}>
+                        <SelectTrigger className="h-12 rounded-xl border-slate-200">
+                          <SelectValue placeholder={banksLoading ? "Loading..." : "Choose Bank"} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {banks.map((bank) => (
+                            <SelectItem key={bank.code} value={bank.code}>{bank.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-slate-700">Account Number</Label>
+                      <div className="relative">
+                         <Landmark className="absolute left-4 top-3.5 h-5 w-5 text-slate-300" />
+                         <Input
+                           className="h-12 pl-11 rounded-xl border-slate-200"
+                           value={formData.account_number}
+                           onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
+                           placeholder="0000000000"
+                           required
+                           maxLength={10}
+                           disabled={loading}
+                         />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
 
-              <div>
-                <Label htmlFor="account_number">Account Number</Label>
-                <Input
-                  id="account_number"
-                  type="text"
-                  value={formData.account_number}
-                  onChange={(e) => setFormData({ ...formData, account_number: e.target.value })}
-                  placeholder="Enter your account number"
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={loading}
-                className="flex-1 bg-transparent"
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading || banksLoading} className="flex-1">
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  `Withdraw ₦${payoutAmount.toLocaleString()}`
+                {error && (
+                  <Alert variant="destructive" className="rounded-2xl bg-red-50 border-red-100 text-red-800">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="font-bold">{error}</AlertDescription>
+                  </Alert>
                 )}
-              </Button>
-            </div>
-          </form>
-        )}
+
+                <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 flex gap-3">
+                   <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
+                   <p className="text-[11px] font-medium text-blue-800 leading-relaxed">
+                      Withdrawals are processed via <strong>Paystack</strong> and usually reflect in your bank account within minutes.
+                   </p>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="flex-1 h-14 rounded-2xl font-bold bg-transparent">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={loading || banksLoading || !formData.account_number} className="flex-1 h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-xl shadow-orange-500/25">
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ArrowRight className="h-5 w-5 mr-2" />}
+                    Withdraw Funds
+                  </Button>
+                </div>
+              </form>
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )
