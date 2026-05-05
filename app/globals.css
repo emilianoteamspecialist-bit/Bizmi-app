@@ -40,7 +40,14 @@
     --destructive: 0 84.2% 60.2%; /* #dc2626 - red-600 */
     --destructive-foreground: 210 40% 98%;
     --info: 221 83% 53%; /* #2563eb */
-    
+
+    /* Afro-Modern Landing Tokens */
+    --aubergine: 263 53% 12%;     /* #1A0E2E */
+    --gold: 43 96% 56%;            /* #FBBF24 */
+    --jade: 173 80% 26%;           /* #0F766E */
+    --cream: 32 67% 96%;           /* #FDF7F0 */
+    --ink: 0 0% 4%;                /* #0A0A0A */
+
     /* Borders & Inputs */
     --border: 220 13% 91%; /* #e5e7eb */
     --divider: 215 14% 83%; /* #d1d5db */
