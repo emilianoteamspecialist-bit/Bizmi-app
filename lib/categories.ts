@@ -107,3 +107,5 @@ export function getCategoriesForSkills(skills: string[]): Category[] {
 export function getSkillsForCategory(category: Category): readonly string[] {
   return CATEGORIES[category]
 }
+
+export const ALL_SKILLS = Object.values(CATEGORIES).flat()

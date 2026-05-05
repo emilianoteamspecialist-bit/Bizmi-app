@@ -3,7 +3,6 @@
 import { Mail, MessageCircle, Instagram, Facebook } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import FreelancerNavbar from "@/components/freelancer-navbar"
 
 export default function FreelancerContactPage() {
   const handleEmailClick = () => {
@@ -21,13 +20,12 @@ export default function FreelancerContactPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
-      <FreelancerNavbar />
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <h1 className="text-4xl font-bold text-slate-900 mb-4">Contact Us</h1>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               Need help or have questions? We're here to assist you. Reach out to us through any of the channels below.
             </p>
           </div>
@@ -38,17 +36,17 @@ export default function FreelancerContactPage() {
             <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <Mail className="h-8 w-8 text-orange-500" />
+                  <Mail className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl text-gray-900">Email Support</CardTitle>
+                <CardTitle className="text-xl text-slate-900">Email Support</CardTitle>
                 <CardDescription>Send us an email and we'll get back to you within 24 hours</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                <Button onClick={handleEmailClick} className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                <Button onClick={handleEmailClick} className="w-full bg-primary hover:bg-primary-hover text-white">
                   <Mail className="mr-2 h-4 w-4" />
                   Email Us
                 </Button>
-                <p className="text-sm text-gray-500 mt-2">Bizimisocials12@gmail.com</p>
+                <p className="text-sm text-slate-500 mt-2">Bizimisocials12@gmail.com</p>
               </CardContent>
             </Card>
 
@@ -56,9 +54,9 @@ export default function FreelancerContactPage() {
             <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
               <CardHeader className="text-center">
                 <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <MessageCircle className="h-8 w-8 text-orange-600" />
+                  <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-xl text-gray-900">WhatsApp Support</CardTitle>
+                <CardTitle className="text-xl text-slate-900">WhatsApp Support</CardTitle>
                 <CardDescription>Chat with us for immediate assistance</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
@@ -69,7 +67,7 @@ export default function FreelancerContactPage() {
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Chat with Us
                 </Button>
-                <p className="text-sm text-gray-500 mt-2">+2347026875518</p>
+                <p className="text-sm text-slate-500 mt-2">+2347026875518</p>
               </CardContent>
             </Card>
 
@@ -79,24 +77,24 @@ export default function FreelancerContactPage() {
                 <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
                   <MessageCircle className="h-8 w-8 text-orange-400" />
                 </div>
-                <CardTitle className="text-xl text-gray-900">Join Community</CardTitle>
+                <CardTitle className="text-xl text-slate-900">Join Community</CardTitle>
                 <CardDescription>Connect with other freelancers and agencies</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
                 <Button
                   onClick={() => handleSocialClick("https://chat.whatsapp.com/H5yku22xKV35cAFDyinj6y?mode=ems_share_c")}
-                  className="w-full bg-orange-400 hover:bg-orange-500 text-white"
+                  className="w-full bg-orange-400 hover:bg-primary text-white"
                 >
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Join Community
                 </Button>
-                <p className="text-sm text-gray-500 mt-2">WhatsApp Group</p>
+                <p className="text-sm text-slate-500 mt-2">WhatsApp Group</p>
               </CardContent>
             </Card>
           </div>
 
             <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200 mb-8">
-  <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+  <h2 className="text-2xl font-semibold text-slate-900 mb-6 text-center">
     Follow Us on Social Media
   </h2>
   <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
@@ -106,7 +104,7 @@ export default function FreelancerContactPage() {
           "https://www.instagram.com/bizimisocials12?igsh=cDNsNzNwd3h0ejI5"
         )
       }
-      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 w-full sm:w-auto"
+      className="bg-primary hover:bg-primary-hover text-white px-6 py-3 w-full sm:w-auto"
     >
       <Instagram className="mr-2 h-5 w-5" />
       Instagram
@@ -126,7 +124,7 @@ export default function FreelancerContactPage() {
           "https://www.tiktok.com/@bizimi0?_t=ZM-8zAXJDSR2d3&_r=1"
         )
       }
-      className="bg-orange-400 hover:bg-orange-500 text-white px-6 py-3 w-full sm:w-auto"
+      className="bg-orange-400 hover:bg-primary text-white px-6 py-3 w-full sm:w-auto"
     >
       <svg
         className="mr-2 h-5 w-5"
@@ -143,11 +141,11 @@ export default function FreelancerContactPage() {
 
           {/* Additional Info */}
           <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4 text-center">How We Can Help</h2>
+            <h2 className="text-2xl font-semibold text-slate-900 mb-4 text-center">How We Can Help</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold text-orange-500 mb-2">For Freelancers</h3>
-                <ul className="text-gray-600 space-y-1">
+                <h3 className="font-semibold text-primary mb-2">For Freelancers</h3>
+                <ul className="text-slate-600 space-y-1">
                   <li>• Account setup and verification</li>
                   <li>• Proposal submission help</li>
                   <li>• Payment and payout assistance</li>
@@ -155,8 +153,8 @@ export default function FreelancerContactPage() {
                 </ul>
               </div>
               <div>
-                <h3 className="font-semibent text-orange-500 mb-2">For Agencies</h3>
-                <ul className="text-gray-600 space-y-1">
+                <h3 className="font-semibent text-primary mb-2">For Agencies</h3>
+                <ul className="text-slate-600 space-y-1">
                   <li>• Job posting guidance</li>
                   <li>• Freelancer selection process</li>
                   <li>• Payment and funding support</li>
@@ -168,7 +166,7 @@ export default function FreelancerContactPage() {
 
           {/* Response Time */}
           <div className="text-center mt-8">
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               <strong>Response Times:</strong> Email within 24 hours • WhatsApp within 2 hours during business hours
             </p>
           </div>

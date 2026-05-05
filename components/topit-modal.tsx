@@ -166,7 +166,7 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Coins className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+              <Coins className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <span className="hidden sm:inline">Top It - Verify Credits</span>
               <span className="sm:hidden">Verify Credits</span>
             </DialogTitle>
@@ -188,30 +188,30 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
               step="0.01"
               value={amountPaid}
               onChange={(e) => setAmountPaid(e.target.value)}
-              placeholder={`Minimum ₦${MIN_AMOUNT.toLocaleString()}`}
+              placeholder={`Minimum ₦ ${MIN_AMOUNT.toLocaleString()}`}
               disabled={loading}
               required
               className="text-sm sm:text-base h-10 sm:h-11"
             />
-            <p className="text-xs sm:text-sm text-gray-500">
-              Rate: 10 credits = ₦500 • Minimum: ₦{MIN_AMOUNT.toLocaleString()}
+            <p className="text-xs sm:text-sm text-slate-500">
+              Rate: 10 credits = ₦ 500 • Minimum: ₦ {MIN_AMOUNT.toLocaleString()}
             </p>
           </div>
 
           {amount >= MIN_AMOUNT && (
-            <div className="p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+            <div className="p-3 sm:p-4 bg-primary/10 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
               <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Amount Paid:</span>
-                  <span className="font-medium">₦{amount.toLocaleString()}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Amount Paid:</span>
+                  <span className="font-medium">₦ {amount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Rate:</span>
-                  <span className="font-medium">10 credits = ₦500</span>
+                  <span className="text-slate-600 dark:text-slate-400">Rate:</span>
+                  <span className="font-medium">10 credits = ₦ 500</span>
                 </div>
                 <div className="flex justify-between border-t border-orange-200 dark:border-orange-700 pt-2">
-                  <span className="font-medium text-orange-700 dark:text-orange-300">Total Credits:</span>
-                  <span className="font-bold text-orange-700 dark:text-orange-300">
+                  <span className="font-medium text-primary dark:text-orange-300">Total Credits:</span>
+                  <span className="font-bold text-primary dark:text-orange-300">
                     {totalCredits.toLocaleString()} credits
                   </span>
                 </div>
@@ -233,7 +233,7 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
               required
               className="text-sm sm:text-base h-10 sm:h-11"
             />
-            <p className="text-xs sm:text-sm text-gray-500">Enter the reference ID from your payment confirmation</p>
+            <p className="text-xs sm:text-sm text-slate-500">Enter the reference ID from your payment confirmation</p>
           </div>
 
           {success && (
@@ -265,7 +265,7 @@ export default function TopItModal({ isOpen, onClose, onSuccess }: TopItModalPro
             <Button
               type="submit"
               disabled={loading || amount < MIN_AMOUNT || !reference.trim()}
-              className="w-full sm:flex-1 bg-orange-500 hover:bg-orange-600 h-10 sm:h-11 text-sm sm:text-base"
+              className="w-full sm:flex-1 bg-primary hover:bg-primary-hover h-10 sm:h-11 text-sm sm:text-base"
             >
               {loading ? (
                 <>

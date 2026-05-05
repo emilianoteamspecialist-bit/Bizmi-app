@@ -115,14 +115,14 @@ export default function AdminDisputes() {
       <SidebarInset>
         <div className="p-4 lg:p-6">
           <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dispute Resolution</h1>
-            <p className="text-gray-600">Manage and resolve active disputes between freelancers and agencies.</p>
+            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">Dispute Resolution</h1>
+            <p className="text-slate-600">Manage and resolve active disputes between freelancers and agencies.</p>
           </div>
 
           <div className="space-y-4">
             {disputes.length === 0 ? (
               <Card>
-                <CardContent className="p-8 text-center text-gray-500">
+                <CardContent className="p-8 text-center text-slate-500">
                   <ShieldAlert className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                   No disputes found.
                 </CardContent>
@@ -130,7 +130,7 @@ export default function AdminDisputes() {
             ) : (
               disputes.map((dispute) => (
                 <Card key={dispute.id} className="overflow-hidden">
-                  <CardHeader className="bg-gray-50 border-b pb-4">
+                  <CardHeader className="bg-slate-50 border-b pb-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg flex items-center gap-2">
@@ -138,10 +138,10 @@ export default function AdminDisputes() {
                           {getStatusBadge(dispute.status)}
                         </CardTitle>
                         <CardDescription className="mt-1">
-                          Type: <strong>{dispute.dispute_type.replace('_', ' ')}</strong> | Amount: <strong>₦{dispute.amount_disputed}</strong>
+                          Type: <strong>{dispute.dispute_type.replace('_', ' ')}</strong> | Amount: <strong>₦ {dispute.amount_disputed}</strong>
                         </CardDescription>
                       </div>
-                      <div className="text-sm text-gray-500 text-right">
+                      <div className="text-sm text-slate-500 text-right">
                         <div>Initiator: {dispute.initiator?.full_name}</div>
                         <div>Respondent: {dispute.respondent?.full_name}</div>
                         <div className="text-xs mt-1">{new Date(dispute.created_at).toLocaleDateString()}</div>
@@ -150,8 +150,8 @@ export default function AdminDisputes() {
                   </CardHeader>
                   <CardContent className="p-4 lg:p-6">
                     <div className="mb-6">
-                      <h4 className="font-semibold text-sm text-gray-700 mb-2">Dispute Description</h4>
-                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md border">
+                      <h4 className="font-semibold text-sm text-slate-700 mb-2">Dispute Description</h4>
+                      <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border">
                         {dispute.description}
                       </p>
                     </div>

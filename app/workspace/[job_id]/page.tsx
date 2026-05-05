@@ -217,23 +217,23 @@ export default function ProjectWorkspace() {
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin mr-2"/> Loading Workspace...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Main Workspace Column */}
         <div className="lg:col-span-2 space-y-6">
           <header className="flex justify-between items-start mb-2">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{job?.title}</h1>
-              <p className="text-gray-500 mt-1">Agency: {job?.agency?.full_name}</p>
+              <h1 className="text-3xl font-bold text-slate-900">{job?.title}</h1>
+              <p className="text-slate-500 mt-1">Agency: {job?.agency?.full_name}</p>
             </div>
             {submission && getStatusBadge(submission.status)}
           </header>
 
           <Card className="border-orange-200">
-            <CardHeader className="bg-orange-50/50">
+            <CardHeader className="bg-primary/10/50">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="h-5 w-5 text-orange-500" />
+                <FileText className="h-5 w-5 text-primary" />
                 Project Submission
               </CardTitle>
               <CardDescription>
@@ -312,11 +312,11 @@ export default function ProjectWorkspace() {
                 </TabsContent>
 
                 <div className="mt-8 pt-6 border-t flex items-center justify-between">
-                  <p className="text-xs text-gray-500 max-w-md italic">
+                  <p className="text-xs text-slate-500 max-w-md italic">
                     By submitting, you certify that you have completed the project requirements. The client will have 3-7 days to review.
                   </p>
                   {!isAgency && submission?.status !== 'approved' && (
-                    <Button onClick={handleSubmitProject} disabled={submitting} className="bg-orange-500 hover:bg-orange-600 px-8">
+                    <Button onClick={handleSubmitProject} disabled={submitting} className="bg-primary hover:bg-primary-hover px-8">
                       {submitting ? <Loader2 className="animate-spin mr-2"/> : <Send className="w-4 h-4 mr-2"/>}
                       {submission ? 'Update Submission' : 'Submit for Approval'}
                     </Button>
@@ -341,34 +341,34 @@ export default function ProjectWorkspace() {
 
         {/* Sidebar: Feedback Thread */}
         <div className="flex flex-col h-[700px]">
-          <Card className="flex flex-col h-full shadow-md border-gray-200">
+          <Card className="flex flex-col h-full shadow-md border-slate-200">
             <CardHeader className="border-b py-3 px-4 bg-white shrink-0">
               <CardTitle className="text-lg flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-gray-400" />
+                <MessageSquare className="h-5 w-5 text-slate-400" />
                 Feedback Thread
               </CardTitle>
             </CardHeader>
             
-            <CardContent className="flex-1 overflow-y-auto p-4 bg-gray-50/50 space-y-4">
+            <CardContent className="flex-1 overflow-y-auto p-4 bg-slate-50/50 space-y-4">
               {!submission ? (
-                <div className="h-full flex flex-col items-center justify-center text-center text-gray-400 p-4">
+                <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 p-4">
                   <AlertCircle className="w-10 h-10 mb-2 opacity-20"/>
                   <p className="text-sm">Submit your project to start the feedback thread.</p>
                 </div>
               ) : comments.length === 0 ? (
-                <div className="text-center text-gray-400 text-sm mt-8">No comments yet.</div>
+                <div className="text-center text-slate-400 text-sm mt-8">No comments yet.</div>
               ) : (
                 comments.map((c) => {
                   const isMe = c.sender_id === currentUserId
                   return (
                     <div key={c.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                      <div className={`text-xs text-gray-500 mb-1 ${isMe ? 'mr-1' : 'ml-1'}`}>
+                      <div className={`text-xs text-slate-500 mb-1 ${isMe ? 'mr-1' : 'ml-1'}`}>
                         {c.sender?.full_name}
                       </div>
-                      <div className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${isMe ? 'bg-gray-800 text-white' : 'bg-white border shadow-sm'}`}>
+                      <div className={`max-w-[90%] rounded-lg px-3 py-2 text-sm ${isMe ? 'bg-slate-800 text-white' : 'bg-white border shadow-sm'}`}>
                         {c.message}
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-1">{new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                      <div className="text-[10px] text-slate-400 mt-1">{new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>
                   )
                 })

@@ -22,7 +22,6 @@ import {
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { ALL_CATEGORIES, getSkillsForCategory, getCategoriesForSkills, type Category } from "@/lib/categories"
-import AgencyNavbar from "@/components/agency-navbar"
 
 interface FreelancerProfile {
   id: string
@@ -64,7 +63,7 @@ export default function FindFreelancers() {
     if (verificationStatus === "verified") {
       return { label: "Verified", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" }
     }
-    return { label: "New", color: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300" }
+    return { label: "New", color: "bg-slate-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300" }
   }
 
   const loadFreelancers = useCallback(
@@ -79,16 +78,16 @@ export default function FindFreelancers() {
         // Build freelancer query
         let query = supabase
           .from("profiles")
-          .select("id, full_name, bio, location, skills, experience_level, hourly_rate, created_at", { count: "exact" })
+          .select("id, full_name, bio, location, created_at", { count: "exact" })
           .eq("account_type", "freelancer")
           .order("created_at", { ascending: false })
           .range(currentOffset, currentOffset + FREELANCERS_PER_PAGE - 1)
 
-        // Apply keyword search across name, bio, and skills
+        // Apply keyword search across name, bio
         const searchTerm = filters.keywords || searchQuery
         if (searchTerm) {
           query = query.or(
-            `full_name.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%,skills.ilike.%${searchTerm}%`,
+            `full_name.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`,
           )
         }
 
@@ -107,8 +106,8 @@ export default function FindFreelancers() {
 
         const freelancerIds = profilesData.map((p) => p.id)
 
-        // Fetch logos, verification status, and completed jobs count in parallel
-        const [logosResult, verificationResult, completedJobsResult] = await Promise.all([
+        // Fetch logos, verification status, completed jobs count, and skills in parallel
+        const [logosResult, verificationResult, completedJobsResult, skillsResult] = await Promise.all([
           supabase.from("freelancer_logos").select("freelancer_id, logo_data").in("freelancer_id", freelancerIds),
           supabase
             .from("Freelancer_identitie")
@@ -119,6 +118,10 @@ export default function FindFreelancers() {
             .select("freelancer_id, status")
             .in("freelancer_id", freelancerIds)
             .eq("status", "completed"),
+          supabase
+            .from("freelancer_skills")
+            .select("user_id, skill_name")
+            .in("user_id", freelancerIds),
         ])
 
         // Build lookup maps
@@ -138,19 +141,24 @@ export default function FindFreelancers() {
           completedCountMap[j.freelancer_id] = (completedCountMap[j.freelancer_id] || 0) + 1
         })
 
+        // Group skills per freelancer
+        const skillsMap: Record<string, string[]> = {}
+        skillsResult.data?.forEach((s) => {
+          if (!skillsMap[s.user_id]) skillsMap[s.user_id] = []
+          skillsMap[s.user_id].push(s.skill_name)
+        })
+
         // Transform data
         let transformed: FreelancerProfile[] = profilesData.map((profile) => {
-          const skillsArray = profile.skills
-            ? profile.skills.split(",").map((s: string) => s.trim()).filter(Boolean)
-            : []
+          const skillsArray = skillsMap[profile.id] || []
           return {
             id: profile.id,
             full_name: profile.full_name,
             bio: profile.bio,
             location: profile.location,
-            skills: profile.skills,
-            experience_level: profile.experience_level,
-            hourly_rate: profile.hourly_rate,
+            skills: skillsArray.join(", "),
+            experience_level: "Expert", // Default fallback
+            hourly_rate: 0, // Default fallback
             created_at: profile.created_at,
             logo: logoMap[profile.id] || null,
             verification_status: verificationMap[profile.id] || null,
@@ -256,12 +264,11 @@ export default function FindFreelancers() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AgencyNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Find Freelancers</h1>
+          <h1 className="text-2xl sm:text-primaryxl font-bold text-slate-900 dark:text-white">Find Freelancers</h1>
           <p className="text-muted-foreground mt-1">Search and connect with talented freelancers</p>
         </div>
 
@@ -280,7 +287,7 @@ export default function FindFreelancers() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSearch} className="bg-orange-500 hover:bg-orange-600">
+                <Button onClick={handleSearch} className="bg-primary hover:bg-primary-hover">
                   <Search className="h-4 w-4 mr-2" />
                   Search
                 </Button>
@@ -300,7 +307,7 @@ export default function FindFreelancers() {
             {freelancers.length} freelancer{freelancers.length !== 1 ? "s" : ""} found
           </p>
           {(filters.category || filters.trustLevel || filters.keywords) && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-orange-500">
+            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-primary">
               Clear filters
             </Button>
           )}
@@ -310,7 +317,7 @@ export default function FindFreelancers() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="h-72 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+              <Card key={i} className="h-72 bg-slate-200 dark:bg-gray-700 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : freelancers.length === 0 ? (
@@ -332,20 +339,20 @@ export default function FindFreelancers() {
                 return (
                   <Card
                     key={freelancer.id}
-                    className="group overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-700"
+                    className="group overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-slate-200 dark:border-gray-700"
                   >
                     <CardContent className="p-4 sm:p-6">
                       {/* Header: Avatar + Name + Badge */}
                       <div className="flex items-start gap-4 mb-4">
                         <Avatar className="h-14 w-14 flex-shrink-0">
                           <AvatarImage src={freelancer.logo || undefined} alt={freelancer.full_name} />
-                          <AvatarFallback className="bg-orange-500 text-white text-lg font-semibold">
+                          <AvatarFallback className="bg-primary text-white text-lg font-semibold">
                             {freelancer.full_name?.charAt(0).toUpperCase() || "F"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                               {freelancer.full_name}
                             </h3>
                             <Badge className={`text-xs ${trustBadge.color} border-0`}>
@@ -355,7 +362,7 @@ export default function FindFreelancers() {
                               {trustBadge.label}
                             </Badge>
                           </div>
-                          <p className="text-sm text-orange-600 dark:text-orange-400 font-medium mt-0.5">
+                          <p className="text-sm text-primary dark:text-orange-400 font-medium mt-0.5">
                             {mainSkill}
                           </p>
                           {freelancer.location && (
@@ -369,7 +376,7 @@ export default function FindFreelancers() {
 
                       {/* Bio */}
                       {freelancer.bio && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
                           {freelancer.bio}
                         </p>
                       )}
@@ -389,14 +396,14 @@ export default function FindFreelancers() {
                       </div>
 
                       {/* Stats Row */}
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-4 pb-4 border-b border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-4 pb-4 border-b border-slate-100 dark:border-gray-700">
                         <div className="flex items-center gap-1">
                           <Briefcase className="h-3.5 w-3.5" />
                           <span>{freelancer.jobs_completed} job{freelancer.jobs_completed !== 1 ? "s" : ""} done</span>
                         </div>
                         {freelancer.hourly_rate && (
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            ₦{freelancer.hourly_rate.toLocaleString()}/hr
+                          <span className="font-medium text-slate-900 dark:text-white">
+                            ₦ {freelancer.hourly_rate.toLocaleString()}/hr
                           </span>
                         )}
                       </div>
@@ -413,7 +420,7 @@ export default function FindFreelancers() {
                         </Button>
                         <Button
                           size="sm"
-                          className="flex-1 bg-orange-500 hover:bg-orange-600"
+                          className="flex-1 bg-primary hover:bg-primary-hover"
                           onClick={() => handleContactFreelancer(freelancer.id)}
                         >
                           <MessageCircle className="h-4 w-4 mr-1" />
@@ -502,7 +509,7 @@ export default function FindFreelancers() {
                 }}>
                   Reset
                 </Button>
-                <Button className="flex-1 bg-orange-500 hover:bg-orange-600" onClick={applyFilters}>
+                <Button className="flex-1 bg-primary hover:bg-primary-hover" onClick={applyFilters}>
                   Apply Filters
                 </Button>
               </div>
@@ -520,7 +527,7 @@ export default function FindFreelancers() {
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={selectedFreelancer.logo || undefined} alt={selectedFreelancer.full_name} />
-                    <AvatarFallback className="text-lg font-semibold bg-orange-500 text-white">
+                    <AvatarFallback className="text-lg font-semibold bg-primary text-white">
                       {selectedFreelancer.full_name?.charAt(0).toUpperCase() || "F"}
                     </AvatarFallback>
                   </Avatar>
@@ -612,7 +619,7 @@ export default function FindFreelancers() {
                   Close
                 </Button>
                 <Button
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="bg-primary hover:bg-primary-hover"
                   onClick={() => {
                     setSelectedFreelancer(null)
                     handleContactFreelancer(selectedFreelancer.id)

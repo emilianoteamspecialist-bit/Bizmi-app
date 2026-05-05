@@ -98,8 +98,8 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
           {/* Logo & Desktop Nav */}
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <span className="text-white font-bold text-xl">B</span>
+              <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl">
+                <img src="/favicon.ico" alt="Bizimi Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-2xl font-black tracking-tight text-slate-900 hidden sm:block">Bizimi</span>
             </Link>
@@ -120,7 +120,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
                     <link.icon className="w-4 h-4" />
                     {link.name}
                     {link.badge > 0 && (
-                      <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                      <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
                         {link.badge}
                       </span>
                     )}
@@ -134,7 +134,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
           <div className="flex items-center gap-3">
             <Button 
               onClick={onPostJobClick}
-              className="hidden md:flex bg-orange-500 hover:bg-orange-600 rounded-xl font-bold h-11 px-6 shadow-lg shadow-orange-500/20"
+              className="hidden md:flex bg-primary hover:bg-primary-hover rounded-xl font-bold h-11 px-6 shadow-lg shadow-primary/20"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Post a Job
@@ -148,7 +148,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
                 <Button variant="ghost" size="icon" className="relative h-11 w-11 rounded-xl hover:bg-slate-50 text-slate-500">
                   <Bell className="h-5 w-5" />
                   {unreadMessagesCount > 0 && (
-                    <span className="absolute top-2 right-2 bg-orange-500 w-2.5 h-2.5 rounded-full border-2 border-white"></span>
+                    <span className="absolute top-2 right-2 bg-primary w-2.5 h-2.5 rounded-full border-2 border-white"></span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -162,7 +162,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
                       <DropdownMenuItem key={n.id} onClick={() => router.push(`/agency/messages?conversationId=${n.conversation_id}`)} className="rounded-xl p-3 cursor-pointer">
                         <div className="flex gap-3">
                            <Avatar className="h-10 w-10 rounded-lg">
-                              <AvatarFallback className="bg-orange-50 text-orange-600 font-bold">{n.sender_profile?.full_name?.charAt(0)}</AvatarFallback>
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold">{n.sender_profile?.full_name?.charAt(0)}</AvatarFallback>
                            </Avatar>
                            <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-slate-900 truncate">{n.sender_profile?.full_name}</p>
@@ -174,7 +174,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
                   )}
                 </ScrollArea>
                 <DropdownMenuSeparator className="my-2" />
-                <DropdownMenuItem onClick={() => router.push("/agency/messages")} className="justify-center font-bold text-orange-500 text-sm">
+                <DropdownMenuItem onClick={() => router.push("/agency/messages")} className="justify-center font-bold text-primary text-sm">
                   View All Messages
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -224,7 +224,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
                   ))}
                   <DropdownMenuSeparator />
                   <div className="p-2">
-                    <Button onClick={onPostJobClick} className="w-full bg-orange-500 hover:bg-orange-600 rounded-xl font-bold h-12">Post a Job</Button>
+                    <Button onClick={onPostJobClick} className="w-full bg-primary hover:bg-primary-hover rounded-xl font-bold h-12">Post a Job</Button>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>

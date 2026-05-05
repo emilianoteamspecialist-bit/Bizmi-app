@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
-import FreelancerNavbar from "@/components/freelancer-navbar"
 
 export default function IdentityPage() {
   const [nin, setNin] = useState("")
@@ -197,8 +196,7 @@ export default function IdentityPage() {
 
   if (checkingExisting) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <FreelancerNavbar />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="max-w-2xl mx-auto p-6 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -207,13 +205,12 @@ export default function IdentityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <FreelancerNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       <div className="max-w-2xl mx-auto p-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Identity Verification</CardTitle>
+            <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">Identity Verification</CardTitle>
             <CardDescription>Please provide your National Identity Number (NIN) for verification</CardDescription>
 
             {existingVerification && (
@@ -288,12 +285,12 @@ export default function IdentityPage() {
                     disabled={isLoading}
                     className="text-lg tracking-wider"
                   />
-                  <p className="text-sm text-gray-600">Your NIN must be exactly 11 digits</p>
+                  <p className="text-sm text-slate-600">Your NIN must be exactly 11 digits</p>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400"
+                  className="w-full bg-primary hover:bg-primary-hover disabled:bg-gray-400"
                   disabled={isLoading || nin.length !== 11}
                 >
                   {isLoading ? (
@@ -308,7 +305,7 @@ export default function IdentityPage() {
               </form>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-600">
+                <p className="text-slate-600">
                   {existingVerification.status === "verified"
                     ? "Your identity has been successfully verified."
                     : "Your NIN has been submitted and is being processed."}

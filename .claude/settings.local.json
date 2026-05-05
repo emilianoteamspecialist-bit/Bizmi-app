@@ -7,7 +7,8 @@
       "Bash(cd:*)",
       "Bash(rm -rf .next)",
       "Bash(rmdir /s /q .next)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(bash *)"
     ]
   }
 }

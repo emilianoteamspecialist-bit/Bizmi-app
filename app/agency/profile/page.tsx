@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, Save, Edit, MapPin, Globe, Phone, Building2, User, Users, Camera } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import AgencyNavbar from "@/components/agency-navbar"
 
 export default function AgencyProfile() {
   const [profile, setProfile] = useState<any>(null)
@@ -132,7 +131,6 @@ export default function AgencyProfile() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 selection:bg-orange-100">
-      <AgencyNavbar />
       
       <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header Area */}
@@ -169,7 +167,7 @@ export default function AgencyProfile() {
                   <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-2xl h-14 px-8 font-bold border-slate-200">
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} disabled={saving} className="bg-orange-500 hover:bg-orange-600 rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-orange-500/25">
+                  <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary-hover rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-primary/25">
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
@@ -194,7 +192,7 @@ export default function AgencyProfile() {
                           </div>
                        </div>
                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-orange-50 rounded-xl"><Globe className="h-4 w-4 text-orange-500" /></div>
+                          <div className="p-2 bg-primary/10 rounded-xl"><Globe className="h-4 w-4 text-primary" /></div>
                           <div className="min-w-0 flex-1">
                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Website</p>
                              <p className="font-bold text-slate-900 truncate">{formData.website || "No website"}</p>
@@ -225,7 +223,7 @@ export default function AgencyProfile() {
                           <Label className="font-black uppercase tracking-widest text-[10px] text-slate-400">Agency Bio / About</Label>
                           <Textarea 
                             rows={6}
-                            className="rounded-[1.5rem] border-slate-200 focus:ring-orange-500 min-h-[160px] p-6 text-slate-600 font-medium leading-relaxed"
+                            className="rounded-[1.5rem] border-slate-200 focus:ring-primary min-h-[160px] p-6 text-slate-600 font-medium leading-relaxed"
                             placeholder="Describe your company, what you do, and what you look for in talent..."
                             value={formData.bio}
                             onChange={(e) => setFormData({...formData, bio: e.target.value})}
@@ -250,7 +248,7 @@ export default function AgencyProfile() {
                             <div className="space-y-2">
                                <Label className="font-bold text-slate-700">Company Size</Label>
                                <select 
-                                 className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                                 className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                                  value={formData.company_size}
                                  onChange={(e) => setFormData({...formData, company_size: e.target.value})}
                                >

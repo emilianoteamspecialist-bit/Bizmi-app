@@ -9,7 +9,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Wallet, TrendingUp, Clock, Trash2, CheckCircle, X, Mail, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import AgencyNavbar from "@/components/agency-navbar"
 
 interface WalletTransaction {
   id: string
@@ -214,8 +213,7 @@ export default function AgencyWalletPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <AgencyNavbar />
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -236,13 +234,12 @@ export default function AgencyWalletPage() {
   const hasMore = endIndex < fundedJobs.length
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AgencyNavbar />
+    <div className="min-h-screen bg-slate-50">
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Agency Wallet</h1>
-          <p className="text-gray-600 mt-2">Manage your wallet balance and fund freelancer jobs</p>
+          <h1 className="text-primaryxl font-bold text-slate-900">Agency Wallet</h1>
+          <p className="text-slate-600 mt-2">Manage your wallet balance and fund freelancer jobs</p>
         </div>
 
         {/* Wallet Balance Card */}
@@ -251,22 +248,22 @@ export default function AgencyWalletPage() {
           <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Wallet className="h-5 w-5 mr-2 text-orange-500" />
+                <Wallet className="h-5 w-5 mr-2 text-primary" />
                 Need Help?
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <p className="text-lg font-medium text-gray-900">Contact Support</p>
-                  <p className="text-gray-600 mt-1">Get help with your wallet or transactions</p>
+                  <p className="text-lg font-medium text-slate-900">Contact Support</p>
+                  <p className="text-slate-600 mt-1">Get help with your wallet or transactions</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={() =>
                       window.open("mailto:Bizimisocials12@gmail.com?subject=Wallet Support Request", "_blank")
                     }
-                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    className="bg-primary hover:bg-primary-hover text-white"
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Contact Us
@@ -274,7 +271,7 @@ export default function AgencyWalletPage() {
                   <Button
                     onClick={handleDepositClick}
                     variant="outline"
-                    className="border-orange-500 text-orange-500 hover:bg-orange-50 bg-transparent"
+                    className="border-primary text-primary hover:bg-primary/10 bg-transparent"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Make a Deposit
@@ -287,18 +284,18 @@ export default function AgencyWalletPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-orange-500" />
+                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
                 Quick Stats
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-gray-600">Total Funded Jobs</p>
-                  <p className="text-2xl font-bold text-gray-900">{fundedJobs.length}</p>
+                  <p className="text-sm text-slate-600">Total Funded Jobs</p>
+                  <p className="text-2xl font-bold text-slate-900">{fundedJobs.length}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Pending Verification</p>
+                  <p className="text-sm text-slate-600">Pending Verification</p>
                   <p className="text-2xl font-bold text-yellow-600">
                     {fundedJobs.filter((job) => job.status === "pending_verification").length}
                   </p>
@@ -311,15 +308,15 @@ export default function AgencyWalletPage() {
         {/* Funded Jobs Section */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-xl text-gray-900">Funded Jobs</CardTitle>
-            <p className="text-gray-600">Jobs you have funded for freelancers</p>
+            <CardTitle className="text-xl text-slate-900">Funded Jobs</CardTitle>
+            <p className="text-slate-600">Jobs you have funded for freelancers</p>
           </CardHeader>
           <CardContent>
             {fundedJobs.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Funded Jobs Yet</h3>
-                <p className="text-gray-500">Jobs you fund will appear here</p>
+                <Clock className="h-16 w-16 mx-auto mb-4 text-slate-400" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No Funded Jobs Yet</h3>
+                <p className="text-slate-500">Jobs you fund will appear here</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -342,10 +339,10 @@ export default function AgencyWalletPage() {
                       <TableRow key={job.id}>
                         <TableCell>{startIndex + index + 1}</TableCell>
                         <TableCell className="font-medium">{job.job_title}</TableCell>
-                        <TableCell className="font-semibold text-orange-600">{formatCurrency(job.amount)}</TableCell>
+                        <TableCell className="font-semibold text-primary">{formatCurrency(job.amount)}</TableCell>
                         <TableCell className="font-mono text-sm">{job.reference_id}</TableCell>
                         <TableCell>{getStatusBadge(job.status)}</TableCell>
-                        <TableCell className="text-sm text-gray-600">
+                        <TableCell className="text-sm text-slate-600">
                           {job.status === "failed" && job.failure_reason ? (
                             <span className="text-red-600">{job.failure_reason}</span>
                           ) : (
@@ -380,7 +377,7 @@ export default function AgencyWalletPage() {
                             </Button>
                           )}
                           {!job.job_confirmed && (
-                            <Badge className="bg-gray-100 text-gray-800">
+                            <Badge className="bg-slate-100 text-gray-800">
                               <Clock className="w-3 h-3 mr-1" />
                               Waiting
                             </Badge>
@@ -412,7 +409,7 @@ export default function AgencyWalletPage() {
               <div className="flex justify-center mt-4">
                 <Button
                   onClick={() => setCurrentPage((prev) => prev + 1)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  className="bg-primary hover:bg-primary-hover text-white"
                 >
                   Load More
                 </Button>

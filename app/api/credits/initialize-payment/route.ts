@@ -12,12 +12,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Validate minimum credits (10 credits = ₦500)
+    // Validate minimum credits (10 credits = ₦ 500)
     if (credits_amount < 10) {
       return NextResponse.json({ error: "Minimum purchase is 10 credits" }, { status: 400 })
     }
 
-    // Validate amount calculation (₦50 per credit)
+    // Validate amount calculation (₦ 50 per credit)
     const expectedAmount = credits_amount * 50
     if (amount !== expectedAmount) {
       return NextResponse.json({ error: "Invalid amount calculation" }, { status: 400 })

@@ -32,242 +32,13 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import AgencyNavbar from "@/components/agency-navbar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import PaymentModal from "@/components/payment-modal"
+import { getAgencyJobs, updateJobStatus } from "@/app/actions/jobs"
+import { getProfile, getAgencyImage, getFreelancerLogos } from "@/app/actions/user"
 
 // Available skills for selection
-const availableSkills = [
-  "Web Development",
-  "Mobile App Development",
-  "Frontend Development",
-  "Backend Development",
-  "Full-Stack Development",
-  "UI/UX Design",
-  "Software Development",
-  "Game Development",
-  "Blockchain Development",
-  "Smart Contracts",
-  "Cybersecurity",
-  "Cloud Computing",
-  "DevOps",
-  "Database Management",
-  "API Development",
-  "WordPress Development",
-  "Shopify Development",
-  "E-commerce Development",
-  "SaaS Development",
-  "AR/VR Development",
-  "Machine Learning",
-  "Artificial Intelligence",
-  "Data Science",
-  "Django",
-  "Express.js",
-  "MongoDB",
-  "MySQL",
-  "PostgreSQL",
-  "Firebase",
-  "AWS",
-  "Docker",
-  "Git",
-  "Figma",
-  "Adobe XD",
-  "Photoshop",
-  "Mobile Development",
-  "Flutter",
-  "React Native",
-  "Data Analysis",
-  "Python Programming",
-  "JavaScript Development",
-  "React.js Development",
-  "Node.js Development",
-  "PHP Development",
-  "Java Development",
-  "C++ Development",
-  "C# Development",
-  "Go (Golang) Development",
-  "Ruby on Rails Development",
-  "Kotlin Development",
-  "Swift (iOS) Development",
-  "Android Development",
-  "Flutter Development",
-  "Rust Development",
-  "Penetration Testing",
-  "Ethical Hacking",
-  "Bug Bounty Research",
-  "IoT Development",
-  "Embedded Systems",
-  "Firmware Development",
-  "Robotics Programming",
-  "MATLAB",
-  "Simulations & Modeling",
-  "QA Testing / Software Testing",
-  "Automation Scripting",
-  "Web Scraping",
-  "Chatbot Development",
-  "API Integration",
-  "CRM Development (Salesforce, HubSpot, Zoho)",
-  "ERP Development (SAP, Oracle, Odoo)",
-  "Game Design (Unity, Unreal Engine)",
-  "Database Optimization",
-  "Big Data Engineering",
-  "Cloud Architecture (AWS, Azure, GCP)",
-  "Server Management",
-  "Linux System Administration",
-  "Network Administration",
-  "IT Support",
-  "Graphic Design",
-  "Logo Design",
-  "Illustration",
-  "Print Design",
-  "Business Card Design",
-  "Flyer & Brochure Design",
-  "Poster Design",
-  "Infographic Design",
-  "UI/UX Wireframing",
-  "Product Design",
-  "Industrial Design",
-  "Fashion Design",
-  "Jewelry Design",
-  "Interior Design",
-  "Architecture Design",
-  "3D Modeling",
-  "3D Rendering",
-  "Animation (2D/3D)",
-  "Motion Graphics",
-  "Character Design",
-  "Video Editing",
-  "Photography",
-  "Photo Editing / Retouching",
-  "Image Manipulation",
-  "NFT Art",
-  "Storyboarding",
-  "T-shirt Design",
-  "Merchandise Design",
-  "Packaging Design",
-  "Label Design",
-  "Tattoo Design",
-  "Book Cover Design",
-  "Album Cover Design",
-  "Presentation Design (PowerPoint, Keynote)",
-  "Infographic Video Creation",
-  "Architectural Visualization",
-  "Landscape Design",
-  "Set Design (Theater/Film)",
-  "Story Illustration",
-  "Typography Design",
-  "Calligraphy",
-  "Comic / Manga Art",
-  "Caricature Drawing",
-  "Content Writing",
-  "Copywriting",
-  "Creative Writing",
-  "Technical Writing",
-  "Blog Writing",
-  "Ghostwriting",
-  "Script Writing (Film/Video)",
-  "Resume Writing",
-  "Cover Letter Writing",
-  "White Papers",
-  "Academic Writing",
-  "Research Writing",
-  "Proofreading & Editing",
-  "Grant Writing",
-  "eBook Writing",
-  "Speech Writing",
-  "Song Lyrics Writing",
-  "Product Descriptions",
-  "Ad Copywriting",
-  "Case Studies",
-  "UX Writing",
-  "Press Releases",
-  "Medical Writing",
-  "Legal Writing",
-  "Grant Proposals",
-  "Business Proposals",
-  "Newsletter Writing",
-  "Review Writing (Books, Products, Movies)",
-  "Social Media Captions",
-  "Digital Marketing",
-  "SEO (Search Engine Optimization)",
-  "SEM (Search Engine Marketing)",
-  "Social Media Marketing",
-  "Social Media Management",
-  "Influencer Marketing",
-  "Content Marketing",
-  "Email Marketing",
-  "Affiliate Marketing",
-  "PPC Campaigns (Google, Facebook Ads)",
-  "Marketing Strategy",
-  "Brand Strategy",
-  "Lead Generation",
-  "Sales Funnel Design",
-  "PR (Public Relations)",
-  "Voice Over",
-  "Music Production",
-  "Audio Editing",
-  "Podcast Editing",
-  "Sound Design",
-  "DJ Services",
-  "Singing / Songwriting",
-  "Acting",
-  "Dance Choreography",
-  "Comedy / Stand-up",
-  "Video Production",
-  "Storytelling",
-  "Modeling",
-  "Event Hosting",
-  "Translation (All Languages)",
-  "Transcription",
-  "Subtitling / Captioning",
-  "Language Tutoring",
-  "Localization Services",
-  "Sign Language",
-  "Online Tutoring",
-  "Test Preparation (SAT, IELTS, GRE, etc.)",
-  "Academic Coaching",
-  "Career Counseling",
-  "Life Coaching",
-  "Personal Development",
-  "E-learning Course Creation",
-  "Educational Content Writing",
-  "Corporate Training",
-  "Virtual Assistant",
-  "Data Entry",
-  "Customer Support",
-  "Technical Support",
-  "Project Management",
-  "Business Consulting",
-  "Financial Consulting",
-  "Accounting & Bookkeeping",
-  "HR & Recruiting",
-  "Market Research",
-  "Business Plan Writing",
-  "Grant Proposal Writing",
-  "Legal Writing",
-  "Contract Drafting",
-  "Intellectual Property",
-  "Business Law",
-  "Tax Law",
-  "Immigration Law",
-  "Paralegal Services",
-  "CAD Design",
-  "Civil Engineering",
-  "Mechanical Engineering",
-  "Electrical Engineering",
-  "Architecture",
-  "Structural Engineering",
-  "Product Engineering",
-  "Lifestyle Coaching",
-  "Fitness Training",
-  "Nutrition Coaching",
-  "Cooking Lessons",
-  "Travel Planning",
-  "Astrology Services",
-  "Gaming Coaching (eSports)",
-  "Online Therapy / Counseling",
-  "Others",
-]
+const availableSkills = ALL_SKILLS;
 
 export default function AgencyDashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -298,67 +69,32 @@ export default function AgencyDashboard() {
   const router = useRouter()
   const [profileImage, setProfileImage] = useState<string>("")
   const [profile, setProfile] = useState<any>(null)
-  const [messageInputOpenForProposalId, setMessageInputOpenForProposalId] = useState<string | null>(null)
-  const [currentMessageText, setCurrentMessageText] = useState<string>("")
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [selectedProposal, setSelectedProposal] = useState<any>(null)
-  const [isPosting, setIsPosting] = useState(false)
-  const [editingJobId, setEditingJobId] = useState<string | null>(null)
-  const [showJobForm, setShowJobForm] = useState(false)
 
   useEffect(() => {
     loadProfileAndJobs()
+    
+    // Check for post=true in URL
+    const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get("post") === "true") {
+      setShowPostJobModal(true)
+      // Clean up URL
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, "", newUrl)
+    }
   }, [])
 
   const loadProfileAndJobs = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        console.log("Current user ID:", user.id)
+      setLoading(true)
+      const [prof, img, jobs] = await Promise.all([
+        getProfile(),
+        getAgencyImage(),
+        getAgencyJobs()
+      ])
 
-        // Load profile data
-        const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-        if (profileData) {
-          setProfile(profileData)
-          console.log("Profile loaded:", profileData)
-        }
-
-        // Load profile image from agency_image table
-        const { data: imageData } = await supabase
-          .from("agency_image")
-          .select("image_data")
-          .eq("agency_id", user.id)
-          .single()
-        if (imageData) {
-          setProfileImage(imageData.image_data)
-        }
-
-        // Load agency jobs with proposal counts
-        const { data: jobsData, error: jobsError } = await supabase
-          .from("jobs")
-          .select(
-            `
-            *,
-            proposals(count)
-          `,
-          )
-          .eq("agency_id", user.id)
-          .order("created_at", { ascending: false })
-
-        if (jobsError) {
-          console.error("Error loading jobs:", jobsError)
-        } else {
-          console.log("Jobs loaded:", jobsData)
-          const transformedJobs =
-            jobsData?.map((job: any) => ({
-              ...job,
-              proposals: job.proposals?.[0]?.count || 0,
-            })) || []
-          setAgencyJobs(transformedJobs)
-        }
-      }
+      if (prof) setProfile(prof)
+      if (img) setProfileImage(img)
+      if (jobs) setAgencyJobs(jobs)
     } catch (error) {
       console.error("Error loading profile and jobs:", error)
     } finally {
@@ -368,23 +104,8 @@ export default function AgencyDashboard() {
 
   const loadFreelancerImages = async (freelancerIds: string[]) => {
     try {
-      const imagePromises = freelancerIds.map(async (freelancerId) => {
-        const { data: imageData } = await supabase
-          .from("freelancer_logos")
-          .select("logo_data")
-          .eq("freelancer_id", freelancerId)
-          .single()
-        return {
-          freelancerId,
-          imageData: imageData?.logo_data || "",
-        }
-      })
-      const results = await Promise.all(imagePromises)
-      const imageMap: { [key: string]: string } = {}
-      results.forEach(({ freelancerId, imageData }) => {
-        imageMap[freelancerId] = imageData
-      })
-      setFreelancerImages(imageMap)
+      const images = await getFreelancerLogos(freelancerIds)
+      setFreelancerImages(prev => ({ ...prev, ...images }))
     } catch (error) {
       console.error("Error loading freelancer images:", error)
     }
@@ -410,15 +131,7 @@ export default function AgencyDashboard() {
     } else {
       try {
         const newStatus = action === "pause" ? (job.status === "paused" ? "active" : "paused") : "closed"
-        const { error } = await supabase
-          .from("jobs")
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq("id", job.id)
-        if (error) {
-          console.error("Error updating job status:", error)
-          alert("Error updating job status")
-          return
-        }
+        await updateJobStatus(job.id, newStatus)
         loadProfileAndJobs()
         alert(`Job ${newStatus === "active" ? "resumed" : newStatus} successfully!`)
       } catch (error) {
@@ -643,16 +356,19 @@ export default function AgencyDashboard() {
     }
     try {
       // Check if a conversation already exists
-      const { data: existingConversation, error: conversationError } = await supabase
+      const { data: existingConversations, error: conversationError } = await supabase
         .from("conversations")
         .select("id")
         .or(
-          `and(participant1_id.eq.${agencyId},participant2_id.eq.${freelancerId}),and(participant1_id.eq.${freelancerId},participant2_id.eq.${agencyId})`,
+          `and(participant1_id.eq.${agencyId},participant2_id.eq.${freelancerId}),and(participant1_id.eq.${freelancerId},participant2_id.eq.${agencyId})`
         )
-        .single()
+        .limit(1)
 
-      let conversationId
-      if (conversationError && conversationError.code === "PGRST116") {
+      if (conversationError) throw conversationError
+
+      let conversationId = existingConversations?.[0]?.id
+
+      if (!conversationId) {
         // No rows found, create a new conversation
         const { data: newConversation, error: newConversationError } = await supabase
           .from("conversations")
@@ -666,12 +382,6 @@ export default function AgencyDashboard() {
           return
         }
         conversationId = newConversation.id
-      } else if (conversationError) {
-        console.error("Error fetching conversation:", conversationError)
-        alert("Error fetching conversation.")
-        return
-      } else {
-        conversationId = existingConversation.id
       }
 
       // Insert the message
@@ -712,9 +422,9 @@ export default function AgencyDashboard() {
       case "paused":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
       case "closed":
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-slate-100 text-gray-800 border-slate-200"
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-slate-100 text-gray-800 border-slate-200"
     }
   }
 
@@ -819,16 +529,11 @@ export default function AgencyDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <AgencyNavbar onPostJobClick={() => setShowPostJobModal(true)} />
-        <div className="max-w-7xl mx-auto py-8 px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-            </div>
+      <div className="min-h-screen bg-[#f8fafc]">
+        <div className="max-w-7xl mx-auto py-8 px-4 space-y-6">
+          <div className="h-40 bg-slate-200 rounded-[20px] animate-pulse"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-slate-200 rounded-[20px] animate-pulse"></div>)}
           </div>
         </div>
       </div>
@@ -836,291 +541,246 @@ export default function AgencyDashboard() {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 ${isDarkMode ? "dark" : ""}`}>
-      <AgencyNavbar onPostJobClick={() => setShowPostJobModal(true)} />
+    <div className="min-h-screen bg-[#f8fafc] pb-20 selection:bg-orange-100 selection:text-orange-900">
+      
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
-        {/* Welcome Card */}
-        <Card className="bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 text-white overflow-hidden relative mb-6">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
-          <CardContent className="p-4 sm:p-6 relative z-10">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex-1">
-                <h2 className="text-xl sm:text-2xl font-bold mb-2">
-                  Welcome back, {profile?.company_name || profile?.full_name || "Agency"}!
-                </h2>
-                <p className="text-orange-100 mb-4 text-sm sm:text-base">
-                  Manage your job posts and find the best talent
-                </p>
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+        
+        {/* Welcome Hero */}
+        <Card className="bg-slate-900 border-none rounded-[20px] overflow-hidden relative shadow-md">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+          
+          <CardContent className="p-8 sm:p-12 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left space-y-4">
+              <Badge className="bg-primary hover:bg-primary-hover text-white border-none px-4 py-1.5 rounded-full font-bold uppercase tracking-wider text-[10px]">
+                Agency Dashboard
+              </Badge>
+              <h2 className="text-primaryxl sm:text-5xl font-bold text-white leading-tight">
+                Welcome back, <br/>
+                <span className="text-primary">
+                  {profile?.company_name || profile?.full_name || "Agency"}
+                </span>
+              </h2>
+              <p className="text-slate-400 font-medium max-w-md">
+                Manage your job posts, review proposals, and hire the top 3% of talent.
+              </p>
+              <div className="pt-2">
                 <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  className="bg-primary hover:bg-primary-hover text-white rounded-xl px-8 font-bold h-12 shadow-sm"
                   onClick={() => setShowPostJobModal(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Post New Job
                 </Button>
               </div>
-              <div className="text-center sm:text-right">
-                <div className="text-2xl sm:text-3xl font-bold">{agencyJobs.length}</div>
-                <div className="text-orange-200 text-xs sm:text-sm">Total Jobs Posted</div>
-              </div>
+            </div>
+            
+            <div className="flex flex-col items-center md:items-end gap-2 bg-white/5 backdrop-blur-xl p-8 rounded-[20px] border border-white/10 min-w-[200px]">
+               <div className="text-5xl font-bold text-white">{agencyJobs.length}</div>
+               <div className="text-primary font-bold uppercase tracking-widest text-[10px]">Total Jobs Posted</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-          <Card className="border-l-4 border-l-green-500 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-muted-foreground text-sm font-medium truncate">Active Jobs</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{activeJobs}</p>
-                  <p className="text-xs sm:text-sm text-green-600 flex items-center mt-1">
-                    <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                    <span className="truncate">Currently hiring</span>
-                  </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-green-50 rounded-xl">
+                  <Play className="h-6 w-6 text-green-500" />
                 </div>
-                <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-full flex-shrink-0 ml-3">
-                  <Play className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                </div>
+                <div className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-bold uppercase tracking-wider">Hiring</div>
               </div>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Active Jobs</p>
+              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{activeJobs}</h3>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-yellow-500 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-muted-foreground text-sm font-medium truncate">Paused</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{pausedJobs}</p>
-                  <p className="text-xs sm:text-sm text-yellow-600 flex items-center mt-1">
-                    <Pause className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                    <span className="truncate">Temporarily paused</span>
-                  </p>
-                </div>
-                <div className="bg-yellow-100 dark:bg-yellow-900/20 p-3 rounded-full flex-shrink-0 ml-3">
-                  <Pause className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
+
+          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-yellow-50 rounded-xl">
+                  <Pause className="h-6 w-6 text-yellow-600" />
                 </div>
               </div>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Paused Jobs</p>
+              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{pausedJobs}</h3>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-gray-500 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-muted-foreground text-sm font-medium truncate">Closed</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{closedJobs}</p>
-                  <p className="text-xs sm:text-sm text-gray-600 flex items-center mt-1">
-                    <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                    <span className="truncate">Completed/Closed</span>
-                  </p>
-                </div>
-                <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-full flex-shrink-0 ml-3">
-                  <X className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+
+          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-slate-100 rounded-xl">
+                  <X className="h-6 w-6 text-slate-600" />
                 </div>
               </div>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Closed Jobs</p>
+              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{closedJobs}</h3>
             </CardContent>
           </Card>
-          <Card className="border-l-4 border-l-orange-500 bg-white dark:bg-gray-800 hover:shadow-md transition-shadow">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="min-w-0 flex-1">
-                  <p className="text-muted-foreground text-sm font-medium truncate">Total Proposals</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{totalProposals}</p>
-                  <p className="text-xs sm:text-sm text-orange-600 flex items-center mt-1">
-                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
-                    <span className="truncate">Across all jobs</span>
-                  </p>
+
+          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-primary/10 rounded-xl">
+                  <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
               </div>
+              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Total Proposals</p>
+              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{totalProposals}</h3>
             </CardContent>
           </Card>
         </div>
 
         {/* Job Posts Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <CardTitle className="text-lg sm:text-xl">Your Job Posts</CardTitle>
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[20px] border border-slate-200 shadow-sm">
+            <div className="space-y-1">
+               <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Your Job Posts</h3>
+               <p className="text-slate-400 text-sm font-medium">Manage listings and review freelancer applications.</p>
+            </div>
+            <Button
+              className="bg-primary hover:bg-primary-hover text-white rounded-xl font-bold h-11 px-6"
+              onClick={() => {
+                setShowPostJobModal(true)
+                setEditingJobId(null)
+                setJobFormData({
+                  title: "", description: "", budgetMin: "", budgetMax: "",
+                  duration: "", location: "", jobType: "", credits: 5, comments: "",
+                })
+                setSelectedSkills([])
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" /> Post New Job
+            </Button>
+          </div>
+
+          {agencyJobs.length === 0 ? (
+            <Card className="rounded-[20px] border-dashed border-2 border-slate-200 p-20 text-center bg-transparent shadow-none">
+              <FileText className="h-16 w-16 mx-auto mb-6 text-gray-200" />
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">No Jobs Posted Yet</h3>
+              <p className="text-slate-400 font-medium">Start finding top talent by posting your first opportunity.</p>
               <Button
-                className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
+                className="mt-8 rounded-xl px-8 bg-primary hover:bg-primary-hover font-bold h-12"
                 onClick={() => {
                   setShowPostJobModal(true)
                   setEditingJobId(null)
-                  setJobFormData({
-                    title: "",
-                    description: "",
-                    budgetMin: "",
-                    budgetMax: "",
-                    duration: "",
-                    location: "",
-                    jobType: "",
-                    credits: 5,
-                    comments: "",
-                  })
+                  setJobFormData({ title: "", description: "", budgetMin: "", budgetMax: "", duration: "", location: "", jobType: "", credits: 5, comments: "" })
                   setSelectedSkills([])
                 }}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Post New Job
+                <Plus className="h-4 w-4 mr-2" /> Post Your First Job
               </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {agencyJobs.length === 0 ? (
-              <div className="p-8 text-center">
-                <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No Jobs Posted Yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start by posting your first job to find talented freelancers
-                </p>
-                <Button
-                  className="bg-orange-500 hover:bg-orange-600"
-                  onClick={() => {
-                    setShowPostJobModal(true)
-                    setEditingJobId(null)
-                    setJobFormData({
-                      title: "",
-                      description: "",
-                      budgetMin: "",
-                      budgetMax: "",
-                      duration: "",
-                      location: "",
-                      jobType: "",
-                      credits: 5,
-                      comments: "",
-                    })
-                    setSelectedSkills([])
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Post Your First Job
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-0">
-                {agencyJobs.map((job, index) => (
-                  <div
-                    key={job.id}
-                    className={`p-4 sm:p-6 ${index !== agencyJobs.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      {/* Job Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
-                              {job.title}
-                            </h3>
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
-                              <span className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                {new Date(job.created_at).toLocaleDateString()}
-                              </span>
-                              <span className="flex items-center">
-                                <Eye className="h-4 w-4 mr-1" />0 views
-                              </span>
-                              <span className="flex items-center">
-                                <Users className="h-4 w-4 mr-1" />
-                                {job.proposals} proposals
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${getStatusColor(job.status)} flex items-center gap-1 text-xs`}>
-                              {getStatusIcon(job.status)}
-                              {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {agencyJobs.map((job) => (
+                <Card key={job.id} className="border border-slate-200 shadow-sm rounded-[20px] bg-white overflow-hidden transition-all hover:border-primary/30">
+                  <div className="p-8">
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+                      
+                      {/* Left side: Content */}
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <h3 className="text-2xl font-bold text-slate-900 line-clamp-1">{job.title}</h3>
+                          
+                          <div className="flex items-center gap-3">
+                            <Badge className={`${job.status === 'active' ? 'bg-green-100 text-green-700' : job.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-700'} border-none font-bold text-[10px] uppercase tracking-wider px-3 py-1`}>
+                              {job.status === 'active' && <Play className="h-3 w-3 mr-1" />}
+                              {job.status === 'paused' && <Pause className="h-3 w-3 mr-1" />}
+                              {job.status === 'closed' && <X className="h-3 w-3 mr-1" />}
+                              {job.status}
                             </Badge>
+                            
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                  <MoreHorizontal className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-50 border border-slate-200">
+                                  <MoreHorizontal className="h-5 w-5 text-slate-400" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleJobAction(job, "edit")}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
+                              <DropdownMenuContent align="end" className="w-48 rounded-[24px] p-2 shadow-md border-slate-200">
+                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer" onClick={() => handleJobAction(job, "edit")}>
+                                  <Edit className="mr-2 h-4 w-4 text-slate-400" /> Edit Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleJobAction(job, "pause")}>
-                                  <Pause className="mr-2 h-4 w-4" />
-                                  {job.status === "paused" ? "Resume" : "Pause"}
+                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer" onClick={() => handleJobAction(job, "pause")}>
+                                  <Pause className="mr-2 h-4 w-4 text-slate-400" /> {job.status === "paused" ? "Resume Job" : "Pause Job"}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleJobAction(job, "close")}>
-                                  <X className="mr-2 h-4 w-4" />
-                                  Close
+                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer" onClick={() => {
+                                  setSelectedJob(job);
+                                  setShowDisputeModal(true);
+                                }}>
+                                  <ShieldAlert className="mr-2 h-4 w-4 text-primary" /> Open Dispute
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50" onClick={() => handleJobAction(job, "close")}>
+                                  <X className="mr-2 h-4 w-4" /> Close Job
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
-                        {job.comments && (
-                          <div className="mb-3">
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Additional Comments</p>
-                            <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap line-clamp-3">
-                              {job.comments}
-                            </p>
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {job.skills?.slice(0, 4).map((skill: string, skillIndex: number) => (
-                            <Badge key={skillIndex} variant="outline" className="text-xs">
-                              {skill}
-                            </Badge>
+
+                        <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
+                          <span className="flex items-center"><Calendar className="h-4 w-4 mr-1.5" /> {new Date(job.created_at).toLocaleDateString()}</span>
+                          <span className="flex items-center text-primary"><Users className="h-4 w-4 mr-1.5" /> {job.proposals} Proposals</span>
+                        </div>
+
+                        <p className="text-sm font-medium text-slate-500 line-clamp-2 leading-relaxed max-w-4xl">
+                          {job.description}
+                        </p>
+
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {job.skills?.slice(0, 4).map((skill: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-slate-50 text-slate-600 border-none font-bold text-[10px] rounded-lg">{skill}</Badge>
                           ))}
                           {job.skills?.length > 4 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{job.skills.length - 4} more
-                            </Badge>
+                            <Badge variant="secondary" className="bg-slate-50 text-slate-400 border-none font-bold text-[10px] rounded-lg">+{job.skills.length - 4} more</Badge>
                           )}
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
-                          <div className="flex items-center">
-                            <span className="font-semibold text-orange-600 truncate">
-                              ₦{job.budget_min?.toLocaleString()} - ₦{job.budget_max?.toLocaleString()}
-                            </span>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-50">
+                          <div className="space-y-1">
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Budget</p>
+                             <p className="text-sm font-bold text-slate-900 truncate">₦ {job.budget_min?.toLocaleString()} - ₦ {job.budget_max?.toLocaleString()}</p>
                           </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 text-muted-foreground mr-1 flex-shrink-0" />
-                            <span className="truncate">{job.duration}</span>
+                          <div className="space-y-1">
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Duration</p>
+                             <p className="text-sm font-bold text-slate-900 truncate flex items-center"><Clock className="h-3 w-3 mr-1 text-slate-400"/>{job.duration}</p>
                           </div>
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 text-muted-foreground mr-1 flex-shrink-0" />
-                            <span className="truncate">{job.location}</span>
+                          <div className="space-y-1">
+                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</p>
+                             <p className="text-sm font-bold text-slate-900 truncate flex items-center"><MapPin className="h-3 w-3 mr-1 text-slate-400"/>{job.location}</p>
                           </div>
                         </div>
                       </div>
-                      {/* Action Button */}
-                      <div className="flex-shrink-0 flex flex-col gap-2">
+
+                      {/* Right side: Action Buttons */}
+                      <div className="flex-shrink-0 flex flex-col gap-3 w-full lg:w-48 pt-4 lg:pt-0 lg:border-l lg:border-gray-50 lg:pl-6">
                         <Button
                           variant="outline"
-                          className="w-full sm:w-auto bg-transparent border-orange-500 text-orange-500 hover:bg-orange-50"
+                          className="w-full h-12 rounded-xl bg-white border-orange-200 text-primary hover:bg-primary/10 hover:text-primary font-bold"
                           onClick={() => handleViewProposals(job)}
                         >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Proposals ({job.proposals})
+                          <Eye className="h-4 w-4 mr-2" /> Review Bids
                         </Button>
                         {(job.status === "active" || job.status === "closed") && (
                           <Button
-                            className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white"
+                            className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-sm"
                             onClick={() => router.push(`/workspace/${job.id}`)}
                           >
-                            <FileText className="h-4 w-4 mr-2" />
-                            Workspace
+                            <FileText className="h-4 w-4 mr-2" /> Workspace
                           </Button>
                         )}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Proposals Modal */}
@@ -1162,7 +822,7 @@ export default function AgencyDashboard() {
             <CardContent>
               {loadingProposals ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin inline-block w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+                  <div className="animate-spin inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                   <p className="text-muted-foreground mt-4">Loading proposals...</p>
                 </div>
               ) : selectedJobProposals.length === 0 ? (
@@ -1182,7 +842,7 @@ export default function AgencyDashboard() {
               ) : (
                 <div className="space-y-6">
                   {filteredProposals.map((proposal) => (
-                    <div key={proposal.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                    <div key={proposal.id} className="border border-slate-200 dark:border-gray-700 rounded-lg p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-12 w-12">
@@ -1228,7 +888,7 @@ export default function AgencyDashboard() {
                           </div>
                           <div>
                             <h5 className="font-medium mb-1">Budget</h5>
-                            <p className="text-sm font-semibold text-orange-600">
+                            <p className="text-sm font-semibold text-primary">
                               {proposal.budget || "Not specified"}
                             </p>
                           </div>
@@ -1264,7 +924,7 @@ export default function AgencyDashboard() {
                             {!messageInputOpenForProposalId || messageInputOpenForProposalId !== proposal.id ? (
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <Button
-                                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                                  className="flex-1 bg-primary hover:bg-primary-hover"
                                   onClick={() => {
                                     setMessageInputOpenForProposalId(proposal.id)
                                     setCurrentMessageText("")
@@ -1273,7 +933,7 @@ export default function AgencyDashboard() {
                                   Message Freelancer
                                 </Button>
                                 <Button
-                                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                                  className="flex-1 bg-primary hover:bg-primary-hover"
                                   onClick={() => {
                                     setSelectedProposal(proposal)
                                     setShowPaymentModal(true)
@@ -1302,7 +962,7 @@ export default function AgencyDashboard() {
                                     Cancel
                                   </Button>
                                   <Button
-                                    className="bg-orange-500 hover:bg-orange-600"
+                                    className="bg-primary hover:bg-primary-hover"
                                     onClick={() =>
                                       handleSendMessage(proposal.freelancer_id, profile?.id, currentMessageText)
                                     }
@@ -1352,12 +1012,12 @@ export default function AgencyDashboard() {
       {/* Post Job Modal */}
       {showPostJobModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
-          <div className="fixed right-0 top-0 h-full w-full max-w-sm sm:max-w-md lg:max-w-2xl bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+          <div className="fixed right-0 top-0 h-full w-full max-w-sm sm:max-w-md lg:max-w-2xl bg-white dark:bg-slate-800 shadow-xl transform transition-transform duration-300 ease-in-out">
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-gray-700">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
                     {editingJobId ? "Edit Job Post" : "Post a Job"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
@@ -1396,15 +1056,15 @@ export default function AgencyDashboard() {
                 </Button>
               </div>
               {/* Progress Bar */}
-              <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-3 border-b border-slate-200 dark:border-gray-700">
                 <div className="flex items-center space-x-2">
                   {[1, 2, 3, 4].map((step) => (
                     <div key={step} className="flex items-center">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                           step <= postJobStep
-                            ? "bg-orange-500 text-white"
-                            : "bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
+                            ? "bg-primary text-white"
+                            : "bg-slate-200 dark:bg-gray-600 text-slate-500 dark:text-slate-400"
                         }`}
                       >
                         {step}
@@ -1412,7 +1072,7 @@ export default function AgencyDashboard() {
                       {step < 4 && (
                         <div
                           className={`w-12 h-1 mx-2 ${
-                            step < postJobStep ? "bg-orange-500" : "bg-gray-200 dark:bg-gray-600"
+                            step < postJobStep ? "bg-primary" : "bg-slate-200 dark:bg-gray-600"
                           }`}
                         />
                       )}
@@ -1426,7 +1086,7 @@ export default function AgencyDashboard() {
                 {postJobStep === 1 && (
                   <div className="space-y-6">
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                         Job Title *
                       </Label>
                       <Input
@@ -1438,7 +1098,7 @@ export default function AgencyDashboard() {
                       />
                     </div>
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                         Job Description *
                       </Label>
                       <Textarea
@@ -1453,7 +1113,7 @@ export default function AgencyDashboard() {
                       </p>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">Duration *</Label>
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">Duration *</Label>
                       <Input
                         type="text"
                         placeholder="e.g. 2 weeks, 1 month, 3 months"
@@ -1468,15 +1128,15 @@ export default function AgencyDashboard() {
                 {postJobStep === 2 && (
                   <div className="space-y-6">
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                         Required Skills *
                       </Label>
-                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-80 overflow-y-auto bg-white dark:bg-gray-700">
+                      <div className="border border-slate-300 dark:border-gray-600 rounded-lg p-4 max-h-80 overflow-y-auto bg-white dark:bg-gray-700">
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                           {availableSkills.map((skill) => (
                             <label
                               key={skill}
-                              className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-600"
+                              className="flex items-center space-x-2 cursor-pointer p-2 rounded hover:bg-slate-50 dark:hover:bg-gray-600"
                             >
                               <input
                                 type="checkbox"
@@ -1488,9 +1148,9 @@ export default function AgencyDashboard() {
                                     removeSkill(skill)
                                   }
                                 }}
-                                className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                                className="rounded border-slate-300 text-primary focus:ring-primary"
                               />
-                              <span className="text-sm text-gray-900 dark:text-white">{skill}</span>
+                              <span className="text-sm text-slate-900 dark:text-white">{skill}</span>
                             </label>
                           ))}
                         </div>
@@ -1498,7 +1158,7 @@ export default function AgencyDashboard() {
                     </div>
                     {selectedSkills.length > 0 && (
                       <div className="mt-4">
-                        <p className="text-sm font-medium mb-3 text-gray-900 dark:text-white">
+                        <p className="text-sm font-medium mb-3 text-slate-900 dark:text-white">
                           Selected Skills ({selectedSkills.length}):
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -1506,7 +1166,7 @@ export default function AgencyDashboard() {
                             <Badge
                               key={skill}
                               variant="secondary"
-                              className="bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                              className="bg-orange-100 text-primary dark:bg-orange-900/20 dark:text-orange-300"
                             >
                               {skill}
                               <button
@@ -1521,7 +1181,7 @@ export default function AgencyDashboard() {
                       </div>
                     )}
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                         Credits Required *
                       </Label>
                       <Select
@@ -1548,7 +1208,7 @@ export default function AgencyDashboard() {
                 {postJobStep === 3 && (
                   <div className="space-y-6">
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">Job Type *</Label>
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">Job Type *</Label>
                       <Select
                         value={jobFormData.jobType}
                         onValueChange={(value) => setJobFormData({ ...jobFormData, jobType: value })}
@@ -1564,7 +1224,7 @@ export default function AgencyDashboard() {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">Location *</Label>
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">Location *</Label>
                       <Input
                         type="text"
                         placeholder="e.g. Lagos, Nigeria"
@@ -1575,7 +1235,7 @@ export default function AgencyDashboard() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                        <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                           Min Budget (₦) *
                         </Label>
                         <Input
@@ -1587,7 +1247,7 @@ export default function AgencyDashboard() {
                         />
                       </div>
                       <div>
-                        <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                        <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                           Max Budget (₦) *
                         </Label>
                         <Input
@@ -1600,7 +1260,7 @@ export default function AgencyDashboard() {
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium mb-3 block text-gray-900 dark:text-white">
+                      <Label className="text-sm font-medium mb-3 block text-slate-900 dark:text-white">
                         Additional Comments (Optional)
                       </Label>
                       <Textarea
@@ -1616,16 +1276,16 @@ export default function AgencyDashboard() {
                 {/* Step 4: Review */}
                 {postJobStep === 4 && (
                   <div className="space-y-6">
-                    <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <h4 className="font-semibold mb-4 text-gray-900 dark:text-white">Job Preview</h4>
+                    <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-gray-700">
+                      <h4 className="font-semibold mb-4 text-slate-900 dark:text-white">Job Preview</h4>
                       <div className="space-y-4">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-1">Title</p>
-                          <p className="font-semibold text-gray-900 dark:text-white">{jobFormData.title}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white">{jobFormData.title}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
-                          <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                          <p className="text-sm text-slate-900 dark:text-white whitespace-pre-wrap">
                             {jobFormData.description}
                           </p>
                         </div>
@@ -1644,51 +1304,50 @@ export default function AgencyDashboard() {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Budget Range</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              ₦{Number.parseInt(jobFormData.budgetMin || "0").toLocaleString()} - ₦
-                              {Number.parseInt(jobFormData.budgetMax || "0").toLocaleString()}
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              ₦ {Number.parseInt(jobFormData.budgetMin || "0").toLocaleString()} - ₦ {Number.parseInt(jobFormData.budgetMax || "0").toLocaleString()}
                             </p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Duration</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{jobFormData.duration}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{jobFormData.duration}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Job Type</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{jobFormData.jobType}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{jobFormData.jobType}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Location</p>
-                            <p className="font-semibold text-gray-900 dark:text-white">{jobFormData.location}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{jobFormData.location}</p>
                           </div>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-1">Credits Required</p>
-                          <p className="font-semibold flex items-center text-gray-900 dark:text-white">
-                            <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                          <p className="font-semibold flex items-center text-slate-900 dark:text-white">
+                            <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
                             {jobFormData.credits} Credits
                           </p>
                         </div>
                         {jobFormData.comments && (
                           <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Additional Comments</p>
-                            <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
+                            <p className="text-sm text-slate-900 dark:text-white whitespace-pre-wrap">
                               {jobFormData.comments}
                             </p>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="bg-primary/10 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
                       <div className="flex items-start space-x-3">
                         <div className="bg-orange-100 dark:bg-orange-900/40 p-2 rounded-full">
-                          <Eye className="h-4 w-4 text-orange-600" />
+                          <Eye className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <h5 className="font-medium text-orange-800 dark:text-orange-200">Ready to Post?</h5>
-                          <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                          <p className="text-sm text-primary dark:text-orange-300 mt-1">
                             Your job will be visible to all freelancers on the platform. You'll start receiving
                             proposals shortly after posting.
                           </p>
@@ -1699,7 +1358,7 @@ export default function AgencyDashboard() {
                 )}
               </div>
               {/* Footer */}
-              <div className="border-t border-gray-200 dark:border-gray-700 p-6">
+              <div className="border-t border-slate-200 dark:border-gray-700 p-6">
                 <div className="flex justify-between">
                   <Button
                     variant="outline"
@@ -1729,7 +1388,7 @@ export default function AgencyDashboard() {
                     {postJobStep === 1 ? "Cancel" : "Back"}
                   </Button>
                   <Button
-                    className="bg-orange-500 hover:bg-orange-600"
+                    className="bg-primary hover:bg-primary-hover"
                     onClick={() => {
                       if (postJobStep < 4) {
                         setPostJobStep(postJobStep + 1)
@@ -1776,7 +1435,7 @@ export default function AgencyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
                   <h4 className="font-semibold text-sm mb-1">{selectedJob.title}</h4>
                   <p className="text-xs text-muted-foreground">{selectedJob.proposals} proposals received</p>
                 </div>
@@ -1800,7 +1459,7 @@ export default function AgencyDashboard() {
                   </Button>
                   <Button
                     className={`flex-1 ${
-                      actionType === "close" ? "bg-red-500 hover:bg-red-600" : "bg-orange-500 hover:bg-orange-600"
+                      actionType === "close" ? "bg-red-500 hover:bg-red-600" : "bg-primary hover:bg-primary-hover"
                     }`}
                     onClick={() => {
                       if (actionType === "edit") {
@@ -1828,7 +1487,7 @@ export default function AgencyDashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <ShieldAlert className="text-orange-500 h-5 w-5" />
+                  <ShieldAlert className="text-primary h-5 w-5" />
                   Open a Dispute
                 </CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => setShowDisputeModal(false)}>
@@ -1838,7 +1497,7 @@ export default function AgencyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                <div className="bg-primary/10 p-3 rounded-lg border border-orange-100">
                   <p className="text-xs text-orange-800">
                     Opening a dispute will freeze the escrow funds for <strong>{selectedJob.title}</strong>. 
                     You and the freelancer will have 3-7 days to resolve it in the Dispute Room before an admin steps in.
@@ -1880,7 +1539,7 @@ export default function AgencyDashboard() {
                     Cancel
                   </Button>
                   <Button
-                    className="flex-1 bg-orange-500 hover:bg-orange-600"
+                    className="flex-1 bg-primary hover:bg-primary-hover"
                     onClick={handleCreateDispute}
                   >
                     Open Dispute

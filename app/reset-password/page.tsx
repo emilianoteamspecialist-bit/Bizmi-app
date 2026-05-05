@@ -101,48 +101,48 @@ export default function ResetPasswordPage() {
 
   if (!isValidSession && !message) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
         <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-          <span className="text-gray-600">Verifying reset link...</span>
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="text-slate-600 font-medium">Verifying reset link...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-md">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center space-y-2">
-            <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-              <Lock className="h-6 w-6 text-orange-500" />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8 selection:bg-primary/20 selection:text-primary">
+      <div className="w-full max-w-[440px]">
+        <Card className="border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-white">
+          <CardHeader className="text-center space-y-2 pt-10 px-8">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-2">
+              <Lock className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Reset Your Password</CardTitle>
-            <CardDescription className="text-gray-600">Enter your new password below</CardDescription>
+            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Reset Password</CardTitle>
+            <CardDescription className="text-slate-500 font-medium">Create a new secure password for your account</CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
+          <CardContent className="px-8 pb-10 space-y-6">
             {!isValidSession ? (
-              <div className="text-center space-y-4">
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="text-center space-y-6">
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
                   <div className="flex items-center justify-center space-x-2">
                     <AlertCircle className="h-5 w-5 text-red-500" />
-                    <span className="text-red-700 text-sm">{message}</span>
+                    <span className="text-red-700 font-bold text-sm">{message}</span>
                   </div>
                 </div>
                 <Button
                   onClick={() => router.push("/login")}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  className="w-full h-12 rounded-xl text-base"
                 >
                   Back to Login
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleResetPassword} className="space-y-4">
+              <form onSubmit={handleResetPassword} className="space-y-6">
                 {/* New Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-700 font-medium">
+                  <Label htmlFor="password" className="text-sm font-bold text-slate-700">
                     New Password
                   </Label>
                   <div className="relative">
@@ -154,20 +154,20 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       disabled={isLoading}
-                      className="pr-10 focus:ring-orange-500 focus:border-orange-500"
+                      className="pr-12 h-12 border-slate-200 rounded-xl"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
+                        <EyeOff className="h-4 w-4" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
+                        <Eye className="h-4 w-4" />
                       )}
                     </Button>
                   </div>
@@ -175,7 +175,7 @@ export default function ResetPasswordPage() {
 
                 {/* Confirm Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">
+                  <Label htmlFor="confirmPassword" className="text-sm font-bold text-slate-700">
                     Confirm New Password
                   </Label>
                   <div className="relative">
@@ -187,30 +187,30 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                       disabled={isLoading}
-                      className="pr-10 focus:ring-orange-500 focus:border-orange-500"
+                      className="pr-12 h-12 border-slate-200 rounded-xl"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-transparent"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       disabled={isLoading}
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
+                        <EyeOff className="h-4 w-4" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
+                        <Eye className="h-4 w-4" />
                       )}
                     </Button>
                   </div>
                 </div>
 
                 {/* Password Requirements */}
-                <div className="text-xs text-gray-500 space-y-1">
-                  <p>Password must contain:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>At least 8 characters</li>
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500 font-medium space-y-2">
+                  <p className="font-bold text-slate-700">Password Requirements:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-1">
+                    <li>At least 8 characters long</li>
                     <li>One uppercase letter</li>
                     <li>One lowercase letter</li>
                     <li>One number</li>
@@ -220,16 +220,16 @@ export default function ResetPasswordPage() {
                 {/* Message Display */}
                 {message && (
                   <div
-                    className={`p-3 rounded-lg text-sm flex items-center space-x-2 ${
+                    className={`p-4 rounded-2xl text-sm font-bold flex items-center space-x-2 ${
                       isSuccess
-                        ? "bg-green-50 text-green-700 border border-green-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
+                        ? "bg-green-50 text-green-700 border border-green-100"
+                        : "bg-red-50 text-red-700 border border-red-100"
                     }`}
                   >
                     {isSuccess ? (
-                      <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                      <CheckCircle className="h-5 w-5 flex-shrink-0" />
                     ) : (
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <AlertCircle className="h-5 w-5 flex-shrink-0" />
                     )}
                     <span>{message}</span>
                   </div>
@@ -238,13 +238,13 @@ export default function ResetPasswordPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5"
+                  className="w-full h-12 rounded-xl text-base shadow-lg shadow-primary/25"
                   disabled={isLoading || !password || !confirmPassword}
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Updating Password...
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Updating...
                     </>
                   ) : (
                     "Update Password"
@@ -252,12 +252,12 @@ export default function ResetPasswordPage() {
                 </Button>
 
                 {/* Back to Login Link */}
-                <div className="text-center">
+                <div className="text-center pt-2">
                   <Button
                     type="button"
                     variant="link"
                     onClick={() => router.push("/login")}
-                    className="text-orange-500 hover:text-orange-600 text-sm"
+                    className="text-primary font-bold hover:underline underline-offset-4"
                     disabled={isLoading}
                   >
                     Back to Login

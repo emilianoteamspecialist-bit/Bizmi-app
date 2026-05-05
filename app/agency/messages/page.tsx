@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, MessageSquare, User, Search, ArrowLeft, MoreVertical, Upload, File, ImageIcon, X } from "lucide-react" // Re-added MoreVertical
+import { Send, MessageSquare, User, ShieldCheck, Zap, Search, ArrowLeft, MoreVertical, Upload, File, ImageIcon, X } from "lucide-react" // Re-added MoreVertical
 import { supabase } from "@/lib/supabase"
-import AgencyNavbar from "@/components/agency-navbar"
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export default function AgencyMessagesPage() {
@@ -359,7 +359,7 @@ export default function AgencyMessagesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <AgencyNavbar />
+        <FreelancerNavbar />
         <div className="max-w-7xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -376,20 +376,20 @@ export default function AgencyMessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <AgencyNavbar />
+      <FreelancerNavbar />
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Conversations List */}
         <Card
           className={`w-full flex-shrink-0 border-r rounded-none flex flex-col overflow-y-auto
           ${selectedConversation && !showConversationList ? "hidden sm:flex" : "flex"}
-          sm:w-80 md:w-96 lg:w-[400px]`} // Responsive width
+          sm:w-80 md:w-96 lg:w-[400px]`}
         >
           <CardHeader className="border-b">
             <div className="flex items-center gap-2 mb-2">
               <MessageSquare className="h-6 w-6 text-orange-500" />
               <CardTitle className="text-xl font-bold">Messages</CardTitle>
             </div>
-            <p className="text-sm text-muted-foreground">Chat with your freelancers</p>
+            <p className="text-sm text-muted-foreground">Chat with your agencies</p>
             <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -422,17 +422,24 @@ export default function AgencyMessagesPage() {
                       }`}
                       onClick={() => {
                         setSelectedConversation(conversation)
-                        setShowConversationList(false) // Hide list on small screens when conversation is selected
-                        console.log("Selected conversation:", conversation) // Debugging log
+                        setShowConversationList(false)
+                        console.log("Selected conversation:", conversation)
                       }}
                     >
                       <Avatar className="h-12 w-12">
-                        <AvatarImage
-                          src={participant?.avatar_url || "/placeholder.svg?height=48&width=48&query=user profile"}
-                          alt={participant?.full_name || "User"}
-                        />
-                        <AvatarFallback>
-                          {participant?.full_name?.charAt(0) || <User className="h-6 w-6" />}
+                        {/* Only render AvatarImage if it's NOT a fallback (i.e., there's an actual image URL) */}
+                        {!participant?.is_fallback && (
+                          <AvatarImage
+                            src={participant?.avatar_url || "/placeholder.svg?height=48&width=48&query=user profile"}
+                            alt={participant?.full_name || "User"}
+                          />
+                        )}
+                        <AvatarFallback
+                          className={
+                            participant?.is_fallback ? "bg-orange-500 text-white flex items-center justify-center" : ""
+                          }
+                        >
+                          {participant?.fallback_char || <User className="h-6 w-6" />}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
@@ -447,8 +454,7 @@ export default function AgencyMessagesPage() {
                           {/* <span className="truncate">React</span> */}
                         </div>
                         <p className="text-sm text-muted-foreground truncate mt-0.5">
-                          {/* Display a snippet of the last message if available */}
-                          {conversation.last_message_at ? "Freelancer" : "No messages yet"}
+                          {conversation.last_message_at ? "Bzimi-agency" : "No messages yet"}
                         </p>
                       </div>
                     </div>
@@ -458,11 +464,10 @@ export default function AgencyMessagesPage() {
             </ScrollArea>
           </CardContent>
         </Card>
-
         {/* Right Panel - Message Thread */}
         <div
           className={`flex-1 flex flex-col bg-white dark:bg-gray-800
-          ${selectedConversation ? "flex" : "hidden"} sm:flex`} // Responsive visibility
+          ${selectedConversation ? "flex" : "hidden"} sm:flex`}
         >
           {/* Chat Header */}
           <CardHeader className="border-b flex-shrink-0 py-3 px-4 sm:py-4 sm:px-6">
@@ -472,26 +477,36 @@ export default function AgencyMessagesPage() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="sm:hidden" // Show only on small screens
+                    className="sm:hidden"
                     onClick={() => setShowConversationList(true)}
                   >
                     <ArrowLeft className="h-5 w-5" />
                     <span className="sr-only">Back to conversations</span>
                   </Button>
                   <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={selectedParticipant?.avatar_url || "/placeholder.svg?height=40&width=40&query=user profile"}
-                      alt={selectedParticipant?.full_name || "User"}
-                    />
-                    <AvatarFallback>
-                      {selectedParticipant?.full_name?.charAt(0) || <User className="h-5 w-5" />}
+                    {/* Only render AvatarImage if it's NOT a fallback */}
+                    {!selectedParticipant?.is_fallback && (
+                      <AvatarImage
+                        src={
+                          selectedParticipant?.avatar_url || "/placeholder.svg?height=40&width=40&query=user profile"
+                        }
+                        alt={selectedParticipant?.full_name || "User"}
+                      />
+                    )}
+                    <AvatarFallback
+                      className={
+                        selectedParticipant?.is_fallback
+                          ? "bg-orange-500 text-white flex items-center justify-center"
+                          : ""
+                      }
+                    >
+                      {selectedParticipant?.fallback_char || <User className="h-5 w-5" />}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle className="text-lg font-semibold">
                       {selectedParticipant?.full_name || "Unknown User"}
                     </CardTitle>
-                    {/* Placeholder for rating and skill */}
                     <div className="flex items-center text-sm text-muted-foreground mt-0.5">
                       <span className="text-yellow-500 mr-1">★ 4.8</span>
                       <span className="bg-green-500 w-2 h-2 rounded-full mr-1"></span>
@@ -506,7 +521,7 @@ export default function AgencyMessagesPage() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto max-w-xs text-sm p-2">
-                    {"Always engage with freelancer on google meets for authenticity of job done"}
+                    {"Always engage with agency on Google meets"}
                   </PopoverContent>
                 </Popover>
               </div>
@@ -514,7 +529,6 @@ export default function AgencyMessagesPage() {
               <CardTitle className="text-lg text-muted-foreground">No conversation selected</CardTitle>
             )}
           </CardHeader>
-
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
@@ -573,10 +587,9 @@ export default function AgencyMessagesPage() {
                   </div>
                 ))
               )}
-              <div ref={messagesEndRef} /> {/* Scroll target */}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
-
           {/* Message Input Area (Always visible) */}
           <div className="p-4 border-t bg-white dark:bg-gray-800 flex-shrink-0">
             {selectedFile && (

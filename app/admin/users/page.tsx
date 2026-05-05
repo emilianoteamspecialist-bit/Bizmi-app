@@ -92,16 +92,16 @@ export default function AdminUsers() {
                 <div className="flex items-center gap-3">
                   <div>
                     <h3 className="font-medium">{user.full_name || "No name"}</h3>
-                    <p className="text-sm text-gray-600">{user.email}</p>
+                    <p className="text-sm text-slate-600">{user.email}</p>
                   </div>
-                  <Badge variant="outline" className="border-orange-200 text-orange-700">
+                  <Badge variant="outline" className="border-orange-200 text-primary">
                     {user.account_type}
                   </Badge>
                 </div>
-                <div className="mt-2 text-sm text-gray-500">
+                <div className="mt-2 text-sm text-slate-500">
                   Joined: {formatDate(user.created_at)}
                   {type === "agency" && user.wallet_balance !== undefined && (
-                    <span className="ml-4">Wallet: ₦{user.wallet_balance.toLocaleString()}</span>
+                    <span className="ml-4">Wallet: ₦ {user.wallet_balance.toLocaleString()}</span>
                   )}
                 </div>
               </div>
@@ -119,13 +119,13 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       ))}
-      {users.length === 0 && <div className="text-center py-8 text-gray-500">No {type}s found</div>}
+      {users.length === 0 && <div className="text-center py-8 text-slate-500">No {type}s found</div>}
     </div>
   )
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-slate-50">
         <AdminSidebar />
         <div className="lg:pl-64">
           <div className="p-4 lg:p-6">
@@ -137,31 +137,31 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <AdminSidebar />
       <div className="lg:pl-64">
         <div className="p-4 lg:p-6">
           <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600">Manage agencies and freelancers</p>
+            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">User Management</h1>
+            <p className="text-slate-600">Manage agencies and freelancers</p>
           </div>
 
           <Card>
-            <CardHeader className="bg-orange-50 border-b">
-              <CardTitle className="text-orange-700">All Users</CardTitle>
+            <CardHeader className="bg-primary/10 border-b">
+              <CardTitle className="text-primary">All Users</CardTitle>
             </CardHeader>
             <CardContent className="p-4 lg:p-6">
               <Tabs defaultValue="agencies" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-orange-100">
                   <TabsTrigger
                     value="agencies"
-                    className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
                   >
                     Agencies ({agencies.length})
                   </TabsTrigger>
                   <TabsTrigger
                     value="freelancers"
-                    className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
                   >
                     Freelancers ({freelancers.length})
                   </TabsTrigger>

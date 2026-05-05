@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import AgencyNavbar from "@/components/agency-navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -166,8 +165,7 @@ export default function AgencySettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <AgencyNavbar />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="max-w-4xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -183,12 +181,11 @@ export default function AgencySettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AgencyNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+          <h1 className="text-primaryxl font-bold text-slate-900 dark:text-white">Settings</h1>
           <p className="text-muted-foreground">Manage your account settings and preferences</p>
         </div>
 
@@ -293,7 +290,7 @@ export default function AgencySettings() {
                   </div>
                 </div>
 
-                <Button onClick={handleSaveAccount} disabled={saving} className="bg-orange-500 hover:bg-orange-600">
+                <Button onClick={handleSaveAccount} disabled={saving} className="bg-primary hover:bg-primary-hover">
                   <Save className="h-4 w-4 mr-2" />
                   {saving ? "Saving..." : "Update Account"}
                 </Button>
@@ -359,7 +356,7 @@ export default function AgencySettings() {
                 <Button
                   onClick={handleSaveNotifications}
                   disabled={saving}
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="bg-primary hover:bg-primary-hover"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {saving ? "Saving..." : "Save Notifications"}
@@ -412,7 +409,7 @@ export default function AgencySettings() {
                   />
                 </div>
 
-                <Button disabled={saving} className="bg-orange-500 hover:bg-orange-600">
+                <Button disabled={saving} className="bg-primary hover:bg-primary-hover">
                   <Save className="h-4 w-4 mr-2" />
                   Save Privacy Settings
                 </Button>

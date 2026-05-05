@@ -46,31 +46,31 @@ export default function TransactionHistory() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <div className="max-h-[400px] overflow-y-auto border rounded-md">
+          <div className="max-h-[400px] overflow-y-auto border rounded-xl">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+              <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
                   >
                     Date
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
                   >
                     Description
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
                   >
                     Amount
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
                   >
                     Type
                   </th>
@@ -79,8 +79,8 @@ export default function TransactionHistory() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentTransactions.map((transaction) => (
                   <tr key={transaction.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.date}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{transaction.description}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{transaction.date}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{transaction.description}</td>
                     <td
                       className={cn(
                         "px-6 py-4 whitespace-nowrap text-sm font-medium",
@@ -89,12 +89,12 @@ export default function TransactionHistory() {
                     >
                       {transaction.type === "credit" ? "+" : "-"}${transaction.amount}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">{transaction.type}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 capitalize">{transaction.type}</td>
                   </tr>
                 ))}
                 {currentTransactions.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-slate-500">
                       No transactions found.
                     </td>
                   </tr>

@@ -28,7 +28,7 @@ export default function AdminSidebar() {
     <>
       {/* Mobile menu button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="bg-white p-2 rounded-md shadow-md">
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="bg-white p-2 rounded-xl shadow-md">
           {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
@@ -43,7 +43,7 @@ export default function AdminSidebar() {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-center h-16 px-4 bg-orange-500">
+          <div className="flex items-center justify-center h-16 px-4 bg-primary">
             <h1 className="text-xl font-bold text-white">Admin Panel</h1>
           </div>
 
@@ -59,8 +59,8 @@ export default function AdminSidebar() {
                     flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors
                     ${
                       isActive
-                        ? "bg-orange-100 text-orange-700 border-r-2 border-orange-500"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-orange-100 text-primary border-r-2 border-primary"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }
                   `}
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -73,10 +73,10 @@ export default function AdminSidebar() {
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-slate-200">
             <button
               onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100 hover:text-slate-900 transition-colors"
             >
               <LogOut className="mr-3 h-5 w-5" />
               Logout

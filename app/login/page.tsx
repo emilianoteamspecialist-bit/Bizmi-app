@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import ForgotPasswordModal from "@/components/forgot-password-modal"
 
+import Image from "next/image"
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
@@ -23,6 +25,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    console.log("Starting login for:", email)
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -31,6 +34,7 @@ export default function LoginPage() {
       })
 
       if (authError) {
+        console.error("Auth error:", authError)
         if (authError.message.includes("Email not confirmed")) {
           alert("Please check your email and click the confirmation link before signing in.")
         } else {
@@ -40,7 +44,10 @@ export default function LoginPage() {
         return
       }
 
+      console.log("Auth success, user ID:", authData.user?.id)
+
       if (authData.user) {
+        console.log("Fetching profile...")
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -48,24 +55,36 @@ export default function LoginPage() {
           .single()
 
         if (profileError || !profile) {
+          console.error("Profile error:", profileError)
           alert("Profile not found. Please contact support or try signing up again.")
           setIsLoading(false)
           return
         }
 
+        console.log("Profile fetched:", profile.account_type)
         localStorage.setItem("bizimee_user", JSON.stringify(profile))
 
-        if (profile.account_type === "agency") {
+        if (profile.account_type === "admin") {
+          console.log("Redirecting to admin dashboard...")
+          router.push("/admin/dashboard")
+        } else if (profile.account_type === "agency") {
+          console.log("Redirecting to agency dashboard...")
           router.push("/agency/dashboard")
         } else {
+          console.log("Redirecting to freelancer dashboard...")
           router.push("/dashboard")
         }
       }
     } catch (error) {
-      console.error("Login error:", error)
+      console.error("Unexpected login error:", error)
       alert("An unexpected error occurred. Please try again.")
     } finally {
-      setIsLoading(false)
+      // We don't want to set loading to false if we are navigating away, 
+      // but router.push is not awaited, so it happens instantly.
+      // If we are still on the same page after a short delay, set loading to false.
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 1000)
     }
   }
 
@@ -74,7 +93,7 @@ export default function LoginPage() {
       {/* Back to Home Link */}
       <Link 
         href="/" 
-        className="absolute top-8 left-8 flex items-center text-sm font-bold text-slate-500 hover:text-orange-500"
+        className="absolute top-8 left-8 flex items-center text-sm font-bold text-slate-500 hover:text-primary"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Home
@@ -84,11 +103,11 @@ export default function LoginPage() {
         {/* Logo and Welcome */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center space-x-2 group">
-            <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-              <span className="text-white font-bold text-2xl">B</span>
+            <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-2xl">
+              <Image src="/favicon.ico" alt="Bizimi Logo" width={48} height={48} className="w-full h-full object-contain" />
             </div>
           </Link>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 pt-4">Welcome Back</h1>
+          <h1 className="text-primaryxl font-black tracking-tight text-slate-900 pt-4">Welcome Back</h1>
           <p className="text-slate-500 font-medium">Continue your journey with Nigeria's best talent.</p>
         </div>
 
@@ -107,7 +126,7 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="name@example.com"
-                  className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                  className="h-12 border-slate-200 rounded-xl focus:ring-primary focus:border-primary"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -120,7 +139,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(true)}
-                    className="text-xs font-bold text-orange-500 hover:text-orange-600"
+                    className="text-xs font-bold text-primary hover:text-primary"
                   >
                     Forgot password?
                   </button>
@@ -130,7 +149,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500 pr-12"
+                    className="h-12 border-slate-200 rounded-xl focus:ring-primary focus:border-primary pr-12"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -151,7 +170,7 @@ export default function LoginPage() {
 
               <Button 
                 type="submit" 
-                className="w-full bg-orange-500 hover:bg-orange-600 h-12 rounded-xl text-base font-bold shadow-lg shadow-orange-500/25 mt-2" 
+                className="w-full bg-primary hover:bg-primary-hover h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/25 mt-2" 
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -168,7 +187,7 @@ export default function LoginPage() {
             <div className="mt-8 text-center">
               <p className="text-sm font-medium text-slate-500">
                 New to Bizimi?{" "}
-                <Link href="/signup" className="text-orange-500 font-bold hover:underline underline-offset-4">
+                <Link href="/signup" className="text-primary font-bold hover:underline underline-offset-4">
                   Create an account
                 </Link>
               </p>

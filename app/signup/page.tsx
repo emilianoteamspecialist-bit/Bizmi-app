@@ -8,26 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, User, Building2, Loader2, CheckCircle, AlertCircle, X, ArrowLeft, ShieldCheck, Sparkles, Search, ChevronRight, ChevronLeft } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { trackSignUp } from "@/lib/fbpixel"
+import { ALL_SKILLS } from "@/lib/categories"
 
 type AccountType = "freelancer" | "agency"
-
-const AVAILABLE_SKILLS = [
-  "Web Development", "Mobile App Development", "Frontend Development", "Backend Development", "Full-Stack Development",
-  "UI/UX Design", "Software Development", "Game Development", "Blockchain Development", "Smart Contracts",
-  "Cybersecurity", "Cloud Computing", "DevOps", "Database Management", "API Development",
-  "WordPress Development", "Shopify Development", "E-commerce Development", "SaaS Development", "AR/VR Development",
-  "Machine Learning", "Artificial Intelligence", "Data Science", "Django", "Express.js",
-  "MongoDB", "MySQL", "PostgreSQL", "Firebase", "AWS", "Docker", "Git", "Figma", "Adobe XD", "Photoshop",
-  "Mobile Development", "Flutter", "React Native", "Data Analysis", "Python Programming", "JavaScript Development",
-  "React.js Development", "Node.js Development", "PHP Development", "Java Development", "C++ Development",
-  "C# Development", "Go (Golang) Development", "Ruby on Rails Development", "Kotlin Development", "Swift (iOS) Development",
-  "Android Development", "Flutter Development", "Rust Development", "Penetration Testing", "Ethical Hacking",
-  "Bug Bounty Research", "IoT Development", "Embedded Systems", "Firmware Development", "Robotics Programming",
-  "Others",
-]
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -183,7 +170,7 @@ export default function SignUpPage() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4 selection:bg-orange-100 selection:text-orange-900 py-20">
       <Link 
         href="/" 
-        className="fixed top-8 left-8 flex items-center text-sm font-bold text-slate-500 hover:text-orange-500 transition-colors z-50"
+        className="fixed top-8 left-8 flex items-center text-sm font-bold text-slate-500 hover:text-primary transition-colors z-50"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Home
@@ -192,11 +179,11 @@ export default function SignUpPage() {
       <div className="w-full max-w-[640px] space-y-8">
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center space-x-2 group">
-            <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-              <span className="text-white font-bold text-2xl">B</span>
+            <div className="w-12 h-12 flex items-center justify-center overflow-hidden rounded-2xl">
+              <Image src="/favicon.ico" alt="Bizimi Logo" width={48} height={48} className="w-full h-full object-contain" />
             </div>
           </Link>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 pt-4">Start Your Journey</h1>
+          <h1 className="text-primaryxl font-black tracking-tight text-slate-900 pt-4">Start Your Journey</h1>
           <p className="text-slate-500 font-medium max-w-sm mx-auto">Join the most secure marketplace for high-impact Nigerian talent.</p>
         </div>
 
@@ -208,8 +195,8 @@ export default function SignUpPage() {
                 const isActive = currentStep >= idx + 1
                 return (
                   <div key={step} className="flex-1">
-                    <div className={`h-2 rounded-full transition-colors duration-300 ${isActive ? 'bg-orange-500' : 'bg-slate-100'}`} />
-                    <p className={`text-[10px] mt-2 font-black uppercase tracking-widest transition-colors duration-300 ${isActive ? 'text-orange-500' : 'text-slate-300'}`}>
+                    <div className={`h-2 rounded-full transition-colors duration-300 ${isActive ? 'bg-primary' : 'bg-slate-100'}`} />
+                    <p className={`text-[10px] mt-2 font-black uppercase tracking-widest transition-colors duration-300 ${isActive ? 'text-primary' : 'text-slate-300'}`}>
                       {step}
                     </p>
                   </div>
@@ -246,11 +233,11 @@ export default function SignUpPage() {
                       type="button"
                       onClick={() => setAccountType("freelancer")}
                       className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
-                        accountType === "freelancer" ? "border-orange-500 bg-orange-50/50" : "border-slate-100 hover:border-orange-200"
+                        accountType === "freelancer" ? "border-primary bg-primary/10/50" : "border-slate-100 hover:border-orange-200"
                       }`}
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
-                        accountType === "freelancer" ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"
+                        accountType === "freelancer" ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
                       }`}>
                         <User className="h-5 w-5" />
                       </div>
@@ -270,11 +257,11 @@ export default function SignUpPage() {
                       type="button"
                       onClick={() => setAccountType("agency")}
                       className={`relative p-6 rounded-2xl border-2 text-left transition-all ${
-                        accountType === "agency" ? "border-orange-500 bg-orange-50/50" : "border-slate-100 hover:border-orange-200"
+                        accountType === "agency" ? "border-primary bg-primary/10/50" : "border-slate-100 hover:border-orange-200"
                       }`}
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
-                        accountType === "agency" ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"
+                        accountType === "agency" ? "bg-primary text-white" : "bg-slate-100 text-slate-500"
                       }`}>
                         <Building2 className="h-5 w-5" />
                       </div>
@@ -303,7 +290,7 @@ export default function SignUpPage() {
                       <Input
                         id="fullName"
                         placeholder="John Doe"
-                        className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                        className="h-12 border-slate-200 rounded-xl focus:ring-primary focus:border-primary"
                         value={formData.fullName}
                         onChange={(e) => handleInputChange("fullName", e.target.value)}
                         required
@@ -315,7 +302,7 @@ export default function SignUpPage() {
                         id="email"
                         type="email"
                         placeholder="john@example.com"
-                        className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                        className="h-12 border-slate-200 rounded-xl focus:ring-primary focus:border-primary"
                         value={formData.email}
                         onChange={(e) => handleInputChange("email", e.target.value)}
                         required
@@ -329,7 +316,7 @@ export default function SignUpPage() {
                       <Input
                         id="username"
                         placeholder="johndoe_creative"
-                        className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                        className="h-12 border-slate-200 rounded-xl focus:ring-primary focus:border-primary"
                         value={formData.username}
                         onChange={(e) => handleInputChange("username", e.target.value)}
                         required
@@ -344,7 +331,7 @@ export default function SignUpPage() {
                         <Input
                           id="companyName"
                           placeholder="Bizimi Creative"
-                          className="h-12 border-slate-200 rounded-xl focus:ring-orange-500 focus:border-orange-500"
+                          className="h-12 border-slate-200 rounded-xl focus:ring-primary focus:border-primary"
                           value={formData.companyName}
                           onChange={(e) => handleInputChange("companyName", e.target.value)}
                           required
@@ -354,7 +341,7 @@ export default function SignUpPage() {
                         <Label htmlFor="companySize" className="text-sm font-bold text-slate-700">Company Size</Label>
                         <select
                           id="companySize"
-                          className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                          className="w-full h-12 px-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                           value={formData.companySize}
                           onChange={(e) => handleInputChange("companySize", e.target.value)}
                           required
@@ -381,7 +368,7 @@ export default function SignUpPage() {
                   
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-black uppercase tracking-widest text-slate-400">Selected Skills</Label>
-                    <span className="text-xs font-bold text-orange-500">{selectedSkills.length}/10</span>
+                    <span className="text-xs font-bold text-primary">{selectedSkills.length}/10</span>
                   </div>
                   
                   <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[60px]">
@@ -421,7 +408,7 @@ export default function SignUpPage() {
                         type="button"
                         onClick={() => handleSkillToggle(skill)}
                         disabled={selectedSkills.length >= 10}
-                        className="text-left px-3 py-2 text-xs font-bold bg-white border border-slate-100 rounded-lg hover:border-orange-500 hover:text-orange-500 transition-all disabled:opacity-30"
+                        className="text-left px-3 py-2 text-xs font-bold bg-white border border-slate-100 rounded-lg hover:border-primary hover:text-primary transition-all disabled:opacity-30"
                       >
                         {skill}
                       </button>
@@ -512,7 +499,7 @@ export default function SignUpPage() {
                 ) : (
                   <Button
                     type="submit"
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 h-14 rounded-2xl text-lg font-black shadow-xl shadow-orange-500/25"
+                    className="flex-1 bg-primary hover:bg-primary-hover h-14 rounded-2xl text-lg font-black shadow-xl shadow-primary/25"
                     disabled={isLoading || !validateCurrentStep() || signupStatus.type === 'success'}
                   >
                     {isLoading ? (
@@ -531,7 +518,7 @@ export default function SignUpPage() {
             <div className="mt-8 text-center">
               <p className="text-sm font-medium text-slate-500">
                 Already have an account?{" "}
-                <Link href="/login" className="text-orange-500 font-bold hover:underline underline-offset-4">
+                <Link href="/login" className="text-primary font-bold hover:underline underline-offset-4">
                   Sign in instead
                 </Link>
               </p>

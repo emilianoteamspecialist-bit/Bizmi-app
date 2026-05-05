@@ -62,14 +62,14 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-2">
-            <Mail className="h-5 w-5 text-orange-500" />
-            <h2 className="text-xl font-semibold text-gray-900">Reset Password</h2>
+            <Mail className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold text-slate-900">Reset Password</h2>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleClose}
-            className="h-8 w-8 text-gray-400 hover:text-gray-600"
+            className="h-8 w-8 text-slate-400 hover:text-slate-600"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -77,13 +77,13 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-gray-600 mb-6">
+          <p className="text-slate-600 mb-6">
             Enter your email address and we'll send you a link to reset your password.
           </p>
 
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email" className="text-gray-700">
+              <Label htmlFor="reset-email" className="text-slate-700">
                 Email Address
               </Label>
               <Input
@@ -94,13 +94,13 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                className="focus:ring-orange-500 focus:border-orange-500"
+                className="focus:ring-primary focus:border-primary"
               />
             </div>
 
             {message && (
               <div
-                className={`p-3 rounded-md text-sm ${
+                className={`p-3 rounded-xl text-sm ${
                   isSuccess
                     ? "bg-green-50 text-green-700 border border-green-200"
                     : "bg-red-50 text-red-700 border border-red-200"
@@ -122,7 +122,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
               </Button>
               <Button
                 type="submit"
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                className="flex-1 bg-primary hover:bg-primary-hover text-white"
                 disabled={isLoading || !email}
               >
                 {isLoading ? (

@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Valid amount is required" }, { status: 400 })
     }
 
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     const {
       data: { user },
@@ -148,7 +149,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Valid amount is required" }, { status: 400 })
     }
 
-    const supabase = createRouteHandlerClient({ cookies })
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     console.log("[v0] Attempting authentication...")
 
     let user = null

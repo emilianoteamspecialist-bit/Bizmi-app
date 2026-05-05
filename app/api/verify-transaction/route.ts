@@ -4,7 +4,8 @@ import { cookies } from "next/headers"
 
 export async function POST(req: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies }) // no cookies needed
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
     const { user_id, reference, credits_amount, amount } = await req.json()
 
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Transaction not successful" }, { status: 400 })
     }
 
-    // Check that the amount matches (Paystack amounts are in kobo: ₦1 = 100 kobo)
+    // Check that the amount matches (Paystack amounts are in kobo: ₦ 1 = 100 kobo)
     const expectedAmountKobo = Number(amount) * 100
     if (transaction.amount !== expectedAmountKobo) {
       return NextResponse.json({ error: "Transaction amount does not match" }, { status: 400 })

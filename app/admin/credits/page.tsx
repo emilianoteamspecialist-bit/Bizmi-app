@@ -5,16 +5,21 @@ import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, AlertCircle } from "lucide-react"
+import { Loader2, Search, Coins, Users, Calendar, Hash, ArrowUpRight } from "lucide-react"
 import AdminSidebar from "@/components/admin-sidebar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface CreditPurchase {
   id: string
+  freelancer_id?: string
   credits_amount: number
   paystack_reference: string
   status: string
   created_at: string
   updated_at: string
+  profiles?: {
+    full_name: string
+  }
 }
 
 interface FreelancerProfile {
@@ -44,7 +49,8 @@ export default function AdminCreditsPage() {
       const filtered = creditPurchases.filter(
         (purchase) =>
           purchase.paystack_reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          purchase.status.toLowerCase().includes(searchTerm.toLowerCase()),
+          purchase.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          purchase.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
       setFilteredPurchases(filtered)
     }
@@ -55,7 +61,7 @@ export default function AdminCreditsPage() {
       setLoading(true)
 
       const [purchasesResult, freelancersResult] = await Promise.all([
-        supabase.from("purchase_credits").select("*").order("created_at", { ascending: false }),
+        supabase.from("purchase_credits").select("*, profiles(full_name)").order("created_at", { ascending: false }),
         supabase
           .from("profiles")
           .select("id, full_name, created_at, updated_at, account_type")
@@ -82,143 +88,193 @@ export default function AdminCreditsPage() {
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "success":
-        return <Badge className="bg-green-100 text-green-800">Success</Badge>
+      case "completed":
+        return <Badge className="bg-green-100 text-green-800 border-none font-bold px-3 py-1 text-xs">Success</Badge>
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800 border-none font-bold px-3 py-1 text-xs">Pending</Badge>
       case "failed":
-        return <Badge className="bg-red-100 text-red-800">Failed</Badge>
+        return <Badge className="bg-red-100 text-red-800 border-none font-bold px-3 py-1 text-xs">Failed</Badge>
       default:
-        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>
+        return <Badge className="bg-slate-100 text-slate-800 border-none font-bold px-3 py-1 text-xs capitalize">{status}</Badge>
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-slate-50 font-sans selection:bg-orange-100 selection:text-orange-900">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900">Credits Management</h1>
+        <div className="p-8 max-w-7xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-primaryxl font-black text-slate-900 tracking-tight">Credits & Users</h1>
+              <p className="text-slate-500 font-medium mt-1">Manage platform credits and registered freelancers.</p>
+            </div>
           </div>
 
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="pt-6">
-              <div className="flex items-center space-x-2 text-orange-800">
-                <AlertCircle className="h-5 w-5" />
-                <p className="font-medium">
-                  Note: Credit purchases and freelancer profiles are shown separately as there's no linking column
-                  between the tables. To link purchases to specific freelancers, add a user_id column to the
-                  purchase_credits table.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
+          {/* Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-orange-600">Total Credits Purchased</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-500">{totalCredits.toLocaleString()} Credits</div>
+            <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white group hover:border-primary/50 border transition-all">
+              <CardContent className="p-8 flex items-center justify-between">
+                <div>
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Total Credits Purchased</p>
+                  <h3 className="text-4xl font-black text-slate-900">{totalCredits.toLocaleString()}</h3>
+                </div>
+                <div className="p-4 bg-primary/10 rounded-2xl">
+                  <Coins className="h-8 w-8 text-primary" />
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-orange-600">Total Freelancers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-500">{freelancers.length}</div>
+            <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white group hover:border-blue-500/50 border transition-all">
+              <CardContent className="p-8 flex items-center justify-between">
+                <div>
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Total Freelancers</p>
+                  <h3 className="text-4xl font-black text-slate-900">{freelancers.length}</h3>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-2xl">
+                  <Users className="h-8 w-8 text-blue-500" />
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Credit Purchases</CardTitle>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search by reference ID or status..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          {/* Credit Purchases Table */}
+          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white overflow-hidden">
+            <CardHeader className="px-8 pt-8 pb-6 border-b border-slate-100 bg-white">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <ArrowUpRight className="h-5 w-5 text-primary" /> Recent Transactions
+                </CardTitle>
+                <div className="relative w-full md:w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search transactions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 h-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:ring-primary focus:border-primary"
+                  />
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4 font-semibold">Credits Amount</th>
-                      <th className="text-left p-4 font-semibold">Reference ID</th>
-                      <th className="text-left p-4 font-semibold">Status</th>
-                      <th className="text-left p-4 font-semibold">Date</th>
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50/50 text-xs uppercase tracking-widest font-black text-slate-500 border-b border-slate-100">
+                    <tr>
+                      <th className="px-8 py-5">Freelancer</th>
+                      <th className="px-8 py-5">Amount</th>
+                      <th className="px-8 py-5">Reference ID</th>
+                      <th className="px-8 py-5">Status</th>
+                      <th className="px-8 py-5">Date</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {filteredPurchases.map((purchase) => (
-                      <tr key={purchase.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4 font-semibold text-orange-600">
-                          {purchase.credits_amount?.toLocaleString()} Credits
+                      <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 rounded-xl border border-slate-200">
+                              <AvatarFallback className="bg-orange-100 text-primary font-bold">
+                                {purchase.profiles?.full_name?.charAt(0) || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-bold text-slate-900">{purchase.profiles?.full_name || "Unknown"}</span>
+                          </div>
                         </td>
-                        <td className="p-4 text-sm text-gray-600">{purchase.paystack_reference}</td>
-                        <td className="p-4">{getStatusBadge(purchase.status)}</td>
-                        <td className="p-4 text-sm text-gray-600">
-                          {new Date(purchase.created_at).toLocaleDateString()}
+                        <td className="px-8 py-5">
+                          <span className="font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
+                            {purchase.credits_amount?.toLocaleString()} <span className="text-slate-400 font-bold text-xs ml-1">CR</span>
+                          </span>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2 text-slate-500 font-mono text-xs bg-slate-50 px-2 py-1 rounded border border-slate-200 w-fit">
+                            <Hash className="h-3 w-3" />
+                            {purchase.paystack_reference}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5">{getStatusBadge(purchase.status)}</td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2 text-slate-500 font-medium">
+                            <Calendar className="h-4 w-4 text-slate-400" />
+                            {new Date(purchase.created_at).toLocaleDateString()}
+                          </div>
                         </td>
                       </tr>
                     ))}
+                    {filteredPurchases.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-12 text-center text-slate-500 font-medium">
+                          {searchTerm ? "No transactions matching your search." : "No transactions found."}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
-                {filteredPurchases.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    {searchTerm ? "No credit purchases found matching your search" : "No credit purchases found"}
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Registered Freelancers</CardTitle>
+          {/* Registered Freelancers Table */}
+          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white overflow-hidden">
+            <CardHeader className="px-8 pt-8 pb-6 border-b border-slate-100 bg-white">
+              <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+                 <Users className="h-5 w-5 text-blue-500" /> Registered Freelancers
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4 font-semibold">Name</th>
-                      <th className="text-left p-4 font-semibold">Account Type</th>
-                      <th className="text-left p-4 font-semibold">Registration Date</th>
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-50/50 text-xs uppercase tracking-widest font-black text-slate-500 border-b border-slate-100">
+                    <tr>
+                      <th className="px-8 py-5">Name</th>
+                      <th className="px-8 py-5">Account Type</th>
+                      <th className="px-8 py-5">Registration Date</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {freelancers.map((freelancer) => (
-                      <tr key={freelancer.id} className="border-b hover:bg-gray-50">
-                        <td className="p-4 font-medium">{freelancer.full_name}</td>
-                        <td className="p-4">
-                          <Badge className="bg-blue-100 text-blue-800 capitalize">{freelancer.account_type}</Badge>
+                      <tr key={freelancer.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 rounded-xl border border-slate-200">
+                              <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
+                                {freelancer.full_name?.charAt(0) || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-bold text-slate-900">{freelancer.full_name}</span>
+                          </div>
                         </td>
-                        <td className="p-4 text-sm text-gray-600">
-                          {new Date(freelancer.created_at).toLocaleDateString()}
+                        <td className="px-8 py-5">
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-widest text-[10px] font-black px-2 py-1">
+                            {freelancer.account_type}
+                          </Badge>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2 text-slate-500 font-medium">
+                            <Calendar className="h-4 w-4 text-slate-400" />
+                            {new Date(freelancer.created_at).toLocaleDateString()}
+                          </div>
                         </td>
                       </tr>
                     ))}
+                    {freelancers.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-8 py-12 text-center text-slate-500 font-medium">
+                          No freelancers registered yet.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
-                {freelancers.length === 0 && <div className="text-center py-8 text-gray-500">No freelancers found</div>}
               </div>
             </CardContent>
           </Card>

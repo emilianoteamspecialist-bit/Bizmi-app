@@ -34,18 +34,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+    let isMounted = true
 
-      if (session?.user) {
-        setUser(session.user)
-        await fetchProfile(session.user.id)
+    // Load from localStorage for immediate UI hydration
+    let cachedProfileObj = null
+    const cachedStr = typeof window !== 'undefined' ? localStorage.getItem("bizimee_user") : null
+    if (cachedStr) {
+      try {
+        cachedProfileObj = JSON.parse(cachedStr)
+        setProfile(cachedProfileObj)
+      } catch (e) {
+        console.error("Failed to parse cached profile", e)
       }
+    }
 
-      setLoading(false)
+    const getInitialSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (!isMounted) return
+
+        if (session?.user) {
+          setUser(session.user)
+          // Only fetch fresh profile if we don't have a valid cache for THIS user
+          if (!cachedProfileObj || cachedProfileObj.id !== session.user.id) {
+            await fetchProfile(session.user.id)
+          }
+        } else {
+          setUser(null)
+          setProfile(null)
+          localStorage.removeItem("bizimee_user")
+        }
+      } catch (error) {
+        console.error("Session error:", error)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
 
     getInitialSession()
@@ -54,17 +80,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return
+
       if (session?.user) {
         setUser(session.user)
-        await fetchProfile(session.user.id)
-      } else {
+        // Refresh profile on explicit sign in
+        if (event === 'SIGNED_IN') {
+           await fetchProfile(session.user.id)
+        }
+      } else if (event === 'SIGNED_OUT') {
         setUser(null)
         setProfile(null)
+        localStorage.removeItem("bizimee_user")
       }
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const fetchProfile = async (userId: string) => {

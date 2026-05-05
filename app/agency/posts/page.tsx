@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Search, Loader2, X, FileText, CheckCircle, XCircle, Eye } from "lucide-react"
-import AgencyNavbar from "@/components/agency-navbar"
 import PaymentModal from "@/components/payment-modal"
 
 interface JobPost {
@@ -425,20 +424,19 @@ export default function AgencyPostsPage() {
   })
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AgencyNavbar />
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900">
       <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-6">Manage Job Posts</h1>
+          <h1 className="text-primaryxl font-bold text-slate-900 dark:text-gray-50 mb-6">Manage Job Posts</h1>
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search job posts by title or description..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 focus:ring-orange-500 focus:border-orange-500"
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-gray-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-gray-50 focus:ring-primary focus:border-primary"
               />
             </div>
           </div>
@@ -447,27 +445,27 @@ export default function AgencyPostsPage() {
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardHeader>
-                    <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    <div className="h-6 bg-slate-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-1/2"></div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                    <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-full mt-4"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-5/6"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-2/3"></div>
+                    <div className="h-8 bg-slate-200 dark:bg-gray-700 rounded w-full mt-4"></div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : jobs.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
               <p className="text-lg">
                 {searchTerm ? "No matching job posts found." : "You haven't created any job posts yet."}
               </p>
               {!searchTerm && (
                 <Button
                   onClick={() => router.push("/agency/dashboard")}
-                  className="mt-4 bg-orange-500 hover:bg-orange-600"
+                  className="mt-4 bg-primary hover:bg-primary-hover"
                 >
                   Create a New Post
                 </Button>
@@ -481,7 +479,7 @@ export default function AgencyPostsPage() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <CardTitle className="text-lg font-semibold">{job.title}</CardTitle>
-                        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
+                        <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
                           Posted: {new Date(job.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
@@ -499,13 +497,13 @@ export default function AgencyPostsPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col justify-between">
-                    <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">{job.description}</p>
+                    <p className="text-slate-700 dark:text-gray-300 mb-4 line-clamp-3">{job.description}</p>
                     <div className="flex items-center justify-between mb-4">
                       <Badge
                         variant="secondary"
-                        className="text-sm bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                        className="text-sm bg-orange-100 text-primary dark:bg-orange-900/20 dark:text-orange-300"
                       >
-                        Budget: ₦{job.budget_min?.toLocaleString()} - ₦{job.budget_max?.toLocaleString()}
+                        Budget: ₦ {job.budget_min?.toLocaleString()} - ₦ {job.budget_max?.toLocaleString()}
                       </Badge>
                       <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
                         Proposals: {job.proposals}
@@ -513,7 +511,7 @@ export default function AgencyPostsPage() {
                     </div>
                     <Button
                       onClick={() => handleViewProposals(job)}
-                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      className="w-full bg-primary hover:bg-primary-hover"
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       View Proposals ({job.proposals})
@@ -525,7 +523,7 @@ export default function AgencyPostsPage() {
           )}
           {hasMore && !loading && jobs.length > 0 && (
             <div className="flex justify-center mt-8">
-              <Button onClick={handleLoadMore} disabled={loading} className="bg-orange-500 hover:bg-orange-600">
+              <Button onClick={handleLoadMore} disabled={loading} className="bg-primary hover:bg-primary-hover">
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {loading ? "Loading..." : "Load More"}
               </Button>
@@ -573,7 +571,7 @@ export default function AgencyPostsPage() {
               </div>
               <div className="mt-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="text"
                     placeholder="Search freelancers by name, location, or proposal..."
@@ -600,7 +598,7 @@ export default function AgencyPostsPage() {
               ) : (
                 <div className="space-y-6">
                   {filteredProposals.map((proposal) => (
-                    <div key={proposal.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                    <div key={proposal.id} className="border border-slate-200 dark:border-gray-700 rounded-lg p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-12 w-12">
@@ -646,7 +644,7 @@ export default function AgencyPostsPage() {
                           </div>
                           <div>
                             <h5 className="font-medium mb-1">Budget</h5>
-                            <p className="text-sm font-semibold text-orange-600">
+                            <p className="text-sm font-semibold text-primary">
                               {proposal.budget || "Not specified"}
                             </p>
                           </div>
@@ -681,7 +679,7 @@ export default function AgencyPostsPage() {
                             {!messageInputOpenForProposalId || messageInputOpenForProposalId !== proposal.id ? (
                               <div className="flex space-x-2">
                                 <Button
-                                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                                  className="flex-1 bg-primary hover:bg-primary-hover"
                                   onClick={() => {
                                     setMessageInputOpenForProposalId(proposal.id)
                                     setCurrentMessageText("")
@@ -691,7 +689,7 @@ export default function AgencyPostsPage() {
                                   Message Freelancer
                                 </Button>
                                 <Button
-                                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                                  className="flex-1 bg-primary hover:bg-primary-hover"
                                   onClick={() => handleFundFreelancerClick(selectedJob, proposal)}
                                 >
                                   💰 Fund Job
@@ -716,7 +714,7 @@ export default function AgencyPostsPage() {
                                     Cancel
                                   </Button>
                                   <Button
-                                    className="bg-orange-500 hover:bg-orange-600"
+                                    className="bg-primary hover:bg-primary-hover"
                                     onClick={() =>
                                       handleSendMessage(proposal.freelancer_id, currentUserId!, currentMessageText)
                                     }

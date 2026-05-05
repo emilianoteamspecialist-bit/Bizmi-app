@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, MessageSquare, User, Search, ArrowLeft, MoreVertical, Upload, File, ImageIcon, X } from "lucide-react"
+import { Send, MessageSquare, User, ShieldCheck, Zap, Search, ArrowLeft, MoreVertical, Upload, File, ImageIcon, X } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import FreelancerNavbar from "@/components/freelancer-navbar"
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export default function FreelancerMessagesPage() {
@@ -350,7 +350,7 @@ export default function FreelancerMessagesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <FreelancerNavbar />
+        
         <div className="max-w-7xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -367,7 +367,7 @@ export default function FreelancerMessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <FreelancerNavbar />
+      
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Conversations List */}
         <Card

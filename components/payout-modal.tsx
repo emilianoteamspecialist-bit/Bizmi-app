@@ -112,7 +112,7 @@ export default function PayoutModal({ isOpen, onClose, jobData, onSuccess }: Pay
         <DialogHeader className="p-8 pb-4">
           <div className="space-y-1">
              <DialogTitle className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <Wallet className="h-6 w-6 text-orange-500" />
+                <Wallet className="h-6 w-6 text-primary" />
                 Withdraw Funds
              </DialogTitle>
              <DialogDescription className="font-medium text-slate-400">Request your earnings for the completed project.</DialogDescription>
@@ -127,7 +127,7 @@ export default function PayoutModal({ isOpen, onClose, jobData, onSuccess }: Pay
               </div>
               <div className="space-y-1">
                 <h3 className="text-2xl font-black text-slate-900">Transfer Initiated</h3>
-                <p className="text-slate-500 font-medium">Your payout of <span className="text-slate-900 font-bold">₦{payoutAmount.toLocaleString()}</span> is being processed.</p>
+                <p className="text-slate-500 font-medium">Your payout of <span className="text-slate-900 font-bold">₦ {payoutAmount.toLocaleString()}</span> is being processed.</p>
               </div>
             </div>
           ) : (
@@ -149,16 +149,16 @@ export default function PayoutModal({ isOpen, onClose, jobData, onSuccess }: Pay
                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200/50">
                     <div className="space-y-1">
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Escrow</p>
-                       <p className="text-sm font-bold text-slate-900">₦{jobData.amount.toLocaleString()}</p>
+                       <p className="text-sm font-bold text-slate-900">₦ {jobData.amount.toLocaleString()}</p>
                     </div>
                     <div className="space-y-1">
                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Platform Fee (15%)</p>
-                       <p className="text-sm font-bold text-red-500">- ₦{platformFee.toLocaleString()}</p>
+                       <p className="text-sm font-bold text-red-500">- ₦ {platformFee.toLocaleString()}</p>
                     </div>
                  </div>
-                 <div className="pt-3 bg-orange-50 -mx-6 -mb-6 px-6 py-4 flex items-center justify-between border-t border-orange-100">
+                 <div className="pt-3 bg-primary/10 -mx-6 -mb-6 px-6 py-4 flex items-center justify-between border-t border-orange-100">
                     <p className="text-xs font-black uppercase tracking-widest text-orange-800">You Receive</p>
-                    <p className="text-xl font-black text-orange-900">₦{payoutAmount.toLocaleString()}</p>
+                    <p className="text-xl font-black text-orange-900">₦ {payoutAmount.toLocaleString()}</p>
                  </div>
               </div>
 
@@ -229,7 +229,7 @@ export default function PayoutModal({ isOpen, onClose, jobData, onSuccess }: Pay
                   <Button type="button" variant="outline" onClick={onClose} disabled={loading} className="flex-1 h-14 rounded-2xl font-bold bg-transparent">
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={loading || banksLoading || !formData.account_number} className="flex-1 h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-xl shadow-orange-500/25">
+                  <Button type="submit" disabled={loading || banksLoading || !formData.account_number} className="flex-1 h-14 rounded-2xl bg-primary hover:bg-primary-hover text-white font-black shadow-xl shadow-primary/25">
                     {loading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ArrowRight className="h-5 w-5 mr-2" />}
                     Withdraw Funds
                   </Button>

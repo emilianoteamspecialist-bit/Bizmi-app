@@ -35,8 +35,10 @@ import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function FreelancerNavbar() {
+  const { user, profile: authProfile, signOut } = useAuth()
   const [logoPreview, setLogoPreview] = useState<string>("")
   const [profile, setProfile] = useState<any>(null)
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0)
@@ -44,33 +46,38 @@ export default function FreelancerNavbar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  const loadUserData = useCallback(async () => {
+  // Update local profile state when authProfile changes
+  useEffect(() => {
+    if (authProfile) {
+      setProfile(authProfile)
+    }
+  }, [authProfile])
+
+  const loadExtraUserData = useCallback(async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      // Fetch logo and message count in parallel
+      const [logoResult, countResult, recentResult] = await Promise.all([
+        supabase.from("freelancer_logos").select("logo_data").eq("freelancer_id", userId).single(),
+        supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", userId).eq("is_read", false),
+        supabase.from("messages").select(`id, message_text, created_at, sender_id, conversation_id, sender_profile:profiles!messages_sender_id_fkey (full_name, account_type, company_name)`).eq("receiver_id", userId).eq("is_read", false).order("created_at", { ascending: false }).limit(7)
+      ])
 
-      const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-      if (profileData) setProfile(profileData)
-
-      const { data: logoData } = await supabase.from("freelancer_logos").select("logo_data").eq("freelancer_id", user.id).single()
-      if (logoData) setLogoPreview(logoData.logo_data)
-
-      const { count } = await supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", user.id).eq("is_read", false)
-      setUnreadMessagesCount(count || 0)
-
-      const { data: recent } = await supabase.from("messages").select(`id, message_text, created_at, sender_id, conversation_id, sender_profile:profiles!messages_sender_id_fkey (full_name, account_type, company_name)`).eq("receiver_id", user.id).eq("is_read", false).order("created_at", { ascending: false }).limit(7)
-      setRecentNotifications(recent || [])
+      if (logoResult.data) setLogoPreview(logoResult.data.logo_data)
+      setUnreadMessagesCount(countResult.count || 0)
+      setRecentNotifications(recentResult.data || [])
     } catch (error) {
-      console.error(error)
+      console.error("Error loading extra user data:", error)
     }
   }, [])
 
   useEffect(() => {
-    loadUserData()
-  }, [loadUserData])
+    if (user?.id) {
+      loadExtraUserData(user.id)
+    }
+  }, [user?.id, loadExtraUserData])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     router.push("/")
   }
 
@@ -90,8 +97,8 @@ export default function FreelancerNavbar() {
           {/* Logo & Desktop Nav */}
           <div className="flex items-center gap-10">
             <Link href="/" className="flex items-center space-x-2 group">
-              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <span className="text-white font-bold text-xl">B</span>
+              <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl">
+                <img src="/favicon.ico" alt="Bizimi Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-2xl font-black tracking-tight text-slate-900 hidden sm:block">Bizimi</span>
             </Link>
@@ -112,7 +119,7 @@ export default function FreelancerNavbar() {
                     <link.icon className="w-4 h-4" />
                     {link.name}
                     {link.badge > 0 && (
-                      <span className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                      <span className="bg-primary text-white text-[10px] px-1.5 py-0.5 rounded-full">
                         {link.badge}
                       </span>
                     )}
@@ -126,7 +133,7 @@ export default function FreelancerNavbar() {
           <div className="flex items-center gap-3">
             <Button 
               onClick={() => router.push("/freelancer/bizpal")}
-              className="hidden md:flex bg-orange-500 hover:bg-orange-600 rounded-xl font-bold h-11 px-6 shadow-lg shadow-orange-500/20"
+              className="hidden md:flex bg-primary hover:bg-primary-hover rounded-xl font-bold h-11 px-6 shadow-lg shadow-primary/20"
             >
               <CreditCard className="w-4 h-4 mr-2" />
               Buy Credits
@@ -140,7 +147,7 @@ export default function FreelancerNavbar() {
                 <Button variant="ghost" size="icon" className="relative h-11 w-11 rounded-xl hover:bg-slate-50 text-slate-500">
                   <Bell className="h-5 w-5" />
                   {unreadMessagesCount > 0 && (
-                    <span className="absolute top-2 right-2 bg-orange-500 w-2.5 h-2.5 rounded-full border-2 border-white"></span>
+                    <span className="absolute top-2 right-2 bg-primary w-2.5 h-2.5 rounded-full border-2 border-white"></span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -154,7 +161,7 @@ export default function FreelancerNavbar() {
                       <DropdownMenuItem key={n.id} onClick={() => router.push(`/freelancer/messages?conversationId=${n.conversation_id}`)} className="rounded-xl p-3 cursor-pointer">
                         <div className="flex gap-3">
                            <Avatar className="h-10 w-10 rounded-lg">
-                              <AvatarFallback className="bg-orange-50 text-orange-600 font-bold">{n.sender_profile?.full_name?.charAt(0)}</AvatarFallback>
+                              <AvatarFallback className="bg-primary/10 text-primary font-bold">{n.sender_profile?.full_name?.charAt(0)}</AvatarFallback>
                            </Avatar>
                            <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-slate-900 truncate">{n.sender_profile?.full_name}</p>
@@ -166,7 +173,7 @@ export default function FreelancerNavbar() {
                   )}
                 </ScrollArea>
                 <DropdownMenuSeparator className="my-2" />
-                <DropdownMenuItem onClick={() => router.push("/freelancer/messages")} className="justify-center font-bold text-orange-500 text-sm">
+                <DropdownMenuItem onClick={() => router.push("/freelancer/messages")} className="justify-center font-bold text-primary text-sm">
                   View All Messages
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -219,7 +226,7 @@ export default function FreelancerNavbar() {
                   ))}
                   <DropdownMenuSeparator />
                   <div className="p-2">
-                    <Button onClick={() => router.push("/freelancer/bizpal")} className="w-full bg-orange-500 hover:bg-orange-600 rounded-xl font-bold h-12">Buy Credits</Button>
+                    <Button onClick={() => router.push("/freelancer/bizpal")} className="w-full bg-primary hover:bg-primary-hover rounded-xl font-bold h-12">Buy Credits</Button>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>

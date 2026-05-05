@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import FreelancerNavbar from "@/components/freelancer-navbar"
 import PayoutModal from "@/components/payout-modal"
 
 interface FundedJob {
@@ -310,7 +309,7 @@ export default function FundedJobsPage() {
         )
       default:
         return (
-          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+          <Badge className="bg-slate-100 text-gray-800 hover:bg-slate-100">
             <AlertCircle className="w-3 h-3 mr-1" />
             {status}
           </Badge>
@@ -324,8 +323,7 @@ export default function FundedJobsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <FreelancerNavbar />
+      <div className="min-h-screen bg-slate-50">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -336,12 +334,11 @@ export default function FundedJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <FreelancerNavbar />
+    <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Funded Jobs</h1>
-          <p className="text-gray-600">Track and verify your funded job payments</p>
+          <h1 className="text-primaryxl font-bold text-slate-900 mb-2">Funded Jobs</h1>
+          <p className="text-slate-600">Track and verify your funded job payments</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -350,8 +347,8 @@ export default function FundedJobsPage() {
               <div className="flex items-center">
                 <Eye className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Jobs</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-sm font-medium text-slate-600">Total Jobs</p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -362,8 +359,8 @@ export default function FundedJobsPage() {
               <div className="flex items-center">
                 <Clock className="h-8 w-8 text-yellow-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+                  <p className="text-sm font-medium text-slate-600">Pending</p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
                 </div>
               </div>
             </CardContent>
@@ -374,8 +371,8 @@ export default function FundedJobsPage() {
               <div className="flex items-center">
                 <CheckCircle className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Verified</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.verified}</p>
+                  <p className="text-sm font-medium text-slate-600">Verified</p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.verified}</p>
                 </div>
               </div>
             </CardContent>
@@ -386,8 +383,8 @@ export default function FundedJobsPage() {
               <div className="flex items-center">
                 <X className="h-8 w-8 text-red-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Failed</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.failed}</p>
+                  <p className="text-sm font-medium text-slate-600">Failed</p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.failed}</p>
                 </div>
               </div>
             </CardContent>
@@ -397,11 +394,11 @@ export default function FundedJobsPage() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-orange-600 font-bold">₦</span>
+                  <span className="text-primary font-bold">₦</span>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">₦{stats.totalAmount.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-slate-600">Total Amount</p>
+                  <p className="text-2xl font-bold text-slate-900">₦ {stats.totalAmount.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -420,7 +417,7 @@ export default function FundedJobsPage() {
                 <AlertDescription>
                   No funded jobs found. Jobs will appear here when agencies fund them for you specifically.
                   <br />
-                  <span className="text-sm text-gray-500 mt-2 block">
+                  <span className="text-sm text-slate-500 mt-2 block">
                     Make sure you're logged in with the correct freelancer account.
                   </span>
                 </AlertDescription>
@@ -449,10 +446,10 @@ export default function FundedJobsPage() {
                         <TableCell className="font-medium">{index + 1}</TableCell>
                         <TableCell className="font-medium">{job.agency_name}</TableCell>
                         <TableCell>{job.job_title}</TableCell>
-                        <TableCell>₦{Number(job.amount).toLocaleString()}</TableCell>
+                        <TableCell>₦ {Number(job.amount).toLocaleString()}</TableCell>
                         <TableCell className="font-mono text-sm">{job.reference_id}</TableCell>
                         <TableCell>{getStatusBadge(job.status)}</TableCell>
-                        <TableCell className="text-sm text-gray-600">
+                        <TableCell className="text-sm text-slate-600">
                           {job.status === "failed" && job.failure_reason ? (
                             <span className="text-red-600">{job.failure_reason}</span>
                           ) : (
@@ -465,7 +462,7 @@ export default function FundedJobsPage() {
                               size="sm"
                               onClick={() => handleConfirmJob(job)}
                               disabled={confirmingJobs.has(job.id)}
-                              className="bg-orange-500 hover:bg-orange-600"
+                              className="bg-primary hover:bg-primary-hover"
                             >
                               {confirmingJobs.has(job.id) ? (
                                 <>
@@ -509,7 +506,7 @@ export default function FundedJobsPage() {
                               size="sm"
                               onClick={() => handleVerifyPayment(job)}
                               disabled={verifyingJobs.has(job.id)}
-                              className="bg-orange-500 hover:bg-orange-600"
+                              className="bg-primary hover:bg-primary-hover"
                             >
                               {verifyingJobs.has(job.id) ? (
                                 <>
@@ -533,7 +530,7 @@ export default function FundedJobsPage() {
                               <Button
                                 size="sm"
                                 onClick={() => handlePayout(job)}
-                                className="bg-orange-500 hover:bg-orange-600"
+                                className="bg-primary hover:bg-primary-hover"
                               >
                                 Payout
                               </Button>
@@ -560,7 +557,7 @@ export default function FundedJobsPage() {
                               <Button
                                 size="sm"
                                 onClick={() => router.push(`/workspace/${job.job_id}`)}
-                                className="bg-gray-900 hover:bg-gray-800 text-white"
+                                className="bg-slate-900 hover:bg-slate-800 text-white"
                               >
                                 <FileText className="w-3 h-3 mr-1" />
                                 Workspace

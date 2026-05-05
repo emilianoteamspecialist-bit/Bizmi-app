@@ -101,25 +101,25 @@ export default function ResetPasswordPage() {
 
   if (!isValidSession && !message) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
         <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-          <span className="text-gray-600">Verifying reset link...</span>
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="text-slate-600">Verifying reset link...</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8">
       <div className="w-full max-w-md">
         <Card className="shadow-lg">
           <CardHeader className="text-center space-y-2">
             <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-              <Lock className="h-6 w-6 text-orange-500" />
+              <Lock className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Reset Your Password</CardTitle>
-            <CardDescription className="text-gray-600">Enter your new password below</CardDescription>
+            <CardTitle className="text-2xl font-bold text-slate-900">Reset Your Password</CardTitle>
+            <CardDescription className="text-slate-600">Enter your new password below</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -133,7 +133,7 @@ export default function ResetPasswordPage() {
                 </div>
                 <Button
                   onClick={() => router.push("/login")}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  className="w-full bg-primary hover:bg-primary-hover text-white"
                 >
                   Back to Login
                 </Button>
@@ -142,7 +142,7 @@ export default function ResetPasswordPage() {
               <form onSubmit={handleResetPassword} className="space-y-4">
                 {/* New Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-700 font-medium">
+                  <Label htmlFor="password" className="text-slate-700 font-medium">
                     New Password
                   </Label>
                   <div className="relative">
@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       disabled={isLoading}
-                      className="pr-10 focus:ring-orange-500 focus:border-orange-500"
+                      className="pr-10 focus:ring-primary focus:border-primary"
                     />
                     <Button
                       type="button"
@@ -165,9 +165,9 @@ export default function ResetPasswordPage() {
                       disabled={isLoading}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
+                        <EyeOff className="h-4 w-4 text-slate-400" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
+                        <Eye className="h-4 w-4 text-slate-400" />
                       )}
                     </Button>
                   </div>
@@ -175,7 +175,7 @@ export default function ResetPasswordPage() {
 
                 {/* Confirm Password Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">
+                  <Label htmlFor="confirmPassword" className="text-slate-700 font-medium">
                     Confirm New Password
                   </Label>
                   <div className="relative">
@@ -187,7 +187,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                       disabled={isLoading}
-                      className="pr-10 focus:ring-orange-500 focus:border-orange-500"
+                      className="pr-10 focus:ring-primary focus:border-primary"
                     />
                     <Button
                       type="button"
@@ -198,16 +198,16 @@ export default function ResetPasswordPage() {
                       disabled={isLoading}
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
+                        <EyeOff className="h-4 w-4 text-slate-400" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
+                        <Eye className="h-4 w-4 text-slate-400" />
                       )}
                     </Button>
                   </div>
                 </div>
 
                 {/* Password Requirements */}
-                <div className="text-xs text-gray-500 space-y-1">
+                <div className="text-xs text-slate-500 space-y-1">
                   <p>Password must contain:</p>
                   <ul className="list-disc list-inside space-y-1 ml-2">
                     <li>At least 8 characters</li>
@@ -238,7 +238,7 @@ export default function ResetPasswordPage() {
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5"
+                  className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-2.5"
                   disabled={isLoading || !password || !confirmPassword}
                 >
                   {isLoading ? (
@@ -257,7 +257,7 @@ export default function ResetPasswordPage() {
                     type="button"
                     variant="link"
                     onClick={() => router.push("/login")}
-                    className="text-orange-500 hover:text-orange-600 text-sm"
+                    className="text-primary hover:text-primary text-sm"
                     disabled={isLoading}
                   >
                     Back to Login

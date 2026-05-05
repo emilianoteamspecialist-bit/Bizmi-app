@@ -1,7 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
 import type React from "react"
-import FreelancerNavbar from "@/components/freelancer-navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -100,7 +99,7 @@ export default function SavedJobsPage() {
               return {
                 ...job,
                 savedAt: new Date(item.created_at).toLocaleDateString(),
-                budget: `₦${job.budget_min?.toLocaleString()} - ₦${job.budget_max?.toLocaleString()}`,
+                budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
                 postedDate: new Date(job.created_at).toLocaleDateString(),
                 proposals: job.proposals?.[0]?.count || 0,
                 rating: 4.8,
@@ -248,8 +247,7 @@ export default function SavedJobsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <FreelancerNavbar />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="max-w-7xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -265,13 +263,12 @@ export default function SavedJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <FreelancerNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Saved Jobs</h1>
+          <h1 className="text-2xl sm:text-primaryxl font-bold text-slate-900 dark:text-white mb-2">Saved Jobs</h1>
           <p className="text-muted-foreground">Jobs you've bookmarked for later</p>
         </div>
 
@@ -286,7 +283,7 @@ export default function SavedJobsPage() {
                 <Bookmark className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No Saved Jobs</h3>
                 <p className="text-muted-foreground mb-4">You haven't saved any jobs yet</p>
-                <Button onClick={() => router.push("/dashboard")} className="bg-orange-500 hover:bg-orange-600">
+                <Button onClick={() => router.push("/dashboard")} className="bg-primary hover:bg-primary-hover">
                   Browse Jobs
                 </Button>
               </div>
@@ -295,13 +292,13 @@ export default function SavedJobsPage() {
                 {savedJobs.map((job, index) => (
                   <div
                     key={job.id}
-                    className={`p-4 sm:p-6 ${index !== savedJobs.length - 1 ? "border-b border-gray-200 dark:border-gray-700" : ""}`}
+                    className={`p-4 sm:p-6 ${index !== savedJobs.length - 1 ? "border-b border-slate-200 dark:border-gray-700" : ""}`}
                   >
                     <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 line-clamp-1">
                               {job.title}
                             </h3>
                             <p className="text-sm text-muted-foreground mb-2">{job.agencyInfo.name}</p>
@@ -319,7 +316,7 @@ export default function SavedJobsPage() {
                                 {job.rating}
                               </span>
                               <span className="flex items-center">
-                                <CreditCard className="h-4 w-4 mr-1 text-orange-500" />
+                                <CreditCard className="h-4 w-4 mr-1 text-primary" />
                                 {job.credit_cost} credits
                               </span>
                             </div>
@@ -329,7 +326,7 @@ export default function SavedJobsPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleJobAction(job, "unsave")}
-                              className="h-8 w-8 text-orange-600 hover:text-red-600"
+                              className="h-8 w-8 text-primary hover:text-red-600"
                             >
                               <BookmarkX className="h-4 w-4" />
                             </Button>
@@ -362,7 +359,7 @@ export default function SavedJobsPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
                           <div className="flex items-center">
-                            <span className="font-semibold text-orange-600 truncate">{job.budget}</span>
+                            <span className="font-semibold text-primary truncate">{job.budget}</span>
                           </div>
                           <div className="flex items-center">
                             <Clock className="h-4 w-4 text-muted-foreground mr-1 flex-shrink-0" />
@@ -377,7 +374,7 @@ export default function SavedJobsPage() {
 
                       <div className="flex-shrink-0">
                         <Button
-                          className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600"
+                          className="w-full sm:w-auto bg-primary hover:bg-primary-hover"
                           onClick={() => handleJobAction(job, "placeBid")}
                         >
                           <Send className="h-4 w-4 mr-2" />
@@ -406,7 +403,7 @@ export default function SavedJobsPage() {
                       alt={selectedAgency.name}
                       className="object-cover"
                     />
-                    <AvatarFallback className="text-lg font-semibold bg-orange-100 text-orange-600">
+                    <AvatarFallback className="text-lg font-semibold bg-orange-100 text-primary">
                       {selectedAgency.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -493,7 +490,7 @@ export default function SavedJobsPage() {
       {/* Place Bid Modal */}
       {showPlaceBidModal && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-end z-50">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-md h-full overflow-y-auto animate-in slide-in-from-right">
+          <div className="bg-white dark:bg-slate-800 w-full max-w-md h-full overflow-y-auto animate-in slide-in-from-right">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Place Your Bid</h3>
@@ -508,7 +505,7 @@ export default function SavedJobsPage() {
                   <p className="text-sm text-muted-foreground mb-2">{selectedJob.agencyInfo.name}</p>
                   <div className="flex items-center space-x-4 text-sm">
                     <span className="flex items-center">
-                      <span className="text-orange-500 mr-1">₦</span>
+                      <span className="text-primary mr-1">₦</span>
                       {selectedJob.budget.replace("₦", "")}
                     </span>
                     <span className="flex items-center">
@@ -542,7 +539,7 @@ export default function SavedJobsPage() {
                 <div>
                   <label className="text-sm font-medium mb-2 block">Your Budget</label>
                   <Input
-                    placeholder="₦0"
+                    placeholder="₦ 0"
                     value={bidData.budget}
                     onChange={(e) => setBidData({ ...bidData, budget: e.target.value })}
                   />
@@ -550,11 +547,11 @@ export default function SavedJobsPage() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Attachments</label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
+                  <div className="border-2 border-dashed border-slate-300 dark:border-gray-600 rounded-lg p-4">
                     <input type="file" multiple onChange={handleFileSelect} className="hidden" id="file-upload" />
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <div className="text-center">
-                        <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                        <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
                         <p className="text-sm text-muted-foreground">Click to upload files</p>
                       </div>
                     </label>
@@ -565,7 +562,7 @@ export default function SavedJobsPage() {
                       {selectedFiles.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded"
+                          className="flex items-center justify-between bg-slate-100 dark:bg-gray-700 p-2 rounded"
                         >
                           <span className="text-sm truncate">{file.name}</span>
                           <Button variant="ghost" size="sm" onClick={() => removeFile(index)}>
@@ -577,16 +574,16 @@ export default function SavedJobsPage() {
                   )}
                 </div>
 
-                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                <div className="bg-primary/10 dark:bg-orange-900/20 p-4 rounded-lg">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Credits Required:</span>
-                    <span className="text-lg font-bold text-orange-600">{selectedJob.credit_cost}</span>
+                    <span className="text-lg font-bold text-primary">{selectedJob.credit_cost}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">This will be deducted from your credit balance</p>
                 </div>
 
                 <Button
-                  className="w-full bg-orange-500 hover:bg-orange-600"
+                  className="w-full bg-primary hover:bg-primary-hover"
                   onClick={submitBid}
                   disabled={!bidData.proposal || !bidData.timeline || !bidData.budget}
                 >

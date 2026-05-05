@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     // Check if payment was successful and amount matches
     if (transactionData.status === "success" && transactionData.amount / 100 === Number(amount)) {
       // Initialize Supabase client
-      const supabase = createRouteHandlerClient({ cookies })
+      const cookieStore = await cookies()
+      const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
       // Insert verified payment into Paystack_data table
       const { error: insertError } = await supabase.from("Paystack_data").insert([

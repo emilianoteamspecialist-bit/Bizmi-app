@@ -18,7 +18,6 @@ import {
   MapPin,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import FreelancerNavbar from "@/components/freelancer-navbar"
 import { Input } from "@/components/ui/input"
 
 interface Proposal {
@@ -287,7 +286,7 @@ export default function ProposalsPage() {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        alert(`Work completed successfully! Payout of ₦${data.payout_amount?.toLocaleString()} initiated.`)
+        alert(`Work completed successfully! Payout of ₦ ${data.payout_amount?.toLocaleString()} initiated.`)
 
         // Update local status
         await supabase.from("freelancer_proposal_status").upsert({
@@ -315,7 +314,7 @@ export default function ProposalsPage() {
       case "rejected":
         return <XCircle className="h-4 w-4 text-red-500" />
       default:
-        return <AlertCircle className="h-4 w-4 text-orange-500" />
+        return <AlertCircle className="h-4 w-4 text-primary" />
     }
   }
 
@@ -340,27 +339,26 @@ export default function ProposalsPage() {
 
   if (loading && proposals.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <FreelancerNavbar />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="max-w-full sm:max-w-6xl lg:max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
           <div className="mb-4 sm:mb-6 lg:mb-8">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
+            <div className="h-8 bg-slate-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
             <div className="relative mt-4">
-              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-10 bg-slate-200 dark:bg-gray-700 rounded animate-pulse"></div>
             </div>
           </div>
           <div className="animate-pulse space-y-6">
             {[...Array(LIMIT)].map((_, i) => (
               <Card key={i}>
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-6 bg-slate-200 dark:bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-5/6"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -372,20 +370,19 @@ export default function ProposalsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <FreelancerNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <div className="max-w-full sm:max-w-6xl lg:max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
         <div className="mb-4 sm:mb-6 lg:mb-8">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">My Proposals</h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
+          <h1 className="text-xl sm:text-2xl lg:text-primaryxl font-bold text-slate-900 dark:text-white">My Proposals</h1>
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1 sm:mt-2">
             Track the status of your job applications
           </p>
           <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               type="text"
               placeholder="Search proposals by job title or description..."
-              className="pl-10 pr-4 py-2 w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-orange-500 focus:border-orange-500"
+              className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-300 dark:border-gray-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary"
               value={searchTerm}
               onChange={handleSearchChange}
             />
@@ -395,13 +392,13 @@ export default function ProposalsPage() {
         {proposals.length === 0 && !loading ? (
           <Card>
             <CardContent className="text-center py-12">
-              <div className="mx-auto w-24 h-24 bg-orange-50 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
-                <FileText className="h-12 w-12 text-orange-500" />
+              <div className="mx-auto w-24 h-24 bg-primary/10 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
+                <FileText className="h-12 w-12 text-primary" />
               </div>
-              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <h3 className="text-base sm:text-lg font-medium text-slate-900 dark:text-white mb-2">
                 {searchTerm ? "No matching proposals found" : "No proposals yet"}
               </h3>
-              <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6">
+              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mb-6">
                 {searchTerm
                   ? "Try a different search term or clear the search."
                   : "Start applying to jobs to see your proposals here."}
@@ -409,7 +406,7 @@ export default function ProposalsPage() {
               {!searchTerm && (
                 <Button
                   onClick={() => (window.location.href = "/dashboard")}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  className="bg-primary hover:bg-primary-hover text-white"
                 >
                   Browse Jobs
                 </Button>
@@ -421,23 +418,23 @@ export default function ProposalsPage() {
             {proposals.map((proposal) => (
               <Card
                 key={proposal.id}
-                className="border-l-4 border-orange-500 shadow-sm hover:shadow-md transition-all duration-200"
+                className="border-l-4 border-primary shadow-sm hover:shadow-md transition-all duration-200"
               >
                 <CardHeader className="p-4 sm:p-6 pb-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex-1">
-                      <CardTitle className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white line-clamp-2">
+                      <CardTitle className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white line-clamp-2">
                         {proposal.job_title}
                       </CardTitle>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 mt-1">
                         <Avatar className="h-6 w-6 mr-2">
-                          <AvatarFallback className="text-xs bg-orange-100 text-orange-600">
+                          <AvatarFallback className="text-xs bg-orange-100 text-primary">
                             {proposal.agency_name?.charAt(0) || "A"}
                           </AvatarFallback>
                         </Avatar>
                         <span className="truncate">{proposal.agency_name}</span>
                         <span className="mx-2">•</span>
-                        <CalendarDays className="h-4 w-4 mr-1 text-orange-500" />
+                        <CalendarDays className="h-4 w-4 mr-1 text-primary" />
                         <span>Applied {formatDate(proposal.created_at)}</span>
                       </div>
                     </div>
@@ -453,43 +450,42 @@ export default function ProposalsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6 pt-4">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
+                  <p className="text-sm text-slate-700 dark:text-gray-300 mb-4 line-clamp-3">
                     {proposal.job_description}
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 border-t border-b border-gray-200 dark:border-gray-700 py-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 border-t border-b border-slate-200 dark:border-gray-700 py-4">
                     <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                      <DollarSign className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Your Budget</p>
-                        <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Your Budget</p>
+                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
                           {proposal.budget || "Not specified"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                      <DollarSign className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Client Budget</p>
-                        <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                          ₦{proposal.job_budget_min?.toLocaleString()} - ₦{proposal.job_budget_max?.toLocaleString()}
-                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Client Budget</p>
+                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                          ₦ {proposal.job_budget_min?.toLocaleString()} - ₦ {proposal.job_budget_max?.toLocaleString()}                        </p>
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <Clock className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                      <Clock className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Your Timeline</p>
-                        <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Your Timeline</p>
+                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
                           {proposal.timeline || "Not specified"}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center">
-                      <Clock className="h-4 w-4 text-orange-500 mr-2 flex-shrink-0" />
+                      <Clock className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                       <div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">Job Duration</p>
-                        <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                        <p className="text-xs text-slate-600 dark:text-slate-400">Job Duration</p>
+                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
                           {proposal.job_duration || "Not specified"}
                         </p>
                       </div>
@@ -497,23 +493,23 @@ export default function ProposalsPage() {
                   </div>
 
                   {proposal.job_location && (
-                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      <MapPin className="h-4 w-4 mr-2 text-orange-500" />
+                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 mb-4">
+                      <MapPin className="h-4 w-4 mr-2 text-primary" />
                       <span>
                         Location:{" "}
-                        <span className="font-medium text-gray-900 dark:text-white">{proposal.job_location}</span>
+                        <span className="font-medium text-slate-900 dark:text-white">{proposal.job_location}</span>
                       </span>
                     </div>
                   )}
 
                   <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Skills:</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Skills:</p>
                     <div className="flex flex-wrap gap-2">
                       {proposal.skills?.map((skill, index) => (
                         <Badge
                           key={index}
                           variant="secondary"
-                          className="text-xs bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300"
+                          className="text-xs bg-primary/10 text-primary dark:bg-orange-900/20 dark:text-orange-300"
                         >
                           {skill}
                         </Badge>
@@ -521,16 +517,16 @@ export default function ProposalsPage() {
                     </div>
                   </div>
 
-                  <div className="bg-orange-50 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Your Proposal:</p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                  <div className="bg-primary/10 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Your Proposal:</p>
+                    <p className="text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap">
                       {proposal.proposal_text}
                     </p>
                   </div>
 
                   {proposal.attachments && proposal.attachments.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white mb-2">Attachments:</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Attachments:</p>
                       <div className="flex flex-wrap gap-2">
                         {proposal.attachments.map((attachment, index) => (
                           <Badge key={index} variant="outline" className="text-sm">
@@ -584,11 +580,11 @@ export default function ProposalsPage() {
                   onClick={() => loadProposals(true)}
                   disabled={loadingMore}
                   variant="outline"
-                  className="min-w-32 border-orange-500 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                  className="min-w-32 border-primary text-primary hover:bg-primary/10 dark:hover:bg-orange-900/20"
                 >
                   {loadingMore ? (
                     <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500 mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
                       Loading...
                     </div>
                   ) : (
@@ -603,3 +599,4 @@ export default function ProposalsPage() {
     </div>
   )
 }
+

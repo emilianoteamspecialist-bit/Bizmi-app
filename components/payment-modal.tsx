@@ -55,7 +55,7 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
       setReferenceError("")
       try {
         const { data, error } = await supabase.from("Funded_jobs101").select("id").eq("reference_id", referenceId.trim()).limit(1)
-        if (error) throw error
+        if (error && error.code !== "PGRST116") throw error
         if (data && data.length > 0) {
           setReferenceExists(true)
           setReferenceError("This reference ID has already been used.")
@@ -63,7 +63,7 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
           setReferenceExists(false)
         }
       } catch (error) {
-        console.error(error)
+        console.error("Reference check error:", error)
       } finally {
         setIsCheckingReference(false)
       }
@@ -116,7 +116,7 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <CardTitle className="text-2xl font-black text-slate-900 flex items-center gap-2">
-                <CreditCard className="h-6 w-6 text-orange-500" />
+                <CreditCard className="h-6 w-6 text-primary" />
                 Fund Project
               </CardTitle>
               <CardDescription className="font-medium text-slate-400">Lock funds in escrow to start the project.</CardDescription>
@@ -132,7 +132,7 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
           <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 space-y-4">
             <div className="flex items-start gap-4">
                <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                  <Briefcase className="h-5 w-5 text-orange-500" />
+                  <Briefcase className="h-5 w-5 text-primary" />
                </div>
                <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Project</p>
@@ -165,8 +165,7 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
                    required
                    disabled={isSubmitting}
                  />
-                 <p className="text-[10px] font-medium text-slate-400 italic">Suggested: ₦{jobData.amount.toLocaleString()}</p>
-               </div>
+                 <p className="text-[10px] font-medium text-slate-400 italic">Suggested: ₦ {jobData.amount.toLocaleString()}</p>               </div>
 
                <div className="space-y-2">
                  <Label htmlFor="referenceId" className="font-bold text-slate-700">Payment Reference</Label>
@@ -186,8 +185,8 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
                </div>
             </div>
 
-            <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 flex gap-3">
-               <ShieldCheck className="h-5 w-5 text-orange-600 shrink-0" />
+            <div className="bg-primary/10 rounded-2xl p-4 border border-orange-100 flex gap-3">
+               <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
                <p className="text-[11px] font-medium text-orange-800 leading-relaxed">
                   Funds will be held in our secure <strong>Escrow System</strong>. They will only be released to the freelancer once you approve the final submission in the Workspace.
                </p>
@@ -200,7 +199,7 @@ export default function PaymentModal({ isOpen, onClose, jobData, onSuccess }: Pa
               <Button
                 type="submit"
                 disabled={isSubmitting || referenceExists || isCheckingReference || !referenceId.trim() || !amount}
-                className="flex-1 h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black shadow-xl shadow-orange-500/25"
+                className="flex-1 h-14 rounded-2xl bg-primary hover:bg-primary-hover text-white font-black shadow-xl shadow-primary/25"
               >
                 {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <DollarSign className="h-5 w-5 mr-2" />}
                 Confirm Funding

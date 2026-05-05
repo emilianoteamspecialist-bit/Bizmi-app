@@ -138,16 +138,16 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-3">
                     <div>
                       <h3 className="font-medium">{user.full_name || "No name"}</h3>
-                      <p className="text-sm text-gray-600">{user.email}</p>
+                      <p className="text-sm text-slate-600">{user.email}</p>
                     </div>
-                    <Badge variant="outline" className="border-orange-200 text-orange-700">
+                    <Badge variant="outline" className="border-orange-200 text-primary">
                       {user.account_type}
                     </Badge>
                   </div>
-                  <div className="mt-2 text-sm text-gray-500">
+                  <div className="mt-2 text-sm text-slate-500">
                     Joined: {formatDate(user.created_at)}
                     {type === "agency" && user.wallet_balance !== undefined && (
-                      <span className="ml-4">Wallet: ₦{user.wallet_balance.toLocaleString()}</span>
+                      <span className="ml-4">Wallet: ₦ {user.wallet_balance.toLocaleString()}</span>
                     )}
                   </div>
                 </div>
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         ))}
-        {filteredUsers.length === 0 && <div className="text-center py-8 text-gray-500">No {type}s found</div>}
+        {filteredUsers.length === 0 && <div className="text-center py-8 text-slate-500">No {type}s found</div>}
       </div>
     )
   }
@@ -189,24 +189,24 @@ export default function AdminDashboard() {
       <SidebarInset>
         <div className="p-4 lg:p-6">
           <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600">Overview of platform activity</p>
+            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">Admin Dashboard</h1>
+            <p className="text-slate-600">Overview of platform activity</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
             <Card className="border-l-4 border-l-orange-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>
-                <Users className="h-5 w-5 text-orange-500" />
+                <CardTitle className="text-sm font-medium text-slate-600">Total Users</CardTitle>
+                <Users className="h-5 w-5 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{stats.totalUsers}</div>
+                <div className="text-2xl font-bold text-primary">{stats.totalUsers}</div>
               </CardContent>
             </Card>
 
             <Card className="border-l-4 border-l-green-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">New Users Today</CardTitle>
+                <CardTitle className="text-sm font-medium text-slate-600">New Users Today</CardTitle>
                 <Users className="h-5 w-5 text-green-500" />
               </CardHeader>
               <CardContent>
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
 
             <Card className="border-l-4 border-l-blue-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Total Agencies</CardTitle>
+                <CardTitle className="text-sm font-medium text-slate-600">Total Agencies</CardTitle>
                 <Briefcase className="h-5 w-5 text-blue-500" />
               </CardHeader>
               <CardContent>
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
 
             <Card className="border-l-4 border-l-purple-500">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Total Freelancers</CardTitle>
+                <CardTitle className="text-sm font-medium text-slate-600">Total Freelancers</CardTitle>
                 <Users className="h-5 w-5 text-purple-500" />
               </CardHeader>
               <CardContent>
@@ -236,21 +236,21 @@ export default function AdminDashboard() {
           </div>
 
           <Card>
-            <CardHeader className="bg-orange-50 border-b">
-              <CardTitle className="text-orange-700">User Management</CardTitle>
+            <CardHeader className="bg-primary/10 border-b">
+              <CardTitle className="text-primary">User Management</CardTitle>
             </CardHeader>
             <CardContent className="p-4 lg:p-6 max-h-[60vh] overflow-y-auto">
               <Tabs defaultValue="agencies" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-orange-100">
                   <TabsTrigger
                     value="agencies"
-                    className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
                   >
                     Agencies ({stats.totalAgencies})
                   </TabsTrigger>
                   <TabsTrigger
                     value="freelancers"
-                    className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
                   >
                     Freelancers ({stats.totalFreelancers})
                   </TabsTrigger>

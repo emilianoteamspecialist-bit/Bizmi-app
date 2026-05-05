@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Play, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import FreelancerNavbar from "@/components/freelancer-navbar"
 
 export default function FreelancerTutorial() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
@@ -41,14 +40,13 @@ export default function FreelancerTutorial() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <FreelancerNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Section */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Freelancer Video Tutorials</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Freelancer Video Tutorials</h1>
+          <p className="text-xl text-slate-600 dark:text-gray-300 max-w-3xl mx-auto">
             Master the art of freelancing with our comprehensive video guides. Learn how to bid effectively, manage
             payments, and create winning proposals that get you hired.
           </p>
@@ -75,7 +73,7 @@ export default function FreelancerTutorial() {
                   />
                   {/* Play Button Overlay */}
                   <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="bg-orange-500 rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                    <div className="bg-primary rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
                       <Play className="h-8 w-8 text-white fill-current" />
                     </div>
                   </div>
@@ -87,15 +85,15 @@ export default function FreelancerTutorial() {
               </CardHeader>
 
               <CardContent className="p-6">
-                <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-orange-500 transition-colors duration-300">
+                <CardTitle className="text-xl font-semibold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors duration-300">
                   {tutorial.title}
                 </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                <CardDescription className="text-slate-600 dark:text-gray-300 mb-4 line-clamp-2">
                   {tutorial.description}
                 </CardDescription>
 
                 <Button
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white transition-colors duration-300"
+                  className="w-full bg-primary hover:bg-primary-hover text-white transition-colors duration-300"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleWatchVideo(tutorial.videoUrl)
@@ -112,15 +110,15 @@ export default function FreelancerTutorial() {
 
         {/* Additional Resources Section */}
         <div className="mt-12 text-center">
-                 <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm border border-orange-500/20">
-                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
+                 <div className="bg-white dark:bg-slate-800 rounded-lg p-8 shadow-sm border border-primary/20">
+                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Need More Help?</h2>
                    <p className="text-muted-foreground mb-6">
                      Can't find what you're looking for? Our support team is here to help you succeed.
                    </p>
                    <Button
                      onClick={() => window.open("mailto:Bizimisocials12@gmail.com", "_blank")}
                      variant="outline"
-                     className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-colors duration-300"
+                     className="border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300"
                    >
                      Contact Support
                    </Button>

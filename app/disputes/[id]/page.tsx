@@ -185,28 +185,28 @@ export default function DisputeRoom() {
   const otherPartyName = currentUserId === dispute.initiator_id ? dispute.respondent?.full_name : dispute.initiator?.full_name
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8 px-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center py-8 px-4">
       <div className="max-w-4xl w-full">
         {/* Header Card */}
         <Card className="mb-6 border-orange-200 shadow-sm">
-          <CardHeader className="bg-orange-50/50 pb-4 border-b">
+          <CardHeader className="bg-primary/10/50 pb-4 border-b">
             <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
               <div>
                 <CardTitle className="text-2xl flex items-center gap-2">
-                  <ShieldAlert className="text-orange-500 h-6 w-6" />
+                  <ShieldAlert className="text-primary h-6 w-6" />
                   Dispute Room
                 </CardTitle>
                 <CardDescription className="mt-1 text-base">
                   Job: <strong>{dispute.job?.title}</strong>
                 </CardDescription>
-                <div className="mt-2 text-sm text-gray-600">
+                <div className="mt-2 text-sm text-slate-600">
                   <span className="mr-4">Type: <strong className="capitalize">{dispute.dispute_type.replace('_', ' ')}</strong></span>
-                  <span>Amount in escrow: <strong>₦{dispute.amount_disputed.toLocaleString()}</strong></span>
+                  <span>Amount in escrow: <strong>₦ {dispute.amount_disputed.toLocaleString()}</strong></span>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
                 {getStatusBadge(dispute.status)}
-                <div className="text-xs text-gray-500 text-right">
+                <div className="text-xs text-slate-500 text-right">
                   Started: {new Date(dispute.created_at).toLocaleDateString()}
                   <br />
                   Other party: <strong>{otherPartyName}</strong>
@@ -215,8 +215,8 @@ export default function DisputeRoom() {
             </div>
           </CardHeader>
           <CardContent className="pt-4 bg-white">
-            <h3 className="text-sm font-semibold text-gray-700 mb-1">Original Complaint</h3>
-            <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border">
+            <h3 className="text-sm font-semibold text-slate-700 mb-1">Original Complaint</h3>
+            <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded border">
               {dispute.description}
             </p>
             {isResolved && dispute.resolution_outcome && (
@@ -228,7 +228,7 @@ export default function DisputeRoom() {
         </Card>
 
         {/* Chat Interface */}
-        <Card className="flex flex-col shadow-sm border-gray-200" style={{ height: '600px' }}>
+        <Card className="flex flex-col shadow-sm border-slate-200" style={{ height: '600px' }}>
           <CardHeader className="border-b py-3 px-4 bg-white shrink-0">
             <CardTitle className="text-lg">Discussion & Evidence</CardTitle>
             <CardDescription className="text-xs">
@@ -236,15 +236,15 @@ export default function DisputeRoom() {
             </CardDescription>
           </CardHeader>
           
-          <CardContent className="flex-1 overflow-y-auto p-4 bg-gray-50/50 space-y-4">
+          <CardContent className="flex-1 overflow-y-auto p-4 bg-slate-50/50 space-y-4">
             {messages.map((msg) => {
               const isMe = msg.sender_id === currentUserId
               return (
                 <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <div className={`text-xs text-gray-500 mb-1 ${isMe ? 'mr-1' : 'ml-1'}`}>
+                  <div className={`text-xs text-slate-500 mb-1 ${isMe ? 'mr-1' : 'ml-1'}`}>
                     {isMe ? 'You' : msg.sender?.full_name} • {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </div>
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${isMe ? 'bg-orange-500 text-white rounded-br-none' : 'bg-white border text-gray-800 rounded-bl-none shadow-sm'}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${isMe ? 'bg-primary text-white rounded-br-none' : 'bg-white border text-gray-800 rounded-bl-none shadow-sm'}`}>
                     <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
                   </div>
                 </div>
@@ -266,7 +266,7 @@ export default function DisputeRoom() {
                   className="flex-1"
                   disabled={sending}
                 />
-                <Button type="submit" className="bg-orange-500 hover:bg-orange-600 shrink-0" disabled={sending || !newMessage.trim()}>
+                <Button type="submit" className="bg-primary hover:bg-primary-hover shrink-0" disabled={sending || !newMessage.trim()}>
                   <Send className="h-4 w-4" />
                 </Button>
               </form>

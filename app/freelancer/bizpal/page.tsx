@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Coins, Filter, X, Mail, ArrowRight } from "lucide-react"
 import { supabase } from "@/lib/supabase"
-import FreelancerNavbar from "@/components/freelancer-navbar"
-import TopItModal from "@/components/topit-modal"
+import dynamic from "next/dynamic"
+
+const TopItModal = dynamic(() => import("@/components/topit-modal"), { ssr: false })
 
 interface CreditPurchase {
   id: string
@@ -149,8 +150,7 @@ export default function BizpalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <FreelancerNavbar />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <div className="max-w-6xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -168,18 +168,17 @@ export default function BizpalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <FreelancerNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       <div className="max-w-6xl mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Bizpal</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your payments and credits</p>
+            <h1 className="text-primaryxl font-bold text-slate-900 dark:text-white">Bizpal</h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-2">Manage your payments and credits</p>
           </div>
           <Button
             onClick={() => window.open("https://paystack.shop/pay/m7uebavu00", "_blank")}
-            className="bg-orange-500 hover:bg-orange-600 border-orange-500 text-white"
+            className="bg-primary hover:bg-primary-hover border-primary text-white"
           >
             Buy Credits
           </Button>
@@ -191,21 +190,21 @@ export default function BizpalPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Available Credits</p>
-                  <p className="text-2xl font-bold text-orange-600">{currentCredits.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Available Credits</p>
+                  <p className="text-2xl font-bold text-primary">{currentCredits.toLocaleString()}</p>
                 </div>
                 <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-                  <Coins className="h-6 w-6 text-orange-600" />
+                  <Coins className="h-6 w-6 text-primary" />
                 </div>
               </div>
               <Button
                 onClick={() => setShowTopItModal(true)}
                 size="sm"
-                className="w-full mt-3 bg-orange-500 hover:bg-orange-600"
+                className="w-full mt-3 bg-primary hover:bg-primary-hover"
               >
                 Top It
               </Button>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">Min: 10 credits (₦500)</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center">Min: 10 credits (₦500)</p>
             </CardContent>
           </Card>
         </div>
@@ -216,7 +215,7 @@ export default function BizpalPage() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-orange-500" />
+                  <Coins className="h-5 w-5 text-primary" />
                   Credits Purchase History
                 </CardTitle>
                 <Button
@@ -232,7 +231,7 @@ export default function BizpalPage() {
 
               {/* Date Filter Section */}
               {showDateFilter && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <Label htmlFor="fromDate" className="text-sm font-medium">
@@ -271,7 +270,7 @@ export default function BizpalPage() {
                     </div>
                   </div>
                   {(fromDate || toDate) && (
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-xs text-slate-500 mt-2">
                       Showing {filteredCreditPurchases.length} of {creditPurchases.length} purchases
                     </p>
                   )}
@@ -281,17 +280,17 @@ export default function BizpalPage() {
             <CardContent>
               {filteredCreditPurchases.length === 0 ? (
                 <div className="text-center py-8">
-                  <Coins className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  <Coins className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                     {creditPurchases.length === 0 ? "No credits purchased yet" : "No purchases found"}
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-slate-500 dark:text-slate-400">
                     {creditPurchases.length === 0
                       ? "Purchase credits to access premium features and services."
                       : "Try adjusting your date filter to see more results."}
                   </p>
                   {creditPurchases.length === 0 && (
-                    <p className="text-sm text-gray-400 mt-2">Rate: 10 credits = ₦500 (₦50 per credit)</p>
+                    <p className="text-sm text-slate-400 mt-2">Rate: 10 credits = ₦ 500 (₦ 50 per credit)</p>
                   )}
                 </div>
               ) : (
@@ -299,25 +298,25 @@ export default function BizpalPage() {
                   {filteredCreditPurchases.map((purchase) => (
                     <div
                       key={purchase.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                      className="flex items-center justify-between p-4 border border-slate-200 dark:border-gray-700 rounded-lg"
                     >
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-                          <Coins className="h-5 w-5 text-orange-600" />
+                          <Coins className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">
+                          <h4 className="font-medium text-slate-900 dark:text-white">
                             {purchase.credits_amount > 0 ? "Credits Purchase" : "Credits Used (Job Bid)"}
                           </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
                             {Math.abs(purchase.credits_amount).toLocaleString()} credits
                           </p>
-                          <p className="text-xs text-gray-400">{formatDate(purchase.created_at)}</p>
+                          <p className="text-xs text-slate-400">{formatDate(purchase.created_at)}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p
-                          className={`font-semibold ${purchase.credits_amount > 0 ? "text-gray-900 dark:text-white" : "text-red-600"}`}
+                          className={`font-semibold ${purchase.credits_amount > 0 ? "text-slate-900 dark:text-white" : "text-red-600"}`}
                         >
                           {purchase.credits_amount > 0
                             ? formatCurrency(purchase.amount)
@@ -346,7 +345,7 @@ export default function BizpalPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-orange-500" />
+                <Mail className="h-5 w-5 text-primary" />
                 How Payout Works
               </CardTitle>
             </CardHeader>
@@ -354,67 +353,67 @@ export default function BizpalPage() {
               <div className="space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       1
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">Agency funds a job</p>
+                    <p className="text-slate-700 dark:text-gray-300">Agency funds a job</p>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       2
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">You click on 'verify' button, to verify payment</p>
+                    <p className="text-slate-700 dark:text-gray-300">You click on 'verify' button, to verify payment</p>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       3
                     </div>
                 
-                    <p className="text-gray-700 dark:text-gray-300">    You click on the 'Biz' button for confirmation</p>
+                    <p className="text-slate-700 dark:text-gray-300">    You click on the 'Biz' button for confirmation</p>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       4
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">Upon successful job delivery</p>
+                    <p className="text-slate-700 dark:text-gray-300">Upon successful job delivery</p>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       5
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">Agency clicks on 'job done' on their side</p>
+                    <p className="text-slate-700 dark:text-gray-300">Agency clicks on 'job done' on their side</p>
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       6
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">
+                    <p className="text-slate-700 dark:text-gray-300">
                     'Payout' button becomes visible
                     </p>
                   </div>
 
                    <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
                       6
                     </div>
-                    <p className="text-gray-700 dark:text-gray-300">
+                    <p className="text-slate-700 dark:text-gray-300">
               Click on 'payout' button, fill in your correct bank details and withdraw
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <div className="pt-4 border-t border-slate-200 dark:border-gray-700">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                     Have questions about failed transactions or need support? Contact us directly.
                   </p>
                   <Button
                     onClick={handleSubmitQuery}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center gap-2"
+                    className="w-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center gap-2"
                   >
                     <Mail className="h-4 w-4" />
                     Submit Query

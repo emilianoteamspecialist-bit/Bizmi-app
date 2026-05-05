@@ -1,5 +1,4 @@
 "use client"
-import AgencyNavbar from "@/components/agency-navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Play, ExternalLink } from "lucide-react"
@@ -34,12 +33,11 @@ export default function AgencyTutorial() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AgencyNavbar />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
 
       <div className="max-w-7xl mx-auto py-8 px-4">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Agency Tutorial Center</h1>
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Agency Tutorial Center</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Master the platform with our comprehensive video tutorials. Learn how to maximize your success as an agency
             on Bizimi.
@@ -50,7 +48,7 @@ export default function AgencyTutorial() {
           {tutorials.map((tutorial) => (
             <Card
               key={tutorial.id}
-              className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-orange-500/20"
+              className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20"
             >
               <CardHeader className="p-0">
                 <div className="relative overflow-hidden rounded-t-lg">
@@ -60,20 +58,20 @@ export default function AgencyTutorial() {
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                    <div className="bg-orange-500 rounded-full p-4 group-hover:scale-110 transition-transform duration-300">
+                    <div className="bg-primary rounded-full p-4 group-hover:scale-110 transition-transform duration-300">
                       <Play className="h-8 w-8 text-white fill-white" />
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-orange-500 transition-colors duration-300">
+                <CardTitle className="text-xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-primary transition-colors duration-300">
                   {tutorial.title}
                 </CardTitle>
                 <p className="text-muted-foreground mb-4 line-clamp-3">{tutorial.description}</p>
                 <Button
                   onClick={() => openVideo(tutorial.videoId)}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
+                  className="w-full bg-primary hover:bg-primary-hover text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
                 >
                   <Play className="h-4 w-4" />
                   Watch Tutorial
@@ -85,15 +83,15 @@ export default function AgencyTutorial() {
         </div>
 
         <div className="mt-12 text-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm border border-orange-500/20">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Need More Help?</h2>
+          <div className="bg-white dark:bg-slate-800 rounded-lg p-8 shadow-sm border border-primary/20">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Need More Help?</h2>
             <p className="text-muted-foreground mb-6">
               Can't find what you're looking for? Our support team is here to help you succeed.
             </p>
             <Button
               onClick={() => window.open("mailto:Bizimisocials12@gmail.com", "_blank")}
               variant="outline"
-              className="border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white transition-colors duration-300"
+              className="border-primary text-primary hover:bg-primary hover:text-white transition-colors duration-300"
             >
               Contact Support
             </Button>

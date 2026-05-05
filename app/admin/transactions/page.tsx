@@ -160,7 +160,7 @@ export default function AdminTransactions() {
       case "failed":
         return "bg-red-100 text-red-800"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-slate-100 text-gray-800"
     }
   }
 
@@ -178,23 +178,23 @@ export default function AdminTransactions() {
     <div className="space-y-6">
       {Object.values(groupedData).map((group) => (
         <Card key={group.user_id}>
-          <CardHeader className="bg-orange-50 border-b">
-            <CardTitle className="text-orange-700 flex items-center justify-between">
+          <CardHeader className="bg-primary/10 border-b">
+            <CardTitle className="text-primary flex items-center justify-between">
               <span>{group.user_name}</span>
-              <Badge variant="outline" className="border-orange-200 text-orange-700">
-                Total: ₦{group.total_amount.toLocaleString()}
+              <Badge variant="outline" className="border-orange-200 text-primary">
+                Total: ₦ {group.total_amount.toLocaleString()}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
             <div className="space-y-3">
               {group.transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <div>
                         <h4 className="font-medium">₦{transaction.amount.toLocaleString()}</h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-slate-600">
                           Job ID: {transaction.job_id} • Ref: {transaction.reference_id}
                         </p>
                       </div>
@@ -210,7 +210,7 @@ export default function AdminTransactions() {
                         </Badge>
                       )}
                     </div>
-                    <div className="mt-1 text-sm text-gray-500">
+                    <div className="mt-1 text-sm text-slate-500">
                       {formatDate(transaction.created_at)}
                       {transaction.failure_reason && (
                         <span className="ml-2 text-red-600">• {transaction.failure_reason}</span>
@@ -222,7 +222,7 @@ export default function AdminTransactions() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-orange-500 text-orange-600 hover:bg-orange-50 bg-transparent"
+                        className="border-primary text-primary hover:bg-primary/10 bg-transparent"
                         onClick={() => handleJobDone(transaction.id)}
                       >
                         Mark Job Done
@@ -246,7 +246,7 @@ export default function AdminTransactions() {
         </Card>
       ))}
       {Object.keys(groupedData).length === 0 && (
-        <div className="text-center py-8 text-gray-500">No {type} transactions found</div>
+        <div className="text-center py-8 text-slate-500">No {type} transactions found</div>
       )}
     </div>
   )
@@ -306,8 +306,8 @@ export default function AdminTransactions() {
       <SidebarInset>
         <div className="p-4 lg:p-6">
           <div className="mb-6">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Transactions</h1>
-            <p className="text-gray-600">Monitor and manage all platform transactions</p>
+            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">Transactions</h1>
+            <p className="text-slate-600">Monitor and manage all platform transactions</p>
           </div>
 
           <div className="mb-6">
@@ -315,7 +315,7 @@ export default function AdminTransactions() {
               placeholder="Search by reference ID, job ID, or user name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md border-orange-200 focus:border-orange-500 focus:ring-orange-500"
+              className="max-w-md border-orange-200 focus:border-primary focus:ring-primary"
             />
           </div>
 
@@ -323,13 +323,13 @@ export default function AdminTransactions() {
             <TabsList className="grid w-full grid-cols-2 bg-orange-100">
               <TabsTrigger
                 value="agencies"
-                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                className="data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Agencies ({Object.keys(filterTransactions(agencyTransactions, "agency")).length})
               </TabsTrigger>
               <TabsTrigger
                 value="freelancers"
-                className="data-[state=active]:bg-orange-500 data-[state=active]:text-white"
+                className="data-[state=active]:bg-primary data-[state=active]:text-white"
               >
                 Freelancers ({Object.keys(filterTransactions(freelancerTransactions, "freelancer")).length})
               </TabsTrigger>
