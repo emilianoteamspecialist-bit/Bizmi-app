@@ -83,6 +83,11 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        aubergine: "hsl(var(--aubergine))",
+        gold: "hsl(var(--gold))",
+        jade: "hsl(var(--jade))",
+        cream: "hsl(var(--cream))",
+        ink: "hsl(var(--ink))",
       },
       borderRadius: {
         "2xl": "var(--radius-2xl)",
@@ -100,10 +105,15 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        marquee: "marquee 40s linear infinite",
       },
     },
   },
