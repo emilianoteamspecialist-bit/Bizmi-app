@@ -96,20 +96,21 @@ export function Hero() {
           </AuberginePanel>
 
           {/* Floating talent card */}
-          <div className="absolute -left-6 bottom-10 bg-white rounded-2xl p-4 w-64 shadow-2xl shadow-aubergine/25">
+          <div className="absolute -left-6 bottom-10 bg-white rounded-2xl p-4 w-[19rem] shadow-2xl shadow-aubergine/25">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-primary/30" />
+              <div className="w-11 h-11 rounded-full bg-primary/30 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-extrabold text-ink truncate">Adaeze N.</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-extrabold text-ink">Adaeze N.</span>
+                  <BadgeCheck className="h-4 w-4 text-jade flex-shrink-0" />
+                </div>
                 <div className="text-xs text-ink/60 truncate">UI/UX Designer · Lagos</div>
               </div>
-              <span className="bg-jade text-white text-[10px] px-2 py-0.5 rounded-md font-extrabold flex items-center gap-1">
-                <BadgeCheck className="h-3 w-3" /> VERIFIED
-              </span>
             </div>
             <div className="flex gap-1.5 mt-3">
               <span className="text-[11px] bg-cream text-aubergine px-2 py-0.5 rounded-md font-bold">Figma</span>
               <span className="text-[11px] bg-cream text-aubergine px-2 py-0.5 rounded-md font-bold">Webflow</span>
+              <span className="text-[11px] bg-cream text-aubergine px-2 py-0.5 rounded-md font-bold">Brand</span>
             </div>
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-ink/5">
               <div className="text-sm font-black text-ink">₦18k/hr</div>
