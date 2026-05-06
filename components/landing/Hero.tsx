@@ -96,7 +96,7 @@ export function Hero() {
           </AuberginePanel>
 
           {/* Floating talent card */}
-          <div className="absolute -left-6 bottom-10 bg-white rounded-2xl p-4 w-[19rem] shadow-2xl shadow-aubergine/25">
+          <div className="absolute -left-6 bottom-10 z-20 bg-white rounded-2xl p-4 w-[19rem] shadow-2xl shadow-aubergine/25">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-primary/30 flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -121,7 +121,7 @@ export function Hero() {
           </div>
 
           {/* Floating escrow micro-card */}
-          <div className="absolute -right-4 top-12 bg-white rounded-2xl p-4 shadow-2xl shadow-aubergine/25 flex items-center gap-3">
+          <div className="absolute -right-4 top-12 z-20 bg-white rounded-2xl p-4 shadow-2xl shadow-aubergine/25 flex items-center gap-3">
             <div className="w-10 h-10 bg-jade rounded-xl flex items-center justify-center">
               <Lock className="h-5 w-5 text-white" />
             </div>
