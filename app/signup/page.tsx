@@ -160,7 +160,7 @@ export default function SignUpPage() {
     }
   }
 
-  const filteredSkills = AVAILABLE_SKILLS.filter(
+  const filteredSkills = ALL_SKILLS.filter(
     (skill) => skill.toLowerCase().includes(skillSearchTerm.toLowerCase()) && !selectedSkills.includes(skill),
   )
 
