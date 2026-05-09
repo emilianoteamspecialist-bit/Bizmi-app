@@ -359,7 +359,6 @@ export default function AgencyMessagesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <FreelancerNavbar />
         <div className="max-w-7xl mx-auto py-8 px-4">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
@@ -376,7 +375,6 @@ export default function AgencyMessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <FreelancerNavbar />
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Conversations List */}
         <Card
