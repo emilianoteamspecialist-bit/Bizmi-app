@@ -12,7 +12,12 @@
       "Bash(npx tsc *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(tee /tmp/build.log)",
+      "Bash(tee /tmp/dev.log)",
+      "Bash(awk -F= '{print $1}' .env.local)",
+      "Bash(kill %1)",
+      "Bash(pkill -f \"next dev\")"
     ]
   }
 }
