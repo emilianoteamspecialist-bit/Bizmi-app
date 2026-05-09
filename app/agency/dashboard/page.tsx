@@ -36,6 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import PaymentModal from "@/components/payment-modal"
 import { getAgencyJobs, updateJobStatus } from "@/app/actions/jobs"
 import { getProfile, getAgencyImage, getFreelancerLogos } from "@/app/actions/user"
+import { ALL_SKILLS } from "@/lib/categories"
 
 // Available skills for selection
 const availableSkills = ALL_SKILLS;
@@ -69,6 +70,17 @@ export default function AgencyDashboard() {
   const router = useRouter()
   const [profileImage, setProfileImage] = useState<string>("")
   const [profile, setProfile] = useState<any>(null)
+  const [editingJobId, setEditingJobId] = useState<string | null>(null)
+  const [isPosting, setIsPosting] = useState(false)
+  const [showDisputeModal, setShowDisputeModal] = useState(false)
+  const [disputeForm, setDisputeForm] = useState<{ type: string; description: string }>({
+    type: "quality",
+    description: "",
+  })
+  const [currentMessageText, setCurrentMessageText] = useState("")
+  const [messageInputOpenForProposalId, setMessageInputOpenForProposalId] = useState<string | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedProposal, setSelectedProposal] = useState<any>(null)
 
   useEffect(() => {
     loadProfileAndJobs()

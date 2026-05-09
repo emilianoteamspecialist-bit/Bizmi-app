@@ -90,7 +90,7 @@ export default function FreelancerProfile({
             mime_type: selectedFile.type,
           })
           window.dispatchEvent(new Event("freelancer_profile_updated"))
-          loadProfile()
+          router.refresh()
         }
         reader.readAsDataURL(selectedFile)
       } else {

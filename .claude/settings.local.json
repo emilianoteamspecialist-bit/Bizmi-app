@@ -17,7 +17,8 @@
       "Bash(tee /tmp/dev.log)",
       "Bash(awk -F= '{print $1}' .env.local)",
       "Bash(kill %1)",
-      "Bash(pkill -f \"next dev\")"
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pnpm exec *)"
     ]
   }
 }
