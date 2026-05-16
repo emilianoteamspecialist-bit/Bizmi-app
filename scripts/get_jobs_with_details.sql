@@ -75,7 +75,7 @@ BEGIN
             'website', pr.website,
             'created_at', pr.created_at,
             'account_type', pr.account_type,
-            'logo', (SELECT image_data FROM agency_image ai WHERE ai.agency_id = fj.agency_id LIMIT 1),
+            'logo_path', (SELECT image_path FROM agency_image ai WHERE ai.agency_id = fj.agency_id LIMIT 1),
             'total_jobs', (SELECT count(*) FROM jobs j2 WHERE j2.agency_id = fj.agency_id)
         ) as agency_info,
         fj.t_count as total_count

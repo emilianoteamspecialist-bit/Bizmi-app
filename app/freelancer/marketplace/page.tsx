@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getFullUserData } from "@/app/actions/user"
 import { getJobs } from "@/app/actions/jobs"
+import { getAvatarUrl } from "@/lib/avatar-url"
 import MarketplaceClient from "./MarketplaceClient"
 
 export default async function MarketplacePage() {
@@ -11,10 +12,10 @@ export default async function MarketplacePage() {
   }
 
   // Load initial jobs
-  const { jobs: jobsData } = await getJobs({ limit: 20, offset: 0 })
-  
+  const { jobs: jobsData, totalCount } = await getJobs({ limit: 20, offset: 0 })
+
   // Transform initial jobs data
-  const formattedJobs = jobsData?.jobs?.map((job: any) => ({
+  const formattedJobs = jobsData?.map((job: any) => ({
     ...job,
     budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
     postedDate: new Date(job.created_at).toLocaleDateString(),
@@ -24,6 +25,7 @@ export default async function MarketplacePage() {
     agencyInfo: {
       ...job.agency_info,
       name: job.agency_info?.company_name || job.agency_info?.full_name || "Unknown Agency",
+      logo: getAvatarUrl(job.agency_info?.logo_path),
       rating: 4.8,
       reviews: 156,
       founded: job.agency_info?.created_at ? new Date(job.agency_info.created_at).getFullYear().toString() : "2020",
@@ -40,8 +42,8 @@ export default async function MarketplacePage() {
       initialProfile={profile} 
       initialCredits={credits} 
       initialBalance={balance} 
-      initialJobs={formattedJobs} 
-      initialTotalJobsCount={jobsData?.totalCount || 0}
+      initialJobs={formattedJobs}
+      initialTotalJobsCount={totalCount || 0}
     />
   )
 }

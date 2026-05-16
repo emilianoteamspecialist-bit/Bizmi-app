@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { resolveAvatar } from "@/lib/avatar-url"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -147,21 +148,14 @@ export default function AgencyPostsPage() {
 
   const loadFreelancerImages = async (freelancerIds: string[]) => {
     try {
-      const imagePromises = freelancerIds.map(async (freelancerId) => {
-        const { data: imageData } = await supabase
-          .from("freelancer_logos")
-          .select("logo_data")
-          .eq("freelancer_id", freelancerId)
-          .single()
-        return {
-          freelancerId,
-          imageData: imageData?.logo_data || "",
-        }
-      })
-      const results = await Promise.all(imagePromises)
+      const { data: rows } = await supabase
+        .from("freelancer_logos")
+        .select("freelancer_id, logo_path, logo_data")
+        .in("freelancer_id", freelancerIds)
+
       const imageMap: { [key: string]: string } = {}
-      results.forEach(({ freelancerId, imageData }) => {
-        imageMap[freelancerId] = imageData
+      rows?.forEach((row) => {
+        imageMap[row.freelancer_id] = resolveAvatar(row)
       })
       setFreelancerImages(imageMap)
     } catch (error) {

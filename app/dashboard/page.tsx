@@ -2,12 +2,13 @@ import { redirect } from "next/navigation"
 import DashboardClient from "./DashboardClient"
 import { getFullUserData } from "@/app/actions/user"
 import { getJobs } from "@/app/actions/jobs"
+import { getAvatarUrl } from "@/lib/avatar-url"
 
 export default async function FreelancerDashboardPage() {
   // Fetch user data and jobs in parallel
   const [userData, jobsData] = await Promise.all([
     getFullUserData(),
-    getJobs({ offset: 0, limit: 100 })
+    getJobs({ offset: 0, limit: 6 })
   ])
 
   if (!userData?.user) {
@@ -27,6 +28,7 @@ export default async function FreelancerDashboardPage() {
       agencyInfo: {
         ...job.agency_info,
         name: job.agency_info?.company_name || job.agency_info?.full_name || "Unknown Agency",
+        logo: getAvatarUrl(job.agency_info?.logo_path),
         rating: 4.8,
         reviews: 156,
         founded: job.agency_info?.created_at ? new Date(job.agency_info.created_at).getFullYear().toString() : "2020",

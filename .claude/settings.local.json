@@ -18,7 +18,9 @@
       "Bash(awk -F= '{print $1}' .env.local)",
       "Bash(kill %1)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(pnpm exec *)"
+      "Bash(pnpm exec *)",
+      "Bash(powershell -Command \"\\(Get-Content -Raw app/dashboard/DashboardClient.tsx\\) -replace 'text-\\\\[10px\\\\] font-black uppercase tracking-\\\\[0\\\\.2\\\\d?em\\\\] text-muted-foreground', 'eyebrow' | Set-Content -NoNewline app/dashboard/DashboardClient.tsx\")",
+      "Bash(powershell *)"
     ]
   }
 }

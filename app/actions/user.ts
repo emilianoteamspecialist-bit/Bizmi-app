@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase-server"
+import { resolveAvatar } from "@/lib/avatar-url"
 
 export async function getUserCredits(userId?: string) {
   const supabase = await createClient()
@@ -104,7 +105,7 @@ export async function getFreelancerLogos(freelancerIds: string[]) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("freelancer_logos")
-    .select("freelancer_id, logo_data")
+    .select("freelancer_id, logo_path, logo_data")
     .in("freelancer_id", freelancerIds)
 
   if (error) {
@@ -114,7 +115,7 @@ export async function getFreelancerLogos(freelancerIds: string[]) {
 
   const logoMap: { [key: string]: string } = {}
   data.forEach((item) => {
-    logoMap[item.freelancer_id] = item.logo_data
+    logoMap[item.freelancer_id] = resolveAvatar(item)
   })
   return logoMap
 }
@@ -127,10 +128,10 @@ export async function getAgencyImage() {
 
   const { data, error } = await supabase
     .from("agency_image")
-    .select("image_data")
+    .select("image_path, image_data")
     .eq("agency_id", user.id)
     .single()
 
   if (error) return null
-  return data.image_data
+  return resolveAvatar(data)
 }

@@ -4,100 +4,299 @@
 
 @layer base {
   :root {
-    /* Core Layout & Background */
-    --background: 0 0% 100%; /* #ffffff */
-    --foreground: 222.2 84% 4.9%; /* #030712 - Primary Text */
-    
-    /* Surface Colors */
-    --surface: 210 40% 98%; /* #f8fafc */
-    --surface-2: 210 40% 96.1%; /* #f1f5f9 */
-    
-    /* Card & Popover */
+    /* ============================================
+       BIZIMI DESIGN SYSTEM — Editorial Trade Pub
+       ============================================ */
+
+    /* Core surfaces */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --surface: 210 40% 98%;
+    --surface-2: 210 40% 96.1%;
+    --paper: 36 33% 97%;             /* warm cream — for editorial moments */
+    --ink: 0 0% 4%;                   /* near-black, neutral (kept for landing compat) */
+    --ink-deep: 220 13% 7%;           /* slight cool tint, for editorial dark surfaces */
+
+    /* Card & popover */
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    
-    /* Brand Primary (Orange) */
-    --primary: 24.6 95% 53.1%; /* #f97316 - Orange 500 */
+
+    /* Brand primary (orange) */
+    --primary: 24.6 95% 53.1%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 20.1 89.1% 48.4%; /* #ea580c - Orange 600 */
-    --primary-soft: 33 100% 96.5%; /* #fff7ed - Orange 50 */
-    --primary-border: 32 98% 83.3%; /* #fed7aa - Orange 200 */
-    
-    /* Secondary & Neutrals */
-    --secondary: 210 40% 96.1%; /* slate-100 */
+    --primary-hover: 20.1 89.1% 48.4%;
+    --primary-soft: 33 100% 96.5%;
+    --primary-border: 32 98% 83.3%;
+
+    /* Editorial accents */
+    --oxblood: 358 50% 28%;           /* deep editorial red accent */
+    --moss: 145 25% 30%;              /* forest green for trust */
+
+    /* Secondary / neutrals */
+    --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    
-    /* Semantic Colors */
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%; /* slate-500 */
+    --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    
-    --success: 142 71% 45%; /* #16a34a */
-    --warning: 38 92% 50%; /* #f59e0b */
-    --destructive: 0 84.2% 60.2%; /* #dc2626 - red-600 */
+
+    /* Semantic */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --info: 221 83% 53%; /* #2563eb */
+    --info: 221 83% 53%;
 
-    /* Afro-Modern Landing Tokens */
-    --aubergine: 263 53% 12%;     /* #1A0E2E */
-    --gold: 43 96% 56%;            /* #FBBF24 */
-    --jade: 173 80% 26%;           /* #0F766E */
-    --cream: 32 67% 96%;           /* #FDF7F0 */
-    --ink: 0 0% 4%;                /* #0A0A0A */
+    /* Afro-modern landing tokens (kept) */
+    --aubergine: 263 53% 12%;
+    --gold: 43 96% 56%;
+    --jade: 173 80% 26%;
+    --cream: 32 67% 96%;
 
-    /* Borders & Inputs */
-    --border: 220 13% 91%; /* #e5e7eb */
-    --divider: 215 14% 83%; /* #d1d5db */
+    /* Borders & rules */
+    --border: 220 13% 91%;
+    --rule: 220 13% 85%;              /* slightly stronger hairline */
+    --divider: 215 14% 83%;
     --input: 220 13% 91%;
     --ring: 24.6 95% 53.1%;
-    
-    /* Design System Tokens (Standardized) */
-    --radius-sm: 0.5rem;   /* 8px */
-    --radius: 0.75rem;    /* 12px - Buttons/Inputs */
-    --radius-lg: 1.25rem;  /* 20px - Cards */
-    --radius-xl: 1.5rem;   /* 24px - Modals */
+
+    /* Radii */
+    --radius-sm: 0.5rem;
+    --radius: 0.75rem;
+    --radius-lg: 1.25rem;
+    --radius-xl: 1.5rem;
     --radius-2xl: 2rem;
+
+    /* Shadows */
+    --shadow-rule: 0 1px 0 hsl(var(--border));
+    --shadow-warm: 0 4px 24px -8px rgb(15 23 42 / 0.06), 0 2px 6px -2px rgb(15 23 42 / 0.04);
+    --shadow-deep: 0 30px 60px -20px rgb(15 23 42 / 0.18);
+    /* Grounded soft modern — soft warm shadows that anchor cards without harsh borders */
+    --shadow-soft: 0 1px 2px -0.5px rgb(15 23 42 / 0.04), 0 2px 4px -1px rgb(15 23 42 / 0.03);
+    --shadow-grounded: 0 1px 2px -0.5px rgb(15 23 42 / 0.05), 0 8px 24px -8px rgb(15 23 42 / 0.06);
+
+    /* Motion */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --duration-fast: 200ms;
+    --duration-base: 400ms;
+    --duration-slow: 600ms;
+
+    /* Editorial measure */
+    --measure: 65ch;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%; /* #0f172a / #030712 */
+    --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-    
     --surface: 222.2 84% 4.9%;
     --surface-2: 217.2 32.6% 17.5%;
-    
+    --paper: 220 13% 10%;
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    
     --primary: 24.6 95% 53.1%;
     --primary-foreground: 0 0% 100%;
-    
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    
-    --border: 217.2 32.6% 17.5%; /* #374151 */
+    --border: 217.2 32.6% 17.5%;
+    --rule: 217.2 32.6% 25%;
     --input: 217.2 32.6% 17.5%;
     --ring: 24.6 95% 53.1%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-feature-settings: "ss01", "cv11";
   }
+
+  /* Better default focus rings — restrained, not screaming */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@layer components {
+  /* ============================================
+     TYPOGRAPHY UTILITIES
+     ============================================ */
+
+  /* Eyebrow — small uppercase label used above headings, stats, etc. */
+  .eyebrow {
+    @apply text-[11px] uppercase tracking-[0.22em] text-muted-foreground font-medium;
+    font-feature-settings: "ss01";
+  }
+  .eyebrow-light {
+    @apply text-[11px] uppercase tracking-[0.22em] text-white/55 font-medium;
+  }
+  .eyebrow-primary {
+    @apply text-[11px] uppercase tracking-[0.22em] text-primary font-semibold;
+  }
+
+  /* Display — Instrument Serif editorial moments */
+  .display-2xl {
+    @apply font-display text-7xl md:text-8xl leading-[0.9] tracking-tight text-foreground;
+  }
+  .display-xl {
+    @apply font-display text-5xl md:text-6xl leading-[0.95] tracking-tight text-foreground;
+  }
+  .display-lg {
+    @apply font-display text-4xl md:text-5xl leading-[1] tracking-tight text-foreground;
+  }
+  .display-md {
+    @apply font-display text-3xl md:text-4xl leading-[1.05] tracking-tight text-foreground;
+  }
+  .display-sm {
+    @apply font-display text-2xl md:text-3xl leading-snug text-foreground;
+  }
+
+  /* Lede — italic intro paragraph */
+  .lede {
+    @apply font-display italic text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-[var(--measure)];
+  }
+
+  /* Body — restrained, measured */
+  .body-lg {
+    @apply text-base leading-relaxed text-foreground max-w-[var(--measure)];
+  }
+  .body {
+    @apply text-sm leading-relaxed text-foreground;
+  }
+  .body-muted {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+  .caption {
+    @apply text-xs leading-relaxed text-muted-foreground;
+  }
+
+  /* Numerals — tabular figures, useful for money/stats */
+  .numeric {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "ss01";
+  }
+
+  /* ============================================
+     LAYOUT UTILITIES
+     ============================================ */
+
+  /* Hairline — disciplined dividers */
+  .hairline { @apply border-t border-border; }
+  .hairline-b { @apply border-b border-border; }
+  .hairline-strong { @apply border-t; border-top-color: hsl(var(--rule)); }
+
+  /* Stacked hairline list — for those right-rail strips */
+  .hairline-stack > * + * { @apply border-t border-border; }
+
+  /* Editorial page wrapper */
+  .editorial-shell {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .editorial-shell-narrow {
+    @apply max-w-5xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Asymmetric editorial grid: 7/5 instead of 8/4 — feels more "magazine" */
+  .editorial-grid {
+    @apply grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start;
+  }
+  .editorial-main { @apply lg:col-span-7; }
+  .editorial-aside { @apply lg:col-span-5; }
+  .editorial-main-wide { @apply lg:col-span-8; }
+  .editorial-aside-narrow { @apply lg:col-span-4; }
+
+  /* ============================================
+     SURFACES & TEXTURE
+     ============================================ */
+
+  /* Subtle paper grain — used on editorial headers / hero surfaces */
+  .grain {
+    position: relative;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+  /* Dim grain on dark surfaces so it doesn't blow out */
+  .surface-money.grain::after {
+    opacity: 0.12;
+    mix-blend-mode: overlay;
+  }
+
+  /* Money surface — dark navy editorial weight, for wallets */
+  .surface-money {
+    @apply relative overflow-hidden rounded-lg text-white;
+    background-color: hsl(var(--ink-deep));
+  }
+  .surface-money::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 100% 0%,
+      hsl(var(--primary) / 0.18) 0%,
+      transparent 50%
+    );
+    pointer-events: none;
+  }
+
+  /* Editorial card — paper-tinted, warm */
+  .surface-paper {
+    background-color: hsl(var(--paper));
+  }
+
+  /* ============================================
+     COMPONENT PATTERNS
+     ============================================ */
+
+  /* Link-arrow — for inline editorial calls-to-action */
+  .link-arrow {
+    @apply inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-hover transition-colors;
+  }
+  .link-arrow svg { @apply transition-transform; }
+  .link-arrow:hover svg { @apply -translate-y-0.5 translate-x-0.5; }
+
+  /* Quiet link — secondary inline action */
+  .link-quiet {
+    @apply inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors;
+  }
+
+  /* Editorial section spacing */
+  .section-y {
+    @apply py-10 md:py-14;
+  }
+  .section-y-tight {
+    @apply py-8 md:py-10;
+  }
+
+  /* Marginalia — small floating note */
+  .marginalia {
+    @apply text-xs italic text-muted-foreground font-display;
+  }
+}
+
+@layer utilities {
+  /* Animation delay helpers (Tailwind has no native ones) */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
 }

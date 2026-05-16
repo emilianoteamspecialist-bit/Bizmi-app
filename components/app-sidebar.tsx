@@ -55,6 +55,8 @@ import {
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
+import { resolveAvatar } from "@/lib/avatar-url"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
@@ -68,11 +70,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const loadExtraData = React.useCallback(async (userId: string, role: string) => {
     try {
       if (role === "agency") {
-        const { data: imageData } = await supabase.from("agency_image").select("image_data").eq("agency_id", userId).single()
-        if (imageData) setImagePreview(imageData.image_data)
+        const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).single()
+        if (imageData) setImagePreview(resolveAvatar(imageData))
       } else {
-        const { data: logoData } = await supabase.from("freelancer_logos").select("logo_data").eq("freelancer_id", userId).single()
-        if (logoData) setImagePreview(logoData.logo_data)
+        const { data: logoData } = await supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).single()
+        if (logoData) setImagePreview(resolveAvatar(logoData))
       }
 
       const { count } = await supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", userId).eq("is_read", false)
@@ -114,17 +116,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="border-b border-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <img src="/favicon.ico" alt="Bizimi" className="size-5" />
+            <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
+              <Link href="/" className="py-3">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <img src="/favicon.ico" alt="Bizimi" className="size-4" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Bizimi</span>
-                  <span className="truncate text-xs">Freelance Marketplace</span>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-semibold text-foreground">Bizimi</span>
+                  <span className="truncate text-[11px] text-muted-foreground">Freelance marketplace</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -132,48 +134,67 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="p-2 gap-1">
-          {navLinks.map((item) => (
-            <SidebarMenuItem key={item.name}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.name}
-                className="rounded-xl h-11 px-4"
-              >
-                <Link href={item.href} className="flex items-center gap-3">
-                  <item.icon className="size-5" />
-                  <span className="font-bold">{item.name}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-white">
-                      {item.badge}
-                    </span>
+        <SidebarMenu className="px-3 py-4 gap-1">
+          {navLinks.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  tooltip={item.name}
+                  className={cn(
+                    "rounded-lg h-10 px-3 text-sm transition-colors group",
+                    "hover:bg-surface-2",
+                    "data-[active=true]:bg-primary-soft data-[active=true]:text-primary data-[active=true]:font-semibold",
+                    !isActive && "text-muted-foreground font-medium"
                   )}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+                >
+                  <Link href={item.href} className="flex items-center gap-3">
+                    <item.icon
+                      className={cn(
+                        "size-4 transition-colors",
+                        isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                      )}
+                    />
+                    <span>{item.name}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="ml-auto flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-white">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
 
-        {role === "agency" ? (
-          <div className="mt-auto p-4 group-data-[collapsible=icon]:hidden">
-            <Button 
-              className="w-full bg-primary hover:bg-primary-hover rounded-xl font-bold h-11 shadow-lg shadow-primary/20"
+        <div className="mt-auto px-3 pb-3 group-data-[collapsible=icon]:hidden hairline pt-4 mx-3">
+          {role === "agency" ? (
+            <Button
+              variant="outline"
+              className="w-full h-10 justify-between font-medium group"
               onClick={() => router.push("/agency/dashboard?post=true")}
             >
-              <Plus className="mr-2 h-4 w-4" /> Post a Job
+              <span className="flex items-center">
+                <Plus className="mr-2 h-4 w-4 text-primary" /> Post a job
+              </span>
+              <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>
             </Button>
-          </div>
-        ) : (
-          <div className="mt-auto p-4 group-data-[collapsible=icon]:hidden">
-            <Button 
-              className="w-full bg-primary hover:bg-primary-hover rounded-xl font-bold h-11 shadow-lg shadow-primary/20"
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full h-10 justify-between font-medium group"
               onClick={() => router.push("/freelancer/bizpal")}
             >
-              <CreditCard className="mr-2 h-4 w-4" /> Buy Credits
+              <span className="flex items-center">
+                <CreditCard className="mr-2 h-4 w-4 text-primary" /> Top up credits
+              </span>
+              <span className="text-muted-foreground group-hover:text-primary transition-colors">→</span>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>

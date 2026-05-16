@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter, Sora } from "next/font/google"
+import { Inter, Sora, Instrument_Serif, Bricolage_Grotesque } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/AuthContext"
 import Script from "next/script"   // ✅ import Script from next
@@ -14,6 +14,20 @@ const inter = Inter({
 const sora = Sora({
   subsets: ["latin"],
   variable: "--font-sora",
+  display: "swap",
+})
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-display",
+  display: "swap",
+})
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
   display: "swap",
 })
 
@@ -81,7 +95,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+    <html lang="en" className={`${inter.variable} ${sora.variable} ${instrumentSerif.variable} ${bricolage.variable}`}>
       <head>
         {/* ✅ Paystack Inline Script */}
         <script

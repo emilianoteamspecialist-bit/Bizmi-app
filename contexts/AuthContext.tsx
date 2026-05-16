@@ -5,6 +5,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
+import { clearAvatarCache } from "@/lib/avatar-cache"
 
 interface AuthContextType {
   user: User | null
@@ -92,6 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(null)
         setProfile(null)
         localStorage.removeItem("bizimee_user")
+        clearAvatarCache()
       }
       setLoading(false)
     })
@@ -122,6 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await supabase.auth.signOut()
       localStorage.removeItem("bizimee_user")
+      clearAvatarCache()
       setUser(null)
       setProfile(null)
     } catch (error) {

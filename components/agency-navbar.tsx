@@ -34,6 +34,8 @@ import { supabase } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Link from "next/link"
+import { getCachedAvatar, setCachedAvatar } from "@/lib/avatar-cache"
+import { resolveAvatar } from "@/lib/avatar-url"
 
 interface AgencyNavbarProps {
   onPostJobClick?: () => void
@@ -57,11 +59,18 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      const cached = getCachedAvatar(user.id)
+      if (cached) setImagePreview(cached)
+
       const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single()
       if (profileData) setProfile(profileData)
 
-      const { data: imageData } = await supabase.from("agency_image").select("image_data").eq("agency_id", user.id).single()
-      if (imageData) setImagePreview(imageData.image_data)
+      const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", user.id).single()
+      if (imageData) {
+        const url = resolveAvatar(imageData)
+        setImagePreview(url)
+        setCachedAvatar(user.id, url)
+      }
 
       const { count } = await supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", user.id).eq("is_read", false)
       setUnreadMessagesCount(count || 0)

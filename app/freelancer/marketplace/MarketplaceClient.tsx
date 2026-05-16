@@ -2,36 +2,26 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card } from "@/components/ui/card"
 import {
-  Calendar,
-  X,
   MapPin,
-  Star,
   Filter,
   Search,
-  Wallet,
   CreditCard,
   Send,
   Loader2,
-  TrendingUp,
-  Sparkles,
   CheckCircle,
-  Shield,
-  Bookmark,
-  ArrowRight,
   Briefcase,
-  Zap,
-  ShieldCheck,
-  ChevronRight,
-  ArrowUpRight,
-  Plus,
-  History,
+  Sparkles,
+  ArrowUpDown,
+  Coins,
   LayoutGrid,
+  List,
+  X,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { getAvatarUrl } from "@/lib/avatar-url"
 import { ALL_CATEGORIES, getSkillsForCategory, type Category } from "@/lib/categories"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
@@ -40,12 +30,88 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getJobs, toggleBookmark } from "@/app/actions/jobs"
 import { JobCard } from "@/components/shared/job-card"
+import { MarketplaceJobCard } from "@/components/shared/marketplace-job-card"
+import { cn } from "@/lib/utils"
 import { Modal } from "@/components/shared/modal"
 import { StatBadge } from "@/components/shared/stat-badge"
-import { Section } from "@/components/ui/section"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 
 const JOBS_PER_PAGE = 20
+
+function FilterGroup({
+  title,
+  options,
+  selected,
+  onChange,
+}: {
+  title: string
+  options: string[]
+  selected: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-semibold text-foreground">{title}</p>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+        {options.map((opt) => {
+          const checked = selected === opt
+          return (
+            <label
+              key={opt}
+              className="flex items-center gap-2 cursor-pointer group"
+            >
+              <span
+                className={cn(
+                  "h-4 w-4 rounded-[3px] border flex items-center justify-center shrink-0 transition-colors",
+                  checked
+                    ? "bg-primary border-primary"
+                    : "border-border group-hover:border-rule bg-card"
+                )}
+                onClick={(e) => {
+                  e.preventDefault()
+                  onChange(opt)
+                }}
+              >
+                {checked && (
+                  <svg viewBox="0 0 12 12" className="h-2.5 w-2.5 text-white">
+                    <path
+                      d="M2.5 6 5 8.5 9.5 4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onChange(opt)}
+                className="sr-only"
+              />
+              <span className="text-xs text-foreground/80 group-hover:text-foreground transition-colors">
+                {opt}
+              </span>
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-primary bg-primary-soft border border-primary-border rounded-md">
+      {children}
+      <button onClick={onRemove} aria-label="Remove" className="hover:text-primary-hover">
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
 
 export default function MarketplaceClient({
   initialUser,
@@ -91,6 +157,11 @@ export default function MarketplaceClient({
   const [creditBalance, setCreditBalance] = useState(initialCredits || 0)
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
   const [profile] = useState<any>(initialProfile)
+  const [location, setLocation] = useState<string>("")
+  const [budgetRange, setBudgetRange] = useState<string>("any")
+  const [sortBy, setSortBy] = useState<string>("latest")
+  const [lastUpdated, setLastUpdated] = useState<string>("any")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
   useEffect(() => {
     if (!initialUser) {
@@ -132,6 +203,7 @@ export default function MarketplaceClient({
               agencyInfo: {
                 ...job.agency_info,
                 name: job.agency_info.company_name || job.agency_info.full_name || "Unknown Agency",
+                logo: getAvatarUrl(job.agency_info?.logo_path),
                 rating: 4.8,
                 reviews: 156,
                 founded: job.agency_info.created_at ? new Date(job.agency_info.created_at).getFullYear().toString() : "2020",
@@ -287,124 +359,283 @@ export default function MarketplaceClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface">
-        <Section spacing="md">
-           <div className="animate-pulse space-y-8">
-             <div className="h-48 bg-card rounded-lg border border-border"></div>
-             <div className="h-96 bg-card rounded-lg border border-border"></div>
-           </div>
-        </Section>
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <p className="eyebrow">Loading marketplace…</p>
       </div>
     )
   }
 
+  const jobTypeOptions = ["Full-time", "Part-time", "Freelance", "Contract", "Internship"]
+  const experienceOptions = ["Entry", "Mid", "Senior", "Lead"]
+  const workTypeOptions = ["Remote", "On-site", "Hybrid"]
+  const popularSearches = ["UI/UX Design", "Programming", "Marketing", "Writing", "Mobile dev"]
+  const budgetRanges = [
+    { value: "any", label: "Any budget" },
+    { value: "0-100000", label: "₦0 – ₦100k" },
+    { value: "100000-500000", label: "₦100k – ₦500k" },
+    { value: "500000-1000000", label: "₦500k – ₦1M" },
+    { value: "1000000+", label: "₦1M+" },
+  ]
+
+  const triggerSearch = () => loadJobs(0, searchQuery, false)
+
   return (
-    <div className="min-h-screen bg-surface pb-20 selection:bg-primary/10">
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="space-y-10">
-          
-          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-8 bg-slate-900 p-8 md:p-10 rounded-lg shadow-2xl shadow-slate-900/20 overflow-hidden border border-slate-800">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-            <div className="space-y-4 relative z-10 flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold font-heading text-white tracking-tight leading-tight">
-                Freelancer Marketplace
-              </h1>
-              <p className="text-slate-400 font-medium max-w-xl text-sm md:text-base leading-relaxed">
-                Discover verified projects that match your expertise. Use smart filters to find your next big opportunity.
-              </p>
+    <div className="min-h-screen bg-surface pb-20">
+      {/* Top search section */}
+      <section className="bg-card border-b border-border">
+        <div className="editorial-shell py-6 space-y-4 animate-fade-up">
+          {/* Segmented search bar */}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_220px_200px_180px_auto] gap-2">
+            {/* Keyword */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search projects, skills, agencies…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") triggerSearch()
+                }}
+                className="pl-10 h-12 bg-card border-border rounded-lg shadow-none"
+              />
             </div>
-            
-            {/* Stats Display */}
-            <div className="relative z-10 flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-               
-               {/* Trust Score */}
-               <div className="w-full md:w-[260px] bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-lg p-3 flex items-center gap-4 shadow-inner">
-                  <div className="h-10 w-10 rounded-md bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shrink-0">
-                     <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                  </div>
-                  <div className="flex-1">
-                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-0.5">Trust Score</p>
-                     <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-black text-white">98</span>
-                        <span className="text-[10px] font-bold text-emerald-500">/100</span>
-                     </div>
-                  </div>
-               </div>
-
-               {/* Credit Balance */}
-               <div className="w-full md:w-[260px] bg-slate-800/50 border border-slate-700/50 backdrop-blur-md rounded-lg p-3 flex items-center gap-4 shadow-inner">
-                  <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center border border-primary/20 shrink-0">
-                     <Zap className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                     <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-0.5">Bidding Power</p>
-                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl font-black text-white">{creditBalance}</span>
-                        <span className="text-[10px] font-bold text-slate-500">CRD</span>
-                     </div>
-                  </div>
-                  <Button 
-                     size="icon" 
-                     variant="secondary"
-                     className="shrink-0 h-8 w-8 rounded-full"
-                     onClick={() => router.push('/freelancer/bizpal')}
-                  >
-                     <Plus className="h-4 w-4" />
-                  </Button>
-               </div>
-
+            {/* Location */}
+            <div className="relative">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Anywhere"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="pl-10 h-12 bg-card border-border rounded-lg shadow-none"
+              />
             </div>
+            {/* Budget */}
+            <Select value={budgetRange} onValueChange={setBudgetRange}>
+              <SelectTrigger className="h-12 bg-card border-border rounded-lg shadow-none pl-10 relative">
+                <Coins className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <SelectValue placeholder="Any budget" />
+              </SelectTrigger>
+              <SelectContent>
+                {budgetRanges.map((b) => (
+                  <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Sort */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-12 bg-card border-border rounded-lg shadow-none pl-10 relative">
+                <ArrowUpDown className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <SelectValue placeholder="Latest" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="latest">Sort: Latest</SelectItem>
+                <SelectItem value="budget_high">Sort: Highest budget</SelectItem>
+                <SelectItem value="budget_low">Sort: Lowest budget</SelectItem>
+                <SelectItem value="popular">Sort: Most proposals</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* Search button */}
+            <Button onClick={triggerSearch} className="h-12 px-7 rounded-lg">
+              <Search className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">Search</span>
+            </Button>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="flex items-center gap-3 w-full">
-                 <div className="relative flex-1">
-                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                   <Input 
-                     placeholder="Search projects, skills..." 
-                     value={searchQuery}
-                     onChange={(e) => setSearchQuery(e.target.value)}
-                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          loadJobs(0, searchQuery, false)
-                        }
-                     }}
-                   />
-                 </div>
-                 <Button 
-                   className="h-12 px-6"
-                   onClick={() => loadJobs(0, searchQuery, false)}
-                 >
-                   Search
-                 </Button>
-                 <Button variant="outline" className="h-12 px-5" onClick={() => setShowFilterModal(true)}>
-                   <Filter className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Filter</span>
-                 </Button>
+          {/* Popular searches */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground font-medium">Popular searches:</span>
+            {popularSearches.map((p) => (
+              <button
+                key={p}
+                onClick={() => {
+                  setSearchQuery(p)
+                  loadJobs(0, p, false)
+                }}
+                className="px-3 py-1 text-xs font-medium text-foreground bg-surface border border-border rounded-md hover:border-primary hover:text-primary transition-colors"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Two-column layout */}
+      <main className="editorial-shell py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start">
+          {/* LEFT: Filter sidebar */}
+          <aside className="space-y-5 lg:sticky lg:top-8 animate-fade-up delay-100">
+            <Card className="p-5 space-y-5 bg-card border-border shadow-none rounded-xl">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">Filter</p>
+                <button
+                  onClick={resetFilters}
+                  className="text-xs font-medium text-primary hover:text-primary-hover"
+                >
+                  Clear filter
+                </button>
+              </div>
+
+              {/* Job type group */}
+              <FilterGroup
+                title="Job type"
+                options={jobTypeOptions}
+                selected={filters.jobType}
+                onChange={(v) => setFilters({ ...filters, jobType: filters.jobType === v ? "" : v })}
+              />
+
+              {/* Experience group */}
+              <FilterGroup
+                title="Experience"
+                options={experienceOptions}
+                selected={filters.category}
+                onChange={(v) => setFilters({ ...filters, category: filters.category === v ? "" : v })}
+              />
+
+              {/* Work type group */}
+              <FilterGroup
+                title="Work type"
+                options={workTypeOptions}
+                selected={""}
+                onChange={() => {}}
+              />
+
+              <div className="space-y-2">
+                <p className="eyebrow">Last updated</p>
+                <Select value={lastUpdated} onValueChange={setLastUpdated}>
+                  <SelectTrigger className="h-10 bg-card border-border rounded-md shadow-none">
+                    <SelectValue placeholder="Any time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any time</SelectItem>
+                    <SelectItem value="24h">Past 24 hours</SelectItem>
+                    <SelectItem value="7d">Past 7 days</SelectItem>
+                    <SelectItem value="30d">Past 30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </Card>
+
+            {/* Smart Match CTA */}
+            <Card className="p-5 bg-paper border-border shadow-none rounded-xl space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">Use Smart Match</p>
+              </div>
+              <p className="caption">
+                Let Bizimi recommend projects based on your skills and past experience.
+              </p>
+              <Button
+                onClick={() => {
+                  const userSkills = profile?.skills
+                  if (Array.isArray(userSkills) && userSkills.length > 0) {
+                    setSearchQuery(userSkills[0])
+                    loadJobs(0, userSkills[0], false)
+                  } else {
+                    router.push("/freelancer/profile")
+                  }
+                }}
+                className="w-full h-10"
+              >
+                Match me
+              </Button>
+            </Card>
+          </aside>
+
+          {/* RIGHT: Job grid */}
+          <section className="space-y-5 animate-fade-up delay-200">
+            {/* Result header */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-foreground">
+                <span className="font-semibold">{initialTotalJobsCount}</span>
+                <span className="text-muted-foreground"> projects found</span>
+              </p>
+              <div className="flex items-center gap-1 border border-border rounded-md p-0.5 bg-card">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={cn(
+                    "h-7 w-7 flex items-center justify-center rounded-[5px] transition-colors",
+                    viewMode === "grid"
+                      ? "bg-paper text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  aria-label="Grid view"
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={cn(
+                    "h-7 w-7 flex items-center justify-center rounded-[5px] transition-colors",
+                    viewMode === "list"
+                      ? "bg-paper text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  aria-label="List view"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {/* Active filters chips */}
+            {(filters.jobType || filters.category || budgetRange !== "any" || location) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {filters.jobType && (
+                  <Chip onRemove={() => setFilters({ ...filters, jobType: "" })}>
+                    {filters.jobType}
+                  </Chip>
+                )}
+                {filters.category && (
+                  <Chip onRemove={() => setFilters({ ...filters, category: "" })}>
+                    {filters.category}
+                  </Chip>
+                )}
+                {location && (
+                  <Chip onRemove={() => setLocation("")}>{location}</Chip>
+                )}
+                {budgetRange !== "any" && (
+                  <Chip onRemove={() => setBudgetRange("any")}>
+                    {budgetRanges.find((b) => b.value === budgetRange)?.label}
+                  </Chip>
+                )}
+              </div>
+            )}
+
+            {/* Job grid / list */}
+            <div
+              className={cn(
+                "grid gap-4",
+                viewMode === "grid"
+                  ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+                  : "grid-cols-1"
+              )}
+            >
               {jobsLoading && jobs.length === 0 ? (
-                Array.from({length: 6}).map((_, i) => (
-                  <div key={i} className="h-80 bg-card rounded-lg border border-border animate-pulse"></div>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-64 bg-card rounded-xl border border-border animate-pulse"
+                  />
                 ))
               ) : jobs.length === 0 ? (
-                <Card className="col-span-full py-24 text-center border-dashed border-2">
-                  <div className="h-16 w-16 bg-surface rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Briefcase className="h-8 w-8 text-muted-foreground/30" />
+                <Card className="col-span-full py-20 text-center border-dashed border-2 bg-card">
+                  <div className="h-14 w-14 bg-surface rounded-full flex items-center justify-center mx-auto mb-5">
+                    <Briefcase className="h-7 w-7 text-muted-foreground/40" />
                   </div>
-                  <h3 className="text-xl font-bold font-heading text-foreground">No projects found</h3>
-                  <p className="text-muted-foreground text-sm max-w-xs mx-auto font-medium mt-2">Try resetting your filters to see more verified listings from our active market.</p>
-                  <Button variant="outline" className="mt-8 px-8" onClick={resetFilters}>Reset Market</Button>
+                  <h3 className="text-lg font-semibold text-foreground">No projects match</h3>
+                  <p className="body-muted max-w-xs mx-auto mt-2">
+                    Reset your filters, or check back tomorrow.
+                  </p>
+                  <Button variant="outline" className="mt-6 px-7" onClick={resetFilters}>
+                    Reset filters
+                  </Button>
                 </Card>
               ) : (
                 jobs.map((job) => (
-                  <JobCard 
-                    key={job.id} 
-                    job={job} 
-                    creditBalance={creditBalance}
+                  <MarketplaceJobCard
+                    key={job.id}
+                    job={job}
                     onAction={handleJobAction}
                   />
                 ))
@@ -412,20 +643,19 @@ export default function MarketplaceClient({
             </div>
 
             {hasMoreJobs && jobs.length > 0 && (
-              <div className="flex justify-center pt-8">
-                 <Button 
-                   variant="outline" 
-                   size="lg"
-                   className="px-12 group"
-                   onClick={handleLoadMoreJobs}
-                   disabled={jobsLoading}
-                 >
-                   {jobsLoading ? <Loader2 className="animate-spin mr-2 h-5 w-5"/> : <History className="mr-2 h-5 w-5 transition-colors" />}
-                   Load More Projects
-                 </Button>
+              <div className="flex justify-center pt-3">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMoreJobs}
+                  disabled={jobsLoading}
+                  className="px-10 h-11"
+                >
+                  {jobsLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                  Load more
+                </Button>
               </div>
             )}
-          </div>
+          </section>
         </div>
       </main>
 
@@ -439,7 +669,7 @@ export default function MarketplaceClient({
       >
         <div className="space-y-6">
           <div className="space-y-2.5">
-            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Contextual Keywords</Label>
+            <Label className="eyebrow">Contextual Keywords</Label>
             <Input 
               placeholder="Skills, companies, or titles..."
               value={filters.keywords}
@@ -447,7 +677,7 @@ export default function MarketplaceClient({
             />
           </div>
           <div className="space-y-2.5">
-            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Professional Field</Label>
+            <Label className="eyebrow">Professional Field</Label>
             <Select value={filters.category} onValueChange={(v) => setFilters({...filters, category: v})}>
               <SelectTrigger className="bg-surface">
                 <SelectValue placeholder="All Specializations" />
@@ -496,7 +726,7 @@ export default function MarketplaceClient({
 
               <div className="space-y-10">
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Professional Pitch</Label>
+                  <Label className="eyebrow">Professional Pitch</Label>
                   <Textarea 
                     className="min-h-[250px] p-6" 
                     placeholder="Explain why your expertise is the perfect match for this project..."
@@ -506,7 +736,7 @@ export default function MarketplaceClient({
                 </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Execution Timeline</Label>
+                    <Label className="eyebrow">Execution Timeline</Label>
                     <Input 
                       placeholder="e.g. 10 Working Days"
                       value={bidData.timeline}
@@ -514,7 +744,7 @@ export default function MarketplaceClient({
                     />
                   </div>
                   <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Project Fee (₦)</Label>
+                    <Label className="eyebrow">Project Fee (₦)</Label>
                     <Input 
                       placeholder="Final bid price"
                       value={bidData.budget}
@@ -578,14 +808,14 @@ export default function MarketplaceClient({
                 { label: "Platform Rating", val: `${selectedAgency.rating} ★` },
               ].map((s, i) => (
                 <div key={i} className="bg-surface p-6 rounded-lg text-center space-y-2 border border-border shadow-inner">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{s.label}</p>
+                  <p className="eyebrow">{s.label}</p>
                   <p className="text-base font-bold text-foreground">{s.val}</p>
                 </div>
               ))}
             </div>
 
             <div className="space-y-4">
-              <Label className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Professional Dossier</Label>
+              <Label className="eyebrow">Professional Dossier</Label>
               <p className="text-muted-foreground font-medium text-lg leading-relaxed">{selectedAgency.description}</p>
             </div>
 

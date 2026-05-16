@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { resolveAvatar } from "@/lib/avatar-url"
 import { ALL_CATEGORIES, getSkillsForCategory, getCategoriesForSkills, type Category } from "@/lib/categories"
 
 interface FreelancerProfile {
@@ -108,7 +109,7 @@ export default function FindFreelancers() {
 
         // Fetch logos, verification status, completed jobs count, and skills in parallel
         const [logosResult, verificationResult, completedJobsResult, skillsResult] = await Promise.all([
-          supabase.from("freelancer_logos").select("freelancer_id, logo_data").in("freelancer_id", freelancerIds),
+          supabase.from("freelancer_logos").select("freelancer_id, logo_path, logo_data").in("freelancer_id", freelancerIds),
           supabase
             .from("Freelancer_identitie")
             .select("user_id, verification_status")
@@ -127,7 +128,7 @@ export default function FindFreelancers() {
         // Build lookup maps
         const logoMap: Record<string, string> = {}
         logosResult.data?.forEach((l) => {
-          logoMap[l.freelancer_id] = l.logo_data
+          logoMap[l.freelancer_id] = resolveAvatar(l)
         })
 
         const verificationMap: Record<string, string> = {}

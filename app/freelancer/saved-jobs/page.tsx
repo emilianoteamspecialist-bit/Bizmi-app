@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { resolveAvatar } from "@/lib/avatar-url"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -137,15 +138,11 @@ export default function SavedJobsPage() {
     try {
       const { data: imageData } = await supabase
         .from("agency_image")
-        .select("image_data")
+        .select("image_path, image_data")
         .eq("agency_id", agencyId)
         .single()
 
-      if (imageData) {
-        setAgencyImage(imageData.image_data)
-      } else {
-        setAgencyImage("")
-      }
+      setAgencyImage(imageData ? resolveAvatar(imageData) : "")
     } catch (error) {
       console.error("Error loading agency image:", error)
       setAgencyImage("")

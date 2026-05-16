@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Upload, Save, Edit, MapPin, Globe, Phone, Building2, User, Users, Camera } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { setCachedAvatar } from "@/lib/avatar-cache"
+import { getAvatarUrl, resolveAvatar } from "@/lib/avatar-url"
 
 export default function AgencyProfile() {
   const [profile, setProfile] = useState<any>(null)
@@ -57,8 +59,8 @@ export default function AgencyProfile() {
         })
       }
 
-      const { data: imageData } = await supabase.from("agency_image").select("image_data").eq("agency_id", user.id).single()
-      if (imageData) setImagePreview(imageData.image_data)
+      const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", user.id).single()
+      if (imageData) setImagePreview(resolveAvatar(imageData))
     } catch (error) {
       console.error(error)
     } finally {
@@ -97,21 +99,25 @@ export default function AgencyProfile() {
       if (profileError) throw profileError
 
       if (selectedFile) {
-        const reader = new FileReader()
-        reader.onload = async (e) => {
-          const imageData = e.target?.result as string
-          await supabase.from("agency_image").delete().eq("agency_id", user.id)
-          await supabase.from("agency_image").insert({
-            agency_id: user.id,
-            image_data: imageData,
-            file_name: selectedFile.name,
-            file_size: selectedFile.size,
-            mime_type: selectedFile.type,
-          })
-          window.dispatchEvent(new Event("agency_profile_updated"))
-          loadProfile()
-        }
-        reader.readAsDataURL(selectedFile)
+        const ext = selectedFile.name.split(".").pop()?.toLowerCase() || "png"
+        const path = `${user.id}/avatar.${ext}`
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(path, selectedFile, { contentType: selectedFile.type, upsert: true })
+        if (uploadError) throw uploadError
+
+        await supabase.from("agency_image").delete().eq("agency_id", user.id)
+        await supabase.from("agency_image").insert({
+          agency_id: user.id,
+          image_path: path,
+          file_name: selectedFile.name,
+          file_size: selectedFile.size,
+          mime_type: selectedFile.type,
+        })
+        setCachedAvatar(user.id, getAvatarUrl(path))
+        window.dispatchEvent(new Event("agency_profile_updated"))
+        loadProfile()
       } else {
         window.dispatchEvent(new Event("agency_profile_updated"))
       }

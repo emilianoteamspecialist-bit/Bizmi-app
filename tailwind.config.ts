@@ -21,14 +21,21 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "sans-serif"],
         heading: ["var(--font-sora)", "Sora", "sans-serif"],
+        display: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        bricolage: ["var(--font-bricolage)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
+        rule: "hsl(var(--rule))",
         divider: "hsl(var(--divider))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        paper: "hsl(var(--paper))",
+        ink: "hsl(var(--ink))",
+        oxblood: "hsl(var(--oxblood))",
+        moss: "hsl(var(--moss))",
         surface: {
           DEFAULT: "hsl(var(--surface))",
           2: "hsl(var(--surface-2))",
@@ -87,7 +94,6 @@ const config: Config = {
         gold: "hsl(var(--gold))",
         jade: "hsl(var(--jade))",
         cream: "hsl(var(--cream))",
-        ink: "hsl(var(--ink))",
       },
       borderRadius: {
         "2xl": "var(--radius-2xl)",
@@ -109,11 +115,16 @@ const config: Config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" },
         },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         marquee: "marquee 40s linear infinite",
+        "fade-up": "fade-up 0.6s ease-out both",
       },
     },
   },

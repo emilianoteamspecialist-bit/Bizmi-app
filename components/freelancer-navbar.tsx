@@ -36,6 +36,8 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
+import { getCachedAvatar, setCachedAvatar } from "@/lib/avatar-cache"
+import { resolveAvatar } from "@/lib/avatar-url"
 
 export default function FreelancerNavbar() {
   const { user, profile: authProfile, signOut } = useAuth()
@@ -57,12 +59,16 @@ export default function FreelancerNavbar() {
     try {
       // Fetch logo and message count in parallel
       const [logoResult, countResult, recentResult] = await Promise.all([
-        supabase.from("freelancer_logos").select("logo_data").eq("freelancer_id", userId).single(),
+        supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).single(),
         supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", userId).eq("is_read", false),
         supabase.from("messages").select(`id, message_text, created_at, sender_id, conversation_id, sender_profile:profiles!messages_sender_id_fkey (full_name, account_type, company_name)`).eq("receiver_id", userId).eq("is_read", false).order("created_at", { ascending: false }).limit(7)
       ])
 
-      if (logoResult.data) setLogoPreview(logoResult.data.logo_data)
+      if (logoResult.data) {
+        const url = resolveAvatar(logoResult.data)
+        setLogoPreview(url)
+        setCachedAvatar(userId, url)
+      }
       setUnreadMessagesCount(countResult.count || 0)
       setRecentNotifications(recentResult.data || [])
     } catch (error) {
@@ -72,6 +78,8 @@ export default function FreelancerNavbar() {
 
   useEffect(() => {
     if (user?.id) {
+      const cached = getCachedAvatar(user.id)
+      if (cached) setLogoPreview(cached)
       loadExtraUserData(user.id)
     }
   }, [user?.id, loadExtraUserData])
