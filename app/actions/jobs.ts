@@ -95,8 +95,80 @@ export async function updateJobStatus(jobId: string, newStatus: string) {
     .from("jobs")
     .update({ status: newStatus, updated_at: new Date().toISOString() })
     .eq("id", jobId)
-  
+
   if (error) throw error
+  return { success: true }
+}
+
+export type JobInput = {
+  title: string
+  description: string
+  skills: string[]
+  budget_min: number | null
+  budget_max: number | null
+  duration: string
+  location: string
+  job_type: string
+  credit_cost: number
+}
+
+export type CreateJobResult =
+  | { success: true; deduped?: boolean }
+  | { success: false; error: string; code?: string }
+
+export async function createJob(
+  input: JobInput,
+  idempotencyKey: string,
+): Promise<CreateJobResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+
+  const { error } = await supabase.from("jobs").insert([
+    {
+      ...input,
+      agency_id: user.id,
+      status: "active",
+      created_at: new Date().toISOString(),
+      idempotency_key: idempotencyKey,
+    },
+  ])
+
+  if (error) {
+    // unique_violation on idempotency_key: a prior attempt already landed.
+    if (error.code === "23505") return { success: true, deduped: true }
+    console.error("createJob error:", error)
+    return { success: false, error: error.message, code: error.code }
+  }
+
+  return { success: true }
+}
+
+export type UpdateJobResult =
+  | { success: true }
+  | { success: false; error: string; code?: string }
+
+export async function updateJob(
+  jobId: string,
+  input: JobInput,
+): Promise<UpdateJobResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+
+  // Ownership check is also enforced by RLS; the explicit filter keeps the
+  // update from touching rows the user shouldn't see even if RLS is misconfigured.
+  const { error } = await supabase
+    .from("jobs")
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq("id", jobId)
+    .eq("agency_id", user.id)
+
+  if (error) {
+    console.error("updateJob error:", error)
+    return { success: false, error: error.message, code: error.code }
+  }
+
   return { success: true }
 }
 

@@ -6,18 +6,11 @@ import {
   Check,
   ChevronRight,
   ChevronsUpDown,
-  FileText,
-  LayoutDashboard,
   LogOut,
-  MessageCircle,
   Plus,
-  Search,
   Settings,
   Sparkles,
   User,
-  Users,
-  Wallet,
-  Bookmark,
   CreditCard,
   Shield,
   Play,
@@ -92,26 +85,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const role = profile?.account_type || "freelancer"
 
-  const navLinks = role === "agency" 
+  const navLinks = role === "agency"
     ? [
-        { name: "Dashboard", href: "/agency/dashboard", icon: LayoutDashboard },
-        { name: "Marketplace", href: "/agency/find-freelancers", icon: Users },
-        { name: "Messages", href: "/agency/messages", icon: MessageCircle, badge: unreadMessagesCount },
-        { name: "My Posts", href: "/agency/posts", icon: FileText },
-        { name: "Wallet", href: "/agency/wallet", icon: Wallet },
+        { name: "Dashboard", href: "/agency/dashboard", icon: "fi-rr-apps" },
+        { name: "Marketplace", href: "/agency/find-freelancers", icon: "fi-rr-users-alt" },
+        { name: "Messages", href: "/agency/messages", icon: "fi-rr-comment-alt", badge: unreadMessagesCount },
+        { name: "My Posts", href: "/agency/posts", icon: "fi-rr-document" },
+        { name: "Wallet", href: "/agency/wallet", icon: "fi-rr-wallet" },
       ]
     : [
-        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        { name: "Marketplace", href: "/freelancer/marketplace", icon: Search },
-        { name: "Messages", href: "/freelancer/messages", icon: MessageCircle, badge: unreadMessagesCount },
-        { name: "Proposals", href: "/freelancer/proposals", icon: FileText },
-        { name: "Funded Jobs", href: "/freelancer/funded-jobs", icon: Wallet },
-        { name: "Saved", href: "/freelancer/saved-jobs", icon: Bookmark },
+        { name: "Dashboard", href: "/freelancer/dashboard", icon: "fi-rr-apps" },
+        { name: "Marketplace", href: "/freelancer/marketplace", icon: "fi-rr-search" },
+        { name: "Messages", href: "/freelancer/messages", icon: "fi-rr-comment-alt", badge: unreadMessagesCount },
+        { name: "Proposals", href: "/freelancer/proposals", icon: "fi-rr-document" },
+        { name: "Funded Jobs", href: "/freelancer/funded-jobs", icon: "fi-rr-wallet" },
+        { name: "Saved", href: "/freelancer/saved-jobs", icon: "fi-rr-bookmark" },
       ]
 
   const handleSignOut = async () => {
     await signOut()
-    router.push("/")
+    router.push("/login")
   }
 
   return (
@@ -151,11 +144,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   )}
                 >
                   <Link href={item.href} className="flex items-center gap-3">
-                    <item.icon
+                    <i
                       className={cn(
-                        "size-4 transition-colors",
+                        "fi inline-flex items-center justify-center text-base leading-none transition-colors w-4 h-4",
+                        item.icon,
                         isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                       )}
+                      aria-hidden
                     />
                     <span>{item.name}</span>
                     {item.badge !== undefined && item.badge > 0 && (

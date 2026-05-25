@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Search, Loader2, X, FileText, CheckCircle, XCircle, Eye } from "lucide-react"
-import PaymentModal from "@/components/payment-modal"
+import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface JobPost {
   id: string
@@ -34,13 +35,14 @@ interface JobPost {
 const ITEMS_PER_PAGE = 15
 
 export default function AgencyPostsPage() {
+  const { user } = useAuth()
   const [jobs, setJobs] = useState<JobPost[]>([])
   const [loading, setLoading] = useState(true)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const currentUserId = user?.id ?? null
   const router = useRouter()
   const [showProposalsModal, setShowProposalsModal] = useState(false)
   const [selectedJob, setSelectedJob] = useState<any>(null)
@@ -50,9 +52,7 @@ export default function AgencyPostsPage() {
   const [currentMessageText, setCurrentMessageText] = useState<string>("")
   const [proposalSearchTerm, setProposalSearchTerm] = useState("")
 
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [selectedJobForPayment, setSelectedJobForPayment] = useState<JobPost | null>(null)
-  const [selectedFreelancerForPayment, setSelectedFreelancerForPayment] = useState<any>(null)
+  const [fundingProposalId, setFundingProposalId] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -288,17 +288,26 @@ export default function AgencyPostsPage() {
     }
   }
 
-  const handleFundFreelancerClick = (job: JobPost, freelancer: any) => {
-    setSelectedJobForPayment(job)
-    setSelectedFreelancerForPayment(freelancer)
-    setShowProposalsModal(false)
-    setShowPaymentModal(true)
-  }
-
-  const handlePaymentSuccess = () => {
-    loadJobs(0, debouncedSearchTerm, false)
-    if (selectedJob) {
-      handleViewProposals(selectedJob)
+  const handleFundProposal = async (proposalId: string) => {
+    if (fundingProposalId) return
+    setFundingProposalId(proposalId)
+    try {
+      const res = await fetch("/api/escrow/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.authorization_url) {
+        toast.error(data?.error || "Failed to start funding")
+        setFundingProposalId(null)
+        return
+      }
+      window.location.href = data.authorization_url
+    } catch (err) {
+      console.error("fund job error:", err)
+      toast.error("Could not reach the payment service. Please try again.")
+      setFundingProposalId(null)
     }
   }
 
@@ -371,24 +380,36 @@ export default function AgencyPostsPage() {
   }
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-      } else {
-        setLoading(false)
-      }
-    }
-    fetchUser()
-  }, [])
+    if (!currentUserId) setLoading(false)
+  }, [currentUserId])
 
   useEffect(() => {
     if (currentUserId) {
       setOffset(0)
       setHasMore(true)
       loadJobs(0, debouncedSearchTerm, false)
+    }
+  }, [currentUserId, debouncedSearchTerm, loadJobs])
+
+  // Live proposal counts. RLS on `proposals` restricts the realtime stream
+  // to rows this agency can read, so a single channel covers all our jobs.
+  useEffect(() => {
+    if (!currentUserId) return
+    const channel = supabase
+      .channel("agency_posts_proposals")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "proposals" },
+        () => {
+          loadJobs(0, debouncedSearchTerm, false)
+        },
+      )
+      .subscribe((status, err) => {
+        if (err) console.error("[Realtime] proposals subscription error:", err)
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
     }
   }, [currentUserId, debouncedSearchTerm, loadJobs])
 
@@ -526,28 +547,6 @@ export default function AgencyPostsPage() {
         </div>
       </main>
 
-      {selectedJobForPayment && selectedFreelancerForPayment && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => {
-            setShowPaymentModal(false)
-            setSelectedJobForPayment(null)
-            setSelectedFreelancerForPayment(null)
-          }}
-          jobData={{
-            id: selectedJobForPayment.id,
-            title: selectedJobForPayment.title,
-            freelancer: {
-              id: selectedFreelancerForPayment.freelancer_id,
-              name: selectedFreelancerForPayment.profiles?.full_name || "Unknown Freelancer",
-              email: selectedFreelancerForPayment.profiles?.email || "No email provided",
-            },
-            amount: selectedJobForPayment.budget_max,
-          }}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
-
       {showProposalsModal && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -684,8 +683,12 @@ export default function AgencyPostsPage() {
                                 </Button>
                                 <Button
                                   className="flex-1 bg-primary hover:bg-primary-hover"
-                                  onClick={() => handleFundFreelancerClick(selectedJob, proposal)}
+                                  onClick={() => handleFundProposal(proposal.id)}
+                                  disabled={fundingProposalId === proposal.id}
                                 >
+                                  {fundingProposalId === proposal.id ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : null}
                                   💰 Fund Job
                                 </Button>
                               </div>

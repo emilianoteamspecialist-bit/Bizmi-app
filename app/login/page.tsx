@@ -52,11 +52,9 @@ export default function LoginPage() {
           return
         }
 
-        localStorage.setItem("bizimee_user", JSON.stringify(profile))
-
         if (profile.account_type === "admin") router.push("/admin/dashboard")
         else if (profile.account_type === "agency") router.push("/agency/dashboard")
-        else router.push("/dashboard")
+        else router.push("/freelancer/dashboard")
       }
     } catch (error) {
       console.error("Unexpected login error:", error)

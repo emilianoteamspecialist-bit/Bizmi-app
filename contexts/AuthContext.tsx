@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null
   profile: any | null
   loading: boolean
+  refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  refreshProfile: async () => {},
   signOut: async () => {},
 })
 
@@ -34,50 +36,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const fetchProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single()
+    if (error) {
+      console.error("Error fetching profile:", error)
+      return
+    }
+    setProfile(data)
+  }
+
   useEffect(() => {
     let isMounted = true
 
-    // Load from localStorage for immediate UI hydration
-    let cachedProfileObj = null
-    const cachedStr = typeof window !== 'undefined' ? localStorage.getItem("bizimee_user") : null
-    if (cachedStr) {
-      try {
-        cachedProfileObj = JSON.parse(cachedStr)
-        setProfile(cachedProfileObj)
-      } catch (e) {
-        console.error("Failed to parse cached profile", e)
+    const init = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!isMounted) return
+
+      if (session?.user) {
+        setUser(session.user)
+        await fetchProfile(session.user.id)
       }
+      setLoading(false)
     }
 
-    const getInitialSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+    init()
 
-        if (!isMounted) return
-
-        if (session?.user) {
-          setUser(session.user)
-          // Only fetch fresh profile if we don't have a valid cache for THIS user
-          if (!cachedProfileObj || cachedProfileObj.id !== session.user.id) {
-            await fetchProfile(session.user.id)
-          }
-        } else {
-          setUser(null)
-          setProfile(null)
-          localStorage.removeItem("bizimee_user")
-        }
-      } catch (error) {
-        console.error("Session error:", error)
-      } finally {
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -85,14 +75,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (session?.user) {
         setUser(session.user)
-        // Refresh profile on explicit sign in
-        if (event === 'SIGNED_IN') {
-           await fetchProfile(session.user.id)
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          await fetchProfile(session.user.id)
         }
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === "SIGNED_OUT") {
         setUser(null)
         setProfile(null)
-        localStorage.removeItem("bizimee_user")
         clearAvatarCache()
       }
       setLoading(false)
@@ -104,40 +92,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [])
 
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
-
-      if (error) {
-        console.error("Error fetching profile:", error)
-        return
-      }
-
-      setProfile(data)
-      localStorage.setItem("bizimee_user", JSON.stringify(data))
-    } catch (error) {
-      console.error("Error fetching profile:", error)
-    }
+  const refreshProfile = async () => {
+    if (user?.id) await fetchProfile(user.id)
   }
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut()
-      localStorage.removeItem("bizimee_user")
-      clearAvatarCache()
-      setUser(null)
-      setProfile(null)
-    } catch (error) {
-      console.error("Error signing out:", error)
-    }
+    await supabase.auth.signOut()
+    clearAvatarCache()
+    setUser(null)
+    setProfile(null)
   }
 
-  const value = {
-    user,
-    profile,
-    loading,
-    signOut,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, profile, loading, refreshProfile, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

@@ -54,15 +54,15 @@ export function DashboardTopBar() {
   const load = useCallback(async (userId: string, r: string) => {
     try {
       const logoQuery = r === "agency"
-        ? supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).single()
-        : supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).single()
+        ? supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).maybeSingle()
+        : supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).maybeSingle()
 
       const [logoRes, countRes, recentRes] = await Promise.all([
         logoQuery,
         supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", userId).eq("is_read", false),
         supabase
           .from("messages")
-          .select(`id, message_text, created_at, sender_id, conversation_id, sender_profile:profiles!messages_sender_id_fkey (full_name, account_type, company_name)`)
+          .select("id, message_text, created_at, sender_id, conversation_id")
           .eq("receiver_id", userId)
           .eq("is_read", false)
           .order("created_at", { ascending: false })
@@ -75,19 +75,36 @@ export function DashboardTopBar() {
         setCachedAvatar(userId, url)
       }
       setUnread(countRes.count || 0)
-      setRecent(recentRes.data || [])
+
+      // Resolve sender names in a separate batch (avoids the brittle named-FK embed)
+      const senderIds = Array.from(new Set((recentRes.data || []).map((m: any) => m.sender_id).filter(Boolean)))
+      let senderById: Record<string, any> = {}
+      if (senderIds.length) {
+        const { data: senders } = await supabase
+          .from("profiles")
+          .select("id, full_name, account_type, company_name")
+          .in("id", senderIds)
+        for (const s of senders || []) senderById[(s as any).id] = s
+      }
+      setRecent(
+        (recentRes.data || []).map((m: any) => ({
+          ...m,
+          sender_profile: senderById[m.sender_id] || null,
+        }))
+      )
     } catch (err) {
       console.error("Topbar load error:", err)
     }
   }, [])
 
   useEffect(() => {
-    if (user?.id) {
+    // Wait for profile to be resolved so we don't query the wrong avatar table on first paint
+    if (user?.id && profile?.account_type) {
       const cached = getCachedAvatar(user.id)
       if (cached) setImagePreview(cached)
       load(user.id, role)
     }
-  }, [user?.id, role, load])
+  }, [user?.id, profile?.account_type, role, load])
 
   const triggerSearch = () => {
     if (!searchValue.trim()) return
@@ -102,7 +119,7 @@ export function DashboardTopBar() {
 
   const handleSignOut = async () => {
     await signOut()
-    router.push("/")
+    router.push("/login")
   }
 
   return (

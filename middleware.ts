@@ -33,9 +33,10 @@ export async function middleware(req: NextRequest) {
   }
 
   if (session && isAuthRoute) {
-    // Redirect authenticated users to the generic dashboard
-    // Server components will handle routing them to the correct role dashboard
-    const redirectUrl = new URL('/dashboard', req.url)
+    // Redirect authenticated users to the freelancer dashboard.
+    // /freelancer/dashboard performs a role-check and redirects agency/admin users
+    // to their own dashboards.
+    const redirectUrl = new URL('/freelancer/dashboard', req.url)
     return NextResponse.redirect(redirectUrl)
   }
 

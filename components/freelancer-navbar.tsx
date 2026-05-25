@@ -86,11 +86,11 @@ export default function FreelancerNavbar() {
 
   const handleSignOut = async () => {
     await signOut()
-    router.push("/")
+    router.push("/login")
   }
 
   const navLinks = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", href: "/freelancer/dashboard", icon: LayoutDashboard },
     { name: "Messages", href: "/freelancer/messages", icon: MessageCircle, badge: unreadMessagesCount },
     { name: "Proposals", href: "/freelancer/proposals", icon: FileText },
     { name: "Funded Jobs", href: "/freelancer/funded-jobs", icon: Wallet },

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Wallet, TrendingUp, Clock, Trash2, CheckCircle, X, Mail, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface WalletTransaction {
   id: string
@@ -33,31 +34,31 @@ interface FundedJob {
 }
 
 export default function AgencyWalletPage() {
+  const { user: currentUser, loading: authLoading } = useAuth()
   const [walletBalance, setWalletBalance] = useState(0)
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [fundedJobs, setFundedJobs] = useState<FundedJob[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingJobs, setDeletingJobs] = useState<Set<string>>(new Set())
   const [completingJobs, setCompletingJobs] = useState<Set<string>>(new Set())
-  const [currentUser, setCurrentUser] = useState<any>(null)
   const router = useRouter()
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 25
 
   useEffect(() => {
+    if (authLoading) return
+    if (!currentUser?.id) {
+      setLoading(false)
+      return
+    }
     loadWalletData()
-  }, [])
+  }, [currentUser?.id, authLoading])
 
   const loadWalletData = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+      const user = currentUser
       if (user) {
-        setCurrentUser(user)
-        console.log("Current user ID:", user.id)
 
         // Load wallet balance from profiles
         const { data: profile } = await supabase.from("profiles").select("wallet_balance").eq("id", user.id).single()

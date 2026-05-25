@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface Proposal {
   id: string
@@ -46,6 +47,7 @@ interface Proposal {
 }
 
 export default function ProposalsPage() {
+  const { user, loading: authLoading } = useAuth()
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -63,12 +65,7 @@ export default function ProposalsPage() {
           setLoadingMore(true)
         }
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
         if (!user) {
-          console.log("No user found")
           setProposals([])
           setLoading(false)
           setLoadingMore(false)
@@ -102,24 +99,10 @@ export default function ProposalsPage() {
           }
         }
 
+        // Step 1: fetch proposals only (no embedded joins — bulletproof against FK naming)
         let proposalsQuery = supabase
           .from("proposals")
-          .select(`
-            *,
-            jobs!proposals_job_id_fkey (
-              title,
-              description,
-              budget_min,
-              budget_max,
-              job_type,
-              duration,
-              location,
-              skills,
-              agency_id,
-              job_funding_status(funding_status, job_status)
-            ),
-            freelancer_proposal_status(freelancer_status)
-          `)
+          .select("*")
           .eq("freelancer_id", user.id)
           .order("created_at", { ascending: false })
           .range(isLoadMore ? offset : 0, (isLoadMore ? offset : 0) + LIMIT - 1)
@@ -131,7 +114,12 @@ export default function ProposalsPage() {
         const { data: proposalsData, error: proposalsError } = await proposalsQuery
 
         if (proposalsError) {
-          console.error("Error loading proposals:", proposalsError)
+          console.error("Error loading proposals:", {
+            message: proposalsError.message,
+            code: proposalsError.code,
+            details: proposalsError.details,
+            hint: proposalsError.hint,
+          })
           setLoading(false)
           setLoadingMore(false)
           return
@@ -147,20 +135,59 @@ export default function ProposalsPage() {
           return
         }
 
-        // Get agency data
-        const agencyIds = proposalsData.map((p) => p.jobs?.agency_id).filter(Boolean)
-        let agencyData: any[] = []
+        // Step 2: parallel-fetch all related data
+        const jobIds = Array.from(new Set(proposalsData.map((p) => p.job_id).filter(Boolean)))
+        const proposalIds = proposalsData.map((p) => p.id).filter(Boolean)
+
+        const [jobsRes, fundingRes, statusRes] = await Promise.all([
+          jobIds.length
+            ? supabase
+                .from("jobs")
+                .select("id, title, description, budget_min, budget_max, job_type, duration, location, skills, agency_id")
+                .in("id", jobIds)
+            : Promise.resolve({ data: [] as any[] }),
+          jobIds.length
+            ? supabase
+                .from("job_funding_status")
+                .select("job_id, funding_status, job_status")
+                .in("job_id", jobIds)
+            : Promise.resolve({ data: [] as any[] }),
+          proposalIds.length
+            ? supabase
+                .from("freelancer_proposal_status")
+                .select("proposal_id, freelancer_status")
+                .in("proposal_id", proposalIds)
+            : Promise.resolve({ data: [] as any[] }),
+        ])
+
+        const jobById: Record<string, any> = {}
+        for (const j of (jobsRes.data as any[]) || []) jobById[j.id] = j
+
+        const fundingByJobId: Record<string, any> = {}
+        for (const f of (fundingRes.data as any[]) || []) fundingByJobId[f.job_id] = f
+
+        const statusByProposalId: Record<string, any> = {}
+        for (const s of (statusRes.data as any[]) || []) statusByProposalId[s.proposal_id] = s
+
+        // Step 3: fetch agency profiles
+        const agencyIds = Array.from(
+          new Set(Object.values(jobById).map((j: any) => j?.agency_id).filter(Boolean))
+        )
+        let agencyById: Record<string, any> = {}
         if (agencyIds.length > 0) {
-          const { data: agencies, error: agencyError } = await supabase
+          const { data: agencies } = await supabase
             .from("profiles")
             .select("id, full_name, company_name")
             .in("id", agencyIds)
-          agencyData = agencies || []
+          for (const a of (agencies as any[]) || []) agencyById[a.id] = a
         }
 
+        // Step 4: stitch everything together
         const enrichedProposals = proposalsData.map((proposal) => {
-          const job = proposal.jobs
-          const agency = agencyData.find((a) => a.id === job?.agency_id)
+          const job = jobById[proposal.job_id]
+          const agency = job ? agencyById[job.agency_id] : null
+          const funding = fundingByJobId[proposal.job_id]
+          const fStatus = statusByProposalId[proposal.id]
           return {
             ...proposal,
             job_title: job?.title || "Unknown Job",
@@ -172,9 +199,9 @@ export default function ProposalsPage() {
             job_location: job?.location || "Not specified",
             skills: job?.skills || [],
             agency_name: agency?.company_name || agency?.full_name || "Unknown Agency",
-            funding_status: job?.job_funding_status?.[0]?.funding_status || "pending",
-            job_status: job?.job_funding_status?.[0]?.job_status || "open",
-            freelancer_status: proposal.freelancer_proposal_status?.[0]?.freelancer_status || "pending",
+            funding_status: funding?.funding_status || "pending",
+            job_status: funding?.job_status || "open",
+            freelancer_status: fStatus?.freelancer_status || "pending",
           }
         })
 
@@ -193,14 +220,20 @@ export default function ProposalsPage() {
         setLoadingMore(false)
       }
     },
-    [searchTerm],
+    [searchTerm, user],
   )
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user?.id) {
+      setLoading(false)
+      setHasMore(false)
+      return
+    }
     setOffset(0)
     setHasMore(true)
     loadProposals(false, searchTerm)
-  }, [searchTerm])
+  }, [searchTerm, user?.id, authLoading])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value)
@@ -208,9 +241,6 @@ export default function ProposalsPage() {
 
   const handleStartWork = async (proposalId: string, jobId: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
       if (!user) return
 
       const { error } = await supabase.from("freelancer_proposal_status").upsert({
@@ -237,9 +267,6 @@ export default function ProposalsPage() {
 
   const handleCompleteWork = async (proposalId: string, jobId: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
       if (!user) return
 
       // Get freelancer bank details
@@ -405,7 +432,7 @@ export default function ProposalsPage() {
               </p>
               {!searchTerm && (
                 <Button
-                  onClick={() => (window.location.href = "/dashboard")}
+                  onClick={() => (window.location.href = "/freelancer/dashboard")}
                   className="bg-primary hover:bg-primary-hover text-white"
                 >
                   Browse Jobs

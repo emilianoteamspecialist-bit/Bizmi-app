@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { resolveAvatar } from "@/lib/avatar-url"
 import { ALL_CATEGORIES, getSkillsForCategory, getCategoriesForSkills, type Category } from "@/lib/categories"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface FreelancerProfile {
   id: string
@@ -42,6 +43,7 @@ interface FreelancerProfile {
 const FREELANCERS_PER_PAGE = 20
 
 export default function FindFreelancers() {
+  const { user: authUser } = useAuth()
   const [freelancers, setFreelancers] = useState<FreelancerProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -228,8 +230,7 @@ export default function FindFreelancers() {
   }
 
   const handleContactFreelancer = async (freelancerId: string) => {
-    // Check if agency is logged in
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = authUser
     if (!user) {
       router.push("/login")
       return

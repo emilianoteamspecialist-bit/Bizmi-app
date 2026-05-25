@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import PayoutModal from "@/components/payout-modal"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface FundedJob {
   id: string
@@ -34,11 +35,11 @@ interface FundedJob {
 }
 
 export default function FundedJobsPage() {
+  const { user: currentUser, loading: authLoading } = useAuth()
   const [fundedJobs, setFundedJobs] = useState<FundedJob[]>([])
   const [loading, setLoading] = useState(true)
   const [verifyingJobs, setVerifyingJobs] = useState<Set<string>>(new Set())
   const [confirmingJobs, setConfirmingJobs] = useState<Set<string>>(new Set())
-  const [currentUser, setCurrentUser] = useState<any>(null)
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -60,19 +61,12 @@ export default function FundedJobsPage() {
   const fetchFundedJobs = async () => {
     try {
       setLoading(true)
-      console.log("🔍 Fetching funded jobs...")
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        console.log("❌ No user found")
+      if (!currentUser) {
+        setLoading(false)
         return
       }
-
-      console.log("👤 Current freelancer user ID:", user.id)
-      setCurrentUser(user)
+      const user = currentUser
 
       // Fetch funded jobs where this freelancer is specifically assigned
       const { data: jobs, error } = await supabase
@@ -267,9 +261,14 @@ export default function FundedJobsPage() {
         })
       });
 
-      if (!response.ok) throw new Error("Failed to create dispute");
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        console.error("Dispute API error:", { status: response.status, body });
+        toast.error(body?.details || body?.error || "Failed to create dispute");
+        return;
+      }
 
-      const { dispute } = await response.json();
+      const { dispute } = body;
       
       setShowDisputeModal(false);
       setDisputeForm({ type: "client_abandonment", description: "" });
@@ -318,8 +317,13 @@ export default function FundedJobsPage() {
   }
 
   useEffect(() => {
+    if (authLoading) return
+    if (!currentUser?.id) {
+      setLoading(false)
+      return
+    }
     fetchFundedJobs()
-  }, [])
+  }, [currentUser?.id, authLoading])
 
   if (loading) {
     return (

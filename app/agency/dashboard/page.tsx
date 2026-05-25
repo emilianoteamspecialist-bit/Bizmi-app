@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -29,12 +29,13 @@ import {
   XCircle,
   Search,
   ShieldAlert,
+  ArrowUpRight,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import PaymentModal from "@/components/payment-modal"
-import { getAgencyJobs, updateJobStatus } from "@/app/actions/jobs"
+import { toast } from "sonner"
+import { getAgencyJobs, updateJobStatus, createJob, updateJob } from "@/app/actions/jobs"
 import { getProfile, getAgencyImage, getFreelancerLogos } from "@/app/actions/user"
 import { ALL_SKILLS } from "@/lib/categories"
 
@@ -54,6 +55,10 @@ export default function AgencyDashboard() {
   const [showProposalsModal, setShowProposalsModal] = useState(false)
   const [loadingProposals, setLoadingProposals] = useState(false)
   const [selectedJobProposals, setSelectedJobProposals] = useState<any[]>([])
+  // Escrow status (v2) for the currently viewed job. Used to hide "Fund Job"
+  // once the job has already been funded — the prior UI showed the button
+  // even after a successful payment because nothing fetched escrow state.
+  const [selectedJobEscrowStatus, setSelectedJobEscrowStatus] = useState<string | null>(null)
   const [freelancerImages, setFreelancerImages] = useState<{ [key: string]: string }>({})
   const [proposalSearchTerm, setProposalSearchTerm] = useState("")
   const [jobFormData, setJobFormData] = useState({
@@ -72,6 +77,12 @@ export default function AgencyDashboard() {
   const [profile, setProfile] = useState<any>(null)
   const [editingJobId, setEditingJobId] = useState<string | null>(null)
   const [isPosting, setIsPosting] = useState(false)
+  // Synchronous lock against double-submit; ref wins the race against React's batched state.
+  const isSubmittingRef = useRef(false)
+  // Idempotency key for the current Post-a-Job attempt. Kept across retries so
+  // a duplicated insert (network retry, refresh-then-resubmit) hits the unique
+  // index and is treated as success rather than creating a second row.
+  const idempotencyKeyRef = useRef<string | null>(null)
   const [showDisputeModal, setShowDisputeModal] = useState(false)
   const [disputeForm, setDisputeForm] = useState<{ type: string; description: string }>({
     type: "quality",
@@ -79,19 +90,94 @@ export default function AgencyDashboard() {
   })
   const [currentMessageText, setCurrentMessageText] = useState("")
   const [messageInputOpenForProposalId, setMessageInputOpenForProposalId] = useState<string | null>(null)
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [selectedProposal, setSelectedProposal] = useState<any>(null)
+  const [fundingProposalId, setFundingProposalId] = useState<string | null>(null)
+
+  const handleFundProposal = async (proposalId: string) => {
+    if (fundingProposalId) return
+    setFundingProposalId(proposalId)
+    try {
+      const res = await fetch("/api/escrow/initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proposalId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.authorization_url) {
+        toast.error(data?.error || "Failed to start funding")
+        setFundingProposalId(null)
+        return
+      }
+      window.location.href = data.authorization_url
+    } catch (err) {
+      console.error("fund job error:", err)
+      toast.error("Could not reach the payment service. Please try again.")
+      setFundingProposalId(null)
+    }
+  }
 
   useEffect(() => {
     loadProfileAndJobs()
-    
-    // Check for post=true in URL
+
     const searchParams = new URLSearchParams(window.location.search)
     if (searchParams.get("post") === "true") {
       setShowPostJobModal(true)
-      // Clean up URL
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, "", newUrl)
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+
+    // Paystack redirects here after a successful charge. Hit the verify
+    // endpoint so the escrow transitions awaiting -> funded even when no
+    // webhook can reach us (localhost dev, missed webhook, etc.).
+    const fundedId = searchParams.get("escrow_funded")
+    if (fundedId) {
+      window.history.replaceState({}, "", window.location.pathname)
+      ;(async () => {
+        try {
+          const res = await fetch(
+            `/api/escrow/verify?reference=${encodeURIComponent(`escrow_${fundedId}`)}`,
+          )
+          const data = await res.json()
+          if (res.ok && data.success) {
+            toast.success(
+              data.already_processed
+                ? "Funding already confirmed."
+                : "Job funded successfully.",
+            )
+            loadProfileAndJobs()
+          } else {
+            toast.error(data.error || "Could not confirm payment yet.")
+          }
+        } catch (err) {
+          console.error("escrow verify error:", err)
+          toast.error("Could not confirm payment. Please refresh.")
+        }
+      })()
+    }
+  }, [])
+
+  // Live proposal counts: subscribe to INSERTs on `proposals`. RLS on the
+  // table restricts the realtime stream to rows this agency can read (i.e.
+  // proposals on its own jobs), so a single global channel is enough.
+  useEffect(() => {
+    const channel = supabase
+      .channel("agency_dashboard_proposals")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "proposals" },
+        () => {
+          loadProfileAndJobs()
+        },
+      )
+      .subscribe((status, err) => {
+        if (err) console.error("[Realtime] proposals subscription error:", err)
+        if (status === "CHANNEL_ERROR") {
+          console.warn(
+            "[Realtime] proposals channel failed. Ensure proposals is in the supabase_realtime publication (run scripts/enable-realtime-proposals.sql).",
+          )
+        }
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
     }
   }, [])
 
@@ -186,9 +272,14 @@ export default function AgencyDashboard() {
         })
       });
 
-      if (!response.ok) throw new Error("Failed to create dispute");
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        console.error("Dispute API error:", { status: response.status, body });
+        alert(body?.details || body?.error || "Failed to create dispute");
+        return;
+      }
 
-      const { dispute } = await response.json();
+      const { dispute } = body;
       
       setShowDisputeModal(false);
       setDisputeForm({ type: "quality", description: "" });
@@ -204,48 +295,47 @@ export default function AgencyDashboard() {
 
   const handleJobSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
-    if (!profile) return
+
+    // Synchronous double-submit guard. The `disabled` prop on the button is
+    // driven by React state (`isPosting`) which can lag a fast second click.
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+
+    // Reuse the same key across retries of THIS attempt so the DB unique
+    // index collapses duplicates. New attempts (after success or explicit
+    // cancel) start from a fresh key — see resetJobForm and the cancel path.
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = crypto.randomUUID()
+    }
+    const idempotencyKey = idempotencyKeyRef.current
 
     try {
-      const jobData = {
+      setIsPosting(true)
+      const jobInput = {
         title: jobFormData.title,
         description: jobFormData.description,
         skills: selectedSkills,
-        budget_min: jobFormData.budgetMin,
-        budget_max: jobFormData.budgetMax,
+        budget_min: jobFormData.budgetMin ? Number.parseInt(jobFormData.budgetMin) : null,
+        budget_max: jobFormData.budgetMax ? Number.parseInt(jobFormData.budgetMax) : null,
         duration: jobFormData.duration,
         location: jobFormData.location,
         job_type: jobFormData.jobType,
         credit_cost: jobFormData.credits,
-        comments: jobFormData.comments,
-        updated_at: new Date().toISOString(),
       }
 
-      let error
-      if (editingJobId) {
-        // Update existing job
-        const result = await supabase.from("jobs").update(jobData).eq("id", editingJobId)
-        error = result.error
-      } else {
-        // Create new job
-        const result = await supabase.from("jobs").insert([
-          {
-            ...jobData,
-            agency_id: profile.id,
-            status: "active",
-            created_at: new Date().toISOString(),
-          },
-        ])
-        error = result.error
-      }
+      const result = editingJobId
+        ? await updateJob(editingJobId, jobInput)
+        : await createJob(jobInput, idempotencyKey)
 
-      if (error) {
-        console.error("Error saving job:", error)
-        alert("Error saving job")
+      if (!result.success) {
+        const msg = result.error === "Unauthorized"
+          ? "You must be signed in to post a job."
+          : `Error saving job: ${result.error}`
+        alert(msg)
         return
       }
 
-      // Reset form and close modal
+      idempotencyKeyRef.current = null
       setJobFormData({
         title: "",
         description: "",
@@ -265,25 +355,36 @@ export default function AgencyDashboard() {
     } catch (error) {
       console.error("Error saving job:", error)
       alert("Error saving job. Please try again.")
+    } finally {
+      setIsPosting(false)
+      isSubmittingRef.current = false
     }
   }
 
   const handleViewProposals = async (job: any) => {
-    console.log("🔍 Loading proposals for job:", job.id)
     setSelectedJob(job)
     setShowProposalsModal(true)
     setLoadingProposals(true)
+    setSelectedJobProposals([])
+    setSelectedJobEscrowStatus(null)
+
+    // Fire the escrow lookup in parallel — we don't need it to render the
+    // proposal list, only to decide which action buttons to show.
+    supabase
+      .from("escrow_deposits")
+      .select("status_v2")
+      .eq("job_id", job.id)
+      .not("status_v2", "is", null)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("escrow status lookup error:", error)
+          return
+        }
+        setSelectedJobEscrowStatus(data?.status_v2 ?? null)
+      })
 
     try {
-      // First, let's check if we can see the proposals directly
-      const { data: directProposals, error: directError } = await supabase
-        .from("proposals")
-        .select("*")
-        .eq("job_id", job.id)
-
-      console.log("Direct proposals query result:", { directProposals, directError })
-
-      // Now let's try the full query with joins
       const { data: proposalsData, error } = await supabase
         .from("proposals")
         .select(`
@@ -309,22 +410,23 @@ export default function AgencyDashboard() {
         .eq("job_id", job.id)
         .order("created_at", { ascending: false })
 
-      console.log("Proposals query result:", { proposalsData, error })
+      console.log("[proposals] loaded", { count: proposalsData?.length, error })
 
       if (error) {
         console.error("Error loading proposals:", error)
-        alert("Error loading proposals: " + error.message)
+        alert(`Error loading proposals: ${error.message}`)
         return
       }
 
       setSelectedJobProposals(proposalsData || [])
 
-      // Load freelancer images for all proposals
-      const freelancerIds = proposalsData?.map((proposal) => proposal.freelancer_id) || []
-      console.log("Freelancer IDs to load images for:", freelancerIds)
-
+      const freelancerIds = proposalsData?.map((p) => p.freelancer_id) ?? []
       if (freelancerIds.length > 0) {
-        await loadFreelancerImages(freelancerIds)
+        // Load images in the background so the proposals list shows immediately.
+        // A hang here used to keep the whole modal on the spinner.
+        loadFreelancerImages(freelancerIds).catch((err) =>
+          console.error("loadFreelancerImages error:", err),
+        )
       }
     } catch (error) {
       console.error("Error loading proposals:", error)
@@ -463,59 +565,6 @@ export default function AgencyDashboard() {
     setSelectedSkills(selectedSkills.filter((s) => s !== skill))
   }
 
-  const handlePostJob = async () => {
-    try {
-      setIsPosting(true)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
-
-      const jobData = {
-        agency_id: user.id,
-        title: jobFormData.title,
-        description: jobFormData.description,
-        budget_min: jobFormData.budgetMin ? Number.parseInt(jobFormData.budgetMin) : null,
-        budget_max: jobFormData.budgetMax ? Number.parseInt(jobFormData.budgetMax) : null,
-        duration: jobFormData.duration,
-        location: jobFormData.location,
-        job_type: jobFormData.jobType,
-        skills: selectedSkills,
-        credit_cost: jobFormData.credits,
-        status: "active",
-      }
-
-      const { error } = await supabase.from("jobs").insert([jobData])
-      if (error) {
-        console.error("Error posting job:", error)
-        alert("Error posting job: " + error.message)
-        setIsPosting(false)
-        return
-      }
-
-      alert("Job posted successfully!")
-      setShowPostJobModal(false)
-      setPostJobStep(1)
-      setSelectedSkills([])
-      setJobFormData({
-        title: "",
-        description: "",
-        budgetMin: "",
-        budgetMax: "",
-        duration: "",
-        location: "",
-        jobType: "",
-        credits: 5,
-        comments: "",
-      })
-      setIsPosting(false)
-    } catch (error) {
-      console.error("Error posting job:", error)
-      alert("Error posting job. Please try again.")
-      setIsPosting(false)
-    }
-  }
-
   // Calculate metrics
   const activeJobs = agencyJobs.filter((job) => job.status === "active").length
   const pausedJobs = agencyJobs.filter((job) => job.status === "paused").length
@@ -539,260 +588,258 @@ export default function AgencyDashboard() {
     )
   })
 
+  const resetJobForm = () => {
+    setJobFormData({
+      title: "", description: "", budgetMin: "", budgetMax: "",
+      duration: "", location: "", jobType: "", credits: 5, comments: "",
+    })
+    setSelectedSkills([])
+    setEditingJobId(null)
+    idempotencyKeyRef.current = null
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <div className="max-w-7xl mx-auto py-8 px-4 space-y-6">
-          <div className="h-40 bg-slate-200 rounded-[20px] animate-pulse"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-slate-200 rounded-[20px] animate-pulse"></div>)}
+      <div className="min-h-screen bg-paper relative">
+        <div className="grain absolute inset-0 pointer-events-none" aria-hidden />
+        <div className="editorial-shell relative py-10 lg:py-14 space-y-10">
+          <div className="hairline-b pb-3 flex justify-between">
+            <div className="h-3 w-48 bg-foreground/5 animate-pulse" />
+            <div className="h-3 w-40 bg-foreground/5 animate-pulse" />
           </div>
+          <div className="space-y-6">
+            <div className="h-3 w-32 bg-foreground/5 animate-pulse" />
+            <div className="h-16 w-2/3 bg-foreground/5 animate-pulse" />
+            <div className="h-4 w-1/2 bg-foreground/5 animate-pulse" />
+          </div>
+          <div className="hairline-strong" />
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="py-7 px-6 space-y-3">
+                <div className="h-3 w-12 bg-foreground/5 animate-pulse" />
+                <div className="h-12 w-16 bg-foreground/5 animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="hairline-strong" />
         </div>
       </div>
     )
   }
 
+  const agencyName = profile?.company_name || profile?.full_name || "Your"
+  const editionNo = String(agencyJobs.length + 41).padStart(4, "0")
+  const today = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-20 selection:bg-orange-100 selection:text-orange-900">
-      
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
-        
-        {/* Welcome Hero */}
-        <Card className="bg-slate-900 border-none rounded-[20px] overflow-hidden relative shadow-md">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-          
-          <CardContent className="p-8 sm:p-12 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-center md:text-left space-y-4">
-              <Badge className="bg-primary hover:bg-primary-hover text-white border-none px-4 py-1.5 rounded-full font-bold uppercase tracking-wider text-[10px]">
-                Agency Dashboard
-              </Badge>
-              <h2 className="text-primaryxl sm:text-5xl font-bold text-white leading-tight">
-                Welcome back, <br/>
-                <span className="text-primary">
-                  {profile?.company_name || profile?.full_name || "Agency"}
-                </span>
-              </h2>
-              <p className="text-slate-400 font-medium max-w-md">
-                Manage your job posts, review proposals, and hire the top 3% of talent.
+    <div className="min-h-screen bg-paper relative pb-20 selection:bg-primary/15 selection:text-primary">
+      {/* paper grain across the whole canvas */}
+      <div className="grain absolute inset-0 pointer-events-none" aria-hidden />
+
+      <div className="editorial-shell relative py-10 lg:py-14 space-y-14 lg:space-y-20">
+
+        {/* ─────────────── MASTHEAD ─────────────── */}
+        <header className="space-y-9 animate-fade-up">
+          <div className="flex flex-wrap items-center justify-between gap-3 hairline-b pb-3">
+            <p className="eyebrow">
+              Bizimi · Hiring Desk · Vol. I · No. {editionNo}
+            </p>
+            <p className="marginalia">{today}</p>
+          </div>
+
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-end">
+            <div className="lg:col-span-8 space-y-5 animate-fade-up delay-100">
+              <p className="eyebrow-primary">The Hiring Desk</p>
+              <h1 className="display-2xl">
+                <span className="italic text-muted-foreground/70">{agencyName}'s</span>{" "}
+                hiring desk.
+              </h1>
+              <p className="lede">
+                Compose briefs, weigh proposals, hire decisively. The work moves at the pace you set.
               </p>
-              <div className="pt-2">
-                <Button
-                  className="bg-primary hover:bg-primary-hover text-white rounded-xl px-8 font-bold h-12 shadow-sm"
-                  onClick={() => setShowPostJobModal(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Post New Job
-                </Button>
-              </div>
             </div>
-            
-            <div className="flex flex-col items-center md:items-end gap-2 bg-white/5 backdrop-blur-xl p-8 rounded-[20px] border border-white/10 min-w-[200px]">
-               <div className="text-5xl font-bold text-white">{agencyJobs.length}</div>
-               <div className="text-primary font-bold uppercase tracking-widest text-[10px]">Total Jobs Posted</div>
+
+            <div className="lg:col-span-4 space-y-3 lg:text-right animate-fade-up delay-200">
+              <Button
+                onClick={() => { resetJobForm(); setShowPostJobModal(true) }}
+                className="h-12 px-7 rounded-none bg-ink text-white font-medium hover:bg-ink/90 group"
+              >
+                Compose a new brief
+                <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </Button>
+              <p className="marginalia">Drafted from Lagos · filed for {agencyName}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-50 rounded-xl">
-                  <Play className="h-6 w-6 text-green-500" />
-                </div>
-                <div className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-bold uppercase tracking-wider">Hiring</div>
+        {/* ─────────────── LEDGER STRIP ─────────────── */}
+        <section className="animate-fade-up delay-300">
+          <div className="hairline-strong" />
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
+            {[
+              { label: "Active", value: activeJobs, hint: "Currently hiring", accent: false },
+              { label: "Paused", value: pausedJobs, hint: "On the bench", accent: false },
+              { label: "Closed", value: closedJobs, hint: "Archived", accent: false },
+              { label: "Proposals", value: totalProposals, hint: "Awaiting your read", accent: true },
+            ].map((stat) => (
+              <div key={stat.label} className="py-7 px-2 md:px-6 first:md:pl-0 last:md:pr-0">
+                <p className="eyebrow mb-2">{stat.label}</p>
+                <p className="font-display text-5xl md:text-6xl leading-none tracking-tight numeric text-ink">
+                  {String(stat.value).padStart(2, "0")}
+                </p>
+                {stat.accent ? (
+                  <p className="mt-3 inline-flex items-center text-[10px] uppercase tracking-[0.18em] text-primary font-medium">
+                    <span className="w-3 h-px bg-primary mr-2" /> {stat.hint}
+                  </p>
+                ) : (
+                  <p className="marginalia mt-3">{stat.hint}</p>
+                )}
               </div>
-              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Active Jobs</p>
-              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{activeJobs}</h3>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+          <div className="hairline-strong" />
+        </section>
 
-          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-yellow-50 rounded-xl">
-                  <Pause className="h-6 w-6 text-yellow-600" />
-                </div>
-              </div>
-              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Paused Jobs</p>
-              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{pausedJobs}</h3>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-slate-100 rounded-xl">
-                  <X className="h-6 w-6 text-slate-600" />
-                </div>
-              </div>
-              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Closed Jobs</p>
-              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{closedJobs}</h3>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-slate-200 shadow-sm rounded-[20px] bg-white group hover:border-primary/50 transition-all">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-primary/10 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Total Proposals</p>
-              <h3 className="text-primaryxl font-bold text-slate-900 mt-1">{totalProposals}</h3>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Job Posts Section */}
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[20px] border border-slate-200 shadow-sm">
+        {/* ─────────────── ON THE BOOKS ─────────────── */}
+        <section className="space-y-8 animate-fade-up delay-400">
+          <div className="flex items-baseline justify-between gap-4">
             <div className="space-y-1">
-               <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Your Job Posts</h3>
-               <p className="text-slate-400 text-sm font-medium">Manage listings and review freelancer applications.</p>
+              <p className="eyebrow">Section · 02</p>
+              <h2 className="display-md italic">On the books.</h2>
             </div>
-            <Button
-              className="bg-primary hover:bg-primary-hover text-white rounded-xl font-bold h-11 px-6"
-              onClick={() => {
-                setShowPostJobModal(true)
-                setEditingJobId(null)
-                setJobFormData({
-                  title: "", description: "", budgetMin: "", budgetMax: "",
-                  duration: "", location: "", jobType: "", credits: 5, comments: "",
-                })
-                setSelectedSkills([])
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" /> Post New Job
-            </Button>
+            <p className="marginalia hidden sm:block">
+              {agencyJobs.length} {agencyJobs.length === 1 ? "brief" : "briefs"} · live ledger
+            </p>
           </div>
 
           {agencyJobs.length === 0 ? (
-            <Card className="rounded-[20px] border-dashed border-2 border-slate-200 p-20 text-center bg-transparent shadow-none">
-              <FileText className="h-16 w-16 mx-auto mb-6 text-gray-200" />
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">No Jobs Posted Yet</h3>
-              <p className="text-slate-400 font-medium">Start finding top talent by posting your first opportunity.</p>
-              <Button
-                className="mt-8 rounded-xl px-8 bg-primary hover:bg-primary-hover font-bold h-12"
-                onClick={() => {
-                  setShowPostJobModal(true)
-                  setEditingJobId(null)
-                  setJobFormData({ title: "", description: "", budgetMin: "", budgetMax: "", duration: "", location: "", jobType: "", credits: 5, comments: "" })
-                  setSelectedSkills([])
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Post Your First Job
-              </Button>
-            </Card>
+            <div className="border border-border surface-paper px-8 py-20 lg:py-24 text-center space-y-5 relative overflow-hidden">
+              <div className="absolute inset-0 grain pointer-events-none opacity-50" aria-hidden />
+              <p className="eyebrow-primary relative">An empty desk</p>
+              <h3 className="display-lg italic relative">No briefs in the pipeline.</h3>
+              <p className="lede mx-auto relative">
+                Post your first opportunity and we'll bring qualified freelancers to your door.
+              </p>
+              <div className="pt-2 relative">
+                <Button
+                  onClick={() => { resetJobForm(); setShowPostJobModal(true) }}
+                  className="h-12 px-7 rounded-none bg-ink text-white font-medium hover:bg-ink/90 group"
+                >
+                  Compose your first brief
+                  <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </Button>
+              </div>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6">
-              {agencyJobs.map((job) => (
-                <Card key={job.id} className="border border-slate-200 shadow-sm rounded-[20px] bg-white overflow-hidden transition-all hover:border-primary/30">
-                  <div className="p-8">
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
-                      
-                      {/* Left side: Content */}
-                      <div className="flex-1 min-w-0 space-y-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                          <h3 className="text-2xl font-bold text-slate-900 line-clamp-1">{job.title}</h3>
-                          
-                          <div className="flex items-center gap-3">
-                            <Badge className={`${job.status === 'active' ? 'bg-green-100 text-green-700' : job.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-100 text-slate-700'} border-none font-bold text-[10px] uppercase tracking-wider px-3 py-1`}>
-                              {job.status === 'active' && <Play className="h-3 w-3 mr-1" />}
-                              {job.status === 'paused' && <Pause className="h-3 w-3 mr-1" />}
-                              {job.status === 'closed' && <X className="h-3 w-3 mr-1" />}
-                              {job.status}
-                            </Badge>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-50 border border-slate-200">
-                                  <MoreHorizontal className="h-5 w-5 text-slate-400" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 rounded-[24px] p-2 shadow-md border-slate-200">
-                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer" onClick={() => handleJobAction(job, "edit")}>
-                                  <Edit className="mr-2 h-4 w-4 text-slate-400" /> Edit Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer" onClick={() => handleJobAction(job, "pause")}>
-                                  <Pause className="mr-2 h-4 w-4 text-slate-400" /> {job.status === "paused" ? "Resume Job" : "Pause Job"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer" onClick={() => {
-                                  setSelectedJob(job);
-                                  setShowDisputeModal(true);
-                                }}>
-                                  <ShieldAlert className="mr-2 h-4 w-4 text-primary" /> Open Dispute
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl font-bold cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50" onClick={() => handleJobAction(job, "close")}>
-                                  <X className="mr-2 h-4 w-4" /> Close Job
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
+            <ol className="hairline-b">
+              {agencyJobs.map((job, idx) => {
+                const statusTone =
+                  job.status === "active" ? "text-moss"
+                  : job.status === "paused" ? "text-warning"
+                  : "text-muted-foreground"
+                const proposalCount = job.proposals ?? 0
+                return (
+                  <li
+                    key={job.id}
+                    className="group relative grid grid-cols-12 gap-4 md:gap-8 py-8 hairline transition-colors duration-300 hover:bg-primary-soft/40"
+                  >
+                    {/* orange rail on hover */}
+                    <span
+                      className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300"
+                      aria-hidden
+                    />
 
-                        <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest text-slate-400">
-                          <span className="flex items-center"><Calendar className="h-4 w-4 mr-1.5" /> {new Date(job.created_at).toLocaleDateString()}</span>
-                          <span className="flex items-center text-primary"><Users className="h-4 w-4 mr-1.5" /> {job.proposals} Proposals</span>
-                        </div>
+                    {/* numeral */}
+                    <div className="col-span-2 md:col-span-1 pl-2 md:pl-3">
+                      <p className="font-display text-3xl md:text-4xl leading-none text-muted-foreground/40 numeric group-hover:text-primary/70 transition-colors">
+                        {String(idx + 1).padStart(2, "0")}
+                      </p>
+                    </div>
 
-                        <p className="text-sm font-medium text-slate-500 line-clamp-2 leading-relaxed max-w-4xl">
+                    {/* main */}
+                    <div className="col-span-10 md:col-span-7 space-y-3">
+                      <div className="flex flex-wrap items-baseline gap-3">
+                        <h3 className="display-sm">{job.title}</h3>
+                        <span className={`text-[10px] uppercase tracking-[0.22em] font-medium ${statusTone}`}>
+                          · {job.status}
+                        </span>
+                      </div>
+                      {job.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 max-w-[60ch] leading-relaxed">
                           {job.description}
                         </p>
-
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {job.skills?.slice(0, 4).map((skill: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="bg-slate-50 text-slate-600 border-none font-bold text-[10px] rounded-lg">{skill}</Badge>
-                          ))}
-                          {job.skills?.length > 4 && (
-                            <Badge variant="secondary" className="bg-slate-50 text-slate-400 border-none font-bold text-[10px] rounded-lg">+{job.skills.length - 4} more</Badge>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-50">
-                          <div className="space-y-1">
-                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Budget</p>
-                             <p className="text-sm font-bold text-slate-900 truncate">₦ {job.budget_min?.toLocaleString()} - ₦ {job.budget_max?.toLocaleString()}</p>
-                          </div>
-                          <div className="space-y-1">
-                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Duration</p>
-                             <p className="text-sm font-bold text-slate-900 truncate flex items-center"><Clock className="h-3 w-3 mr-1 text-slate-400"/>{job.duration}</p>
-                          </div>
-                          <div className="space-y-1">
-                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Location</p>
-                             <p className="text-sm font-bold text-slate-900 truncate flex items-center"><MapPin className="h-3 w-3 mr-1 text-slate-400"/>{job.location}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right side: Action Buttons */}
-                      <div className="flex-shrink-0 flex flex-col gap-3 w-full lg:w-48 pt-4 lg:pt-0 lg:border-l lg:border-gray-50 lg:pl-6">
-                        <Button
-                          variant="outline"
-                          className="w-full h-12 rounded-xl bg-white border-orange-200 text-primary hover:bg-primary/10 hover:text-primary font-bold"
-                          onClick={() => handleViewProposals(job)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" /> Review Bids
-                        </Button>
-                        {(job.status === "active" || job.status === "closed") && (
-                          <Button
-                            className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-sm"
-                            onClick={() => router.push(`/workspace/${job.id}`)}
-                          >
-                            <FileText className="h-4 w-4 mr-2" /> Workspace
-                          </Button>
-                        )}
-                      </div>
+                      )}
+                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.18em] font-medium text-muted-foreground numeric">
+                        <span>₦{job.budget_min?.toLocaleString() ?? "—"} – ₦{job.budget_max?.toLocaleString() ?? "—"}</span>
+                        <span className="text-border">/</span>
+                        <span>{job.duration || "Flexible"}</span>
+                        <span className="text-border">/</span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location || "Remote"}</span>
+                        <span className="text-border">/</span>
+                        <span>{new Date(job.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</span>
+                        <span className="text-border">/</span>
+                        <span className="text-primary">{proposalCount} {proposalCount === 1 ? "proposal" : "proposals"}</span>
+                      </p>
+                      {!!job.skills?.length && (
+                        <p className="text-xs italic text-muted-foreground/80 font-display">
+                          {job.skills.slice(0, 6).join("  ·  ")}
+                          {job.skills.length > 6 && `  ·  +${job.skills.length - 6}`}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+
+                    {/* actions */}
+                    <div className="col-span-12 md:col-span-4 flex flex-row md:flex-col flex-wrap md:flex-nowrap md:items-end gap-x-5 gap-y-2 md:gap-y-2.5 pt-2 md:pt-1">
+                      <button
+                        onClick={() => handleViewProposals(job)}
+                        className="link-arrow"
+                      >
+                        Review bids
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      </button>
+                      {(job.status === "active" || job.status === "closed") && (
+                        <button
+                          onClick={() => router.push(`/workspace/${job.id}`)}
+                          className="link-quiet hover:text-ink"
+                        >
+                          Open workspace
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="link-quiet hover:text-ink">
+                            More <MoreHorizontal className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-none border-border w-56 p-1 shadow-md">
+                          <DropdownMenuItem className="rounded-none font-medium text-sm cursor-pointer py-2" onClick={() => handleJobAction(job, "edit")}>
+                            <Edit className="mr-2 h-4 w-4 text-muted-foreground" /> Edit brief
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="rounded-none font-medium text-sm cursor-pointer py-2" onClick={() => handleJobAction(job, "pause")}>
+                            <Pause className="mr-2 h-4 w-4 text-muted-foreground" /> {job.status === "paused" ? "Resume hiring" : "Pause hiring"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="rounded-none font-medium text-sm cursor-pointer py-2" onClick={() => { setSelectedJob(job); setShowDisputeModal(true); }}>
+                            <ShieldAlert className="mr-2 h-4 w-4 text-primary" /> Open dispute
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="rounded-none font-medium text-sm text-destructive focus:text-destructive focus:bg-destructive/5 cursor-pointer py-2" onClick={() => handleJobAction(job, "close")}>
+                            <X className="mr-2 h-4 w-4" /> Close listing
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
           )}
-        </div>
+        </section>
+
+        {/* colophon */}
+        <footer className="pt-6 hairline flex flex-wrap items-center justify-between gap-2">
+          <p className="marginalia">Bizimi Trade Sheet · Hiring Desk Edition</p>
+          <p className="marginalia">Set in Instrument Serif & Inter · Filed in Lagos</p>
+        </footer>
       </div>
 
       {/* Proposals Modal */}
@@ -944,16 +991,29 @@ export default function AgencyDashboard() {
                                 >
                                   Message Freelancer
                                 </Button>
-                                <Button
-                                  className="flex-1 bg-primary hover:bg-primary-hover"
-                                  onClick={() => {
-                                    setSelectedProposal(proposal)
-                                    setShowPaymentModal(true)
-                                    setShowProposalsModal(false)
-                                  }}
-                                >
-                                  Fund Job
-                                </Button>
+                                {selectedJobEscrowStatus &&
+                                ["funded", "released", "paid_out"].includes(selectedJobEscrowStatus) ? (
+                                  <Button
+                                    className="flex-1"
+                                    variant="outline"
+                                    disabled
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    {selectedJobEscrowStatus === "funded"
+                                      ? "Funded"
+                                      : selectedJobEscrowStatus === "released"
+                                        ? "Released"
+                                        : "Paid out"}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    className="flex-1 bg-primary hover:bg-primary-hover"
+                                    onClick={() => handleFundProposal(proposal.id)}
+                                    disabled={fundingProposalId === proposal.id}
+                                  >
+                                    {fundingProposalId === proposal.id ? "Starting…" : "Fund Job"}
+                                  </Button>
+                                )}
                               </div>
                             ) : (
                               <div className="space-y-3">
@@ -996,30 +1056,6 @@ export default function AgencyDashboard() {
         </div>
       )}
 
-      {/* Payment Modal */}
-      {showPaymentModal && selectedProposal && selectedJob && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => {
-            setShowPaymentModal(false)
-            setSelectedProposal(null)
-          }}
-          jobData={{
-            id: selectedJob.id,
-            title: selectedJob.title,
-            freelancer: {
-              id: selectedProposal.freelancer_id,
-              name: selectedProposal.profiles?.full_name || "Unknown Freelancer",
-              email: selectedProposal.profiles?.email || "No email",
-            },
-            amount: selectedJob.budget_max || 0,
-          }}
-          onSuccess={() => {
-            setShowPaymentModal(false)
-            setSelectedProposal(null)
-          }}
-        />
-      )}
 
       {/* Post Job Modal */}
       {showPostJobModal && (
@@ -1062,6 +1098,7 @@ export default function AgencyDashboard() {
                       comments: "",
                     })
                     setEditingJobId(null)
+                    idempotencyKeyRef.current = null
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -1393,6 +1430,7 @@ export default function AgencyDashboard() {
                           comments: "",
                         })
                         setEditingJobId(null)
+                        idempotencyKeyRef.current = null
                       }
                     }}
                     className="bg-transparent"

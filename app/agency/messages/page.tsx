@@ -11,17 +11,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, MessageSquare, User, ShieldCheck, Zap, Search, ArrowLeft, MoreVertical, Upload, File, ImageIcon, X } from "lucide-react" // Re-added MoreVertical
 import { supabase } from "@/lib/supabase"
+import { resolveAvatar } from "@/lib/avatar-url"
+import { useAuth } from "@/contexts/AuthContext"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export default function AgencyMessagesPage() {
+  const { user, loading: authLoading } = useAuth()
+  const currentUserId = user?.id ?? null
   const [conversations, setConversations] = useState<any[]>([])
   const [filteredConversations, setFilteredConversations] = useState<any[]>([])
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
   const [messagesInConversation, setMessagesInConversation] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [showConversationList, setShowConversationList] = useState(true) // New state for responsiveness
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -31,39 +34,57 @@ export default function AgencyMessagesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchConversations = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
+    const { data: convs, error } = await supabase
       .from("conversations")
-      .select(`
-        id,
-        last_message_at,
-        participant1_id,
-        participant2_id,
-        participant1_profile:profiles!conversations_participant1_id_fkey (
-          id,
-          full_name,
-          account_type,
-          company_name,
-          freelancer_logos(file_name),
-          agency_logo(*)
-        ),
-        participant2_profile:profiles!conversations_participant2_id_fkey (
-          id,
-          full_name,
-          account_type,
-          company_name,
-          freelancer_logos(file_name),
-          agency_logo(*)
-        )
-      `)
+      .select("id, last_message_at, participant1_id, participant2_id")
       .or(`participant1_id.eq.${userId},participant2_id.eq.${userId}`)
       .order("last_message_at", { ascending: false, nullsFirst: false })
 
     if (error) {
-      console.error("Error fetching conversations:", error)
+      console.error("Error fetching conversations (raw):", error)
+      console.error(
+        "Error fetching conversations (own props):",
+        JSON.stringify(error, Object.getOwnPropertyNames(error))
+      )
       return []
     }
-    console.log("Fetched conversations:", JSON.stringify(data, null, 2)) // Debugging log
-    return data || []
+    if (!convs || convs.length === 0) return []
+
+    const allIds = new Set<string>()
+    for (const c of convs) {
+      if (c.participant1_id) allIds.add(c.participant1_id)
+      if (c.participant2_id) allIds.add(c.participant2_id)
+    }
+    const idArr = Array.from(allIds)
+
+    const [profilesRes, logoRes, imageRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, full_name, account_type, company_name")
+        .in("id", idArr),
+      supabase
+        .from("freelancer_logos")
+        .select("freelancer_id, logo_path, logo_data")
+        .in("freelancer_id", idArr),
+      supabase
+        .from("agency_image")
+        .select("agency_id, image_path, image_data")
+        .in("agency_id", idArr),
+    ])
+
+    const profileById: Record<string, any> = {}
+    for (const p of (profilesRes.data as any[]) || []) profileById[p.id] = p
+
+    const avatarById: Record<string, string> = {}
+    for (const r of (logoRes.data as any[]) || []) avatarById[r.freelancer_id] = resolveAvatar(r)
+    for (const r of (imageRes.data as any[]) || []) avatarById[r.agency_id] = resolveAvatar(r)
+
+    return convs.map((c) => ({
+      ...c,
+      participant1_profile: profileById[c.participant1_id] || null,
+      participant2_profile: profileById[c.participant2_id] || null,
+      _avatarById: avatarById,
+    }))
   }, [])
 
   const fetchMessages = useCallback(async (conversationId: string) => {
@@ -99,21 +120,15 @@ export default function AgencyMessagesPage() {
       return { full_name: "Unknown User", avatar_url: "/placeholder.svg?height=40&width=40" }
     }
 
-    let avatarUrl = "/placeholder.svg?height=40&width=40"
+    const avatarById: Record<string, string> = (conversation as any)._avatarById || {}
+    let avatarUrl = avatarById[participant.id] || ""
     let displayName = participant.full_name || "Unknown User"
 
     if (participant.account_type === "freelancer") {
-      avatarUrl = participant.freelancer_logos?.[0]?.file_name || avatarUrl
-      // For agency viewing, the other participant is a freelancer, so use their full_name
       displayName = participant.full_name || "Freelancer"
     } else if (participant.account_type === "agency") {
-      avatarUrl = participant.agency_logo?.[0]?.file_name || avatarUrl
-      // For agency viewing, the other participant is an agency (shouldn't happen in direct chat, but for completeness)
       displayName = participant.company_name || participant.full_name || "Agency"
     }
-
-    console.log("Participant profile:", JSON.stringify(participant, null, 2))
-    console.log("Constructed avatar URL:", avatarUrl)
 
     return {
       full_name: displayName,
@@ -143,30 +158,27 @@ export default function AgencyMessagesPage() {
     [fetchConversations],
   )
 
-  // Initial load of user data and conversations
+  // Initial load of conversations (user comes from AuthContext)
   useEffect(() => {
+    if (authLoading) return
+    if (!currentUserId) {
+      setLoading(false)
+      return
+    }
     const loadInitialData = async () => {
       setLoading(true)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const fetchedConversations = await fetchConversations(currentUserId)
+      setConversations(fetchedConversations)
+      setFilteredConversations(fetchedConversations)
 
-      if (user) {
-        setCurrentUserId(user.id)
-        const fetchedConversations = await fetchConversations(user.id)
-        setConversations(fetchedConversations)
-        setFilteredConversations(fetchedConversations) // Initialize filtered list
-
-        if (fetchedConversations.length > 0) {
-          setSelectedConversation(fetchedConversations[0]) // Automatically select the first conversation
-          // Mark messages as read for the initially selected conversation
-          markMessagesAsRead(fetchedConversations[0].id, user.id)
-        }
+      if (fetchedConversations.length > 0) {
+        setSelectedConversation(fetchedConversations[0])
+        markMessagesAsRead(fetchedConversations[0].id, currentUserId)
       }
       setLoading(false)
     }
     loadInitialData()
-  }, [fetchConversations, markMessagesAsRead])
+  }, [currentUserId, authLoading, fetchConversations, markMessagesAsRead])
 
   // Fetch messages for selected conversation and set up real-time subscription
   useEffect(() => {
@@ -192,14 +204,25 @@ export default function AgencyMessagesPage() {
             filter: `conversation_id=eq.${selectedConversation.id}`,
           },
           (payload) => {
-            setMessagesInConversation((prevMessages) => [...prevMessages, payload.new])
-            // If the new message is for the current user and this conversation is active, mark it as read
+            console.log("[Realtime] new message received:", payload.new)
+            setMessagesInConversation((prev) =>
+              prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]
+            )
             if (currentUserId && payload.new.receiver_id === currentUserId) {
               markMessagesAsRead(selectedConversation.id, currentUserId)
             }
           },
         )
-        .subscribe()
+        .subscribe((status, err) => {
+          console.log(`[Realtime] channel status for conversation ${selectedConversation.id}:`, status)
+          if (err) console.error("[Realtime] subscription error:", err)
+          if (status === "CHANNEL_ERROR") {
+            console.warn(
+              "[Realtime] subscription failed. Likely cause: realtime is not enabled on `public.messages` in Supabase " +
+                "(Database → Replication → enable). Alternatively, RLS on `messages` may block the live read."
+            )
+          }
+        })
 
       return () => {
         supabase.removeChannel(messageSubscription)
@@ -243,28 +266,40 @@ export default function AgencyMessagesPage() {
         ? selectedConversation.participant2_id
         : selectedConversation.participant1_id
 
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: selectedConversation.id,
-      sender_id: currentUserId,
-      receiver_id: receiverId,
-      message_text: newMessage,
-      is_read: false, // Mark new outgoing messages as unread for the receiver
-    })
+    const { data: inserted, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: selectedConversation.id,
+        sender_id: currentUserId,
+        receiver_id: receiverId,
+        message_text: newMessage,
+        is_read: false,
+      })
+      .select()
+      .single()
 
     if (error) {
-      console.error("Error sending message:", error)
-    } else {
-      setNewMessage("")
-      // Update last_message_at for the conversation to reorder it in the list
-      await supabase
-        .from("conversations")
-        .update({ last_message_at: new Date().toISOString() })
-        .eq("id", selectedConversation.id)
-      // Re-fetch conversations to update the list order
-      const updatedConversations = await fetchConversations(currentUserId)
-      setConversations(updatedConversations)
-      setFilteredConversations(updatedConversations)
+      console.error("Error sending message:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      })
+      return
     }
+    if (inserted) {
+      setMessagesInConversation((prev) =>
+        prev.some((m) => m.id === inserted.id) ? prev : [...prev, inserted]
+      )
+    }
+    setNewMessage("")
+    await supabase
+      .from("conversations")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", selectedConversation.id)
+    const updatedConversations = await fetchConversations(currentUserId)
+    setConversations(updatedConversations)
+    setFilteredConversations(updatedConversations)
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -323,26 +358,39 @@ export default function AgencyMessagesPage() {
           ? selectedConversation.participant2_id
           : selectedConversation.participant1_id
 
-      const { error } = await supabase.from("messages").insert({
-        conversation_id: selectedConversation.id,
-        sender_id: currentUserId,
-        receiver_id: receiverId,
-        message_text: `File: ${fileData.name}`,
-        file_url: fileData.url,
-        file_name: fileData.name,
-        file_type: fileData.type,
-        file_size: fileData.size,
-        is_read: false,
-      })
+      const { data: inserted, error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: selectedConversation.id,
+          sender_id: currentUserId,
+          receiver_id: receiverId,
+          message_text: `File: ${fileData.name}`,
+          file_url: fileData.url,
+          file_name: fileData.name,
+          file_type: fileData.type,
+          file_size: fileData.size,
+          is_read: false,
+        })
+        .select()
+        .single()
 
       if (error) {
-        console.error("Error sending file:", error)
+        console.error("Error sending file:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        })
       } else {
+        if (inserted) {
+          setMessagesInConversation((prev) =>
+            prev.some((m) => m.id === inserted.id) ? prev : [...prev, inserted]
+          )
+        }
         setSelectedFile(null)
         if (fileInputRef.current) {
           fileInputRef.current.value = ""
         }
-        // Update conversation timestamp
         await supabase
           .from("conversations")
           .update({ last_message_at: new Date().toISOString() })

@@ -42,13 +42,13 @@ export async function getProfile(userId?: string) {
       .from("profiles")
       .select("*")
       .eq("id", finalUserId)
-      .single()
-  
+      .maybeSingle()
+
     if (error) {
       console.error("Error fetching profile:", error)
       return null
     }
-  
+
     return data
 }
 
@@ -130,8 +130,8 @@ export async function getAgencyImage() {
     .from("agency_image")
     .select("image_path, image_data")
     .eq("agency_id", user.id)
-    .single()
+    .maybeSingle()
 
-  if (error) return null
+  if (error || !data) return null
   return resolveAvatar(data)
 }

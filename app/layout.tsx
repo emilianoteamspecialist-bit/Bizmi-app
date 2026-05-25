@@ -97,6 +97,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${sora.variable} ${instrumentSerif.variable} ${bricolage.variable}`}>
       <head>
+        {/* Flaticon UICONS — Regular Rounded */}
+        <link
+          rel="stylesheet"
+          href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css"
+        />
+
         {/* ✅ Paystack Inline Script */}
         <script
           type="text/javascript"
@@ -120,7 +126,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
 
         {/* ✅ NoScript fallback */}

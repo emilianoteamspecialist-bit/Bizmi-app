@@ -11,8 +11,10 @@ import { Separator } from "@/components/ui/separator"
 import { Save, Shield, Bell, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function FreelancerSettings() {
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -56,32 +58,14 @@ export default function FreelancerSettings() {
   })
 
   useEffect(() => {
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
-      setSettings((prev) => ({
-        ...prev,
-        email: user.email || "",
-      }))
-
-      // Load user preferences from database if you have a settings table
-      // For now, we'll use default values
-    } catch (error) {
-      console.error("Error loading settings:", error)
-    } finally {
-      setLoading(false)
+    if (authLoading) return
+    if (!user) {
+      router.push("/login")
+      return
     }
-  }
+    setSettings((prev) => ({ ...prev, email: user.email || "" }))
+    setLoading(false)
+  }, [user, authLoading, router])
 
   const handleSaveAccount = async () => {
     setSaving(true)

@@ -88,7 +88,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    router.push("/")
+    router.push("/login")
   }
 
   const navLinks = [

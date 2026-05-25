@@ -11,8 +11,10 @@ import { Separator } from "@/components/ui/separator"
 import { Save, Shield, Bell, Mail, Lock, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function AgencySettings() {
+  const { user, loading: authLoading, signOut } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -45,32 +47,14 @@ export default function AgencySettings() {
   })
 
   useEffect(() => {
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
-      setSettings((prev) => ({
-        ...prev,
-        email: user.email || "",
-      }))
-
-      // Load user preferences from database if you have a settings table
-      // For now, we'll use default values
-    } catch (error) {
-      console.error("Error loading settings:", error)
-    } finally {
-      setLoading(false)
+    if (authLoading) return
+    if (!user) {
+      router.push("/login")
+      return
     }
-  }
+    setSettings((prev) => ({ ...prev, email: user.email || "" }))
+    setLoading(false)
+  }, [user, authLoading, router])
 
   const handleSaveAccount = async () => {
     setSaving(true)
@@ -132,10 +116,6 @@ export default function AgencySettings() {
       try {
         setSaving(true)
 
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
         if (!user) {
           alert("No user found")
           return
@@ -151,7 +131,7 @@ export default function AgencySettings() {
         }
 
         // Sign out and redirect
-        await supabase.auth.signOut()
+        await signOut()
         router.push("/")
         alert("Account deleted successfully")
       } catch (error) {

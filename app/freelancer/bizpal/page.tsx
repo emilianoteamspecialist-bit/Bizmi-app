@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Coins, Filter, X, Mail, ArrowRight } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 import dynamic from "next/dynamic"
 
 const TopItModal = dynamic(() => import("@/components/topit-modal"), { ssr: false })
@@ -21,19 +22,25 @@ interface CreditPurchase {
 }
 
 export default function BizpalPage() {
+  const { user, loading: authLoading } = useAuth()
+  const currentUserId = user?.id ?? null
   const [creditPurchases, setCreditPurchases] = useState<CreditPurchase[]>([])
   const [filteredCreditPurchases, setFilteredCreditPurchases] = useState<CreditPurchase[]>([])
   const [currentCredits, setCurrentCredits] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showTopItModal, setShowTopItModal] = useState(false)
   const [showDateFilter, setShowDateFilter] = useState(false)
   const [fromDate, setFromDate] = useState("")
   const [toDate, setToDate] = useState("")
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user?.id) {
+      setLoading(false)
+      return
+    }
     loadBizpalData()
-  }, [])
+  }, [user?.id, authLoading])
 
   useEffect(() => {
     filterCreditPurchases()
@@ -41,16 +48,10 @@ export default function BizpalPage() {
 
   const loadBizpalData = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
       if (!user) {
         setLoading(false)
         return
       }
-
-      setCurrentUserId(user.id)
 
       // Calculate total credits from completed purchases for this specific user only - Updated logic
       const { data: creditsData, error: creditsError } = await supabase

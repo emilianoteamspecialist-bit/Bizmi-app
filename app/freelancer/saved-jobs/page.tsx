@@ -21,14 +21,15 @@ import {
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { resolveAvatar } from "@/lib/avatar-url"
+import { useAuth } from "@/contexts/AuthContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 export default function SavedJobsPage() {
+  const { user: currentUser, loading: authLoading } = useAuth()
   const [savedJobs, setSavedJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<any>(null)
   const [showPlaceBidModal, setShowPlaceBidModal] = useState(false)
   const [showAgencyModal, setShowAgencyModal] = useState(false)
   const [selectedJob, setSelectedJob] = useState<any>(null)
@@ -43,16 +44,18 @@ export default function SavedJobsPage() {
   const router = useRouter()
 
   useEffect(() => {
+    if (authLoading) return
+    if (!currentUser?.id) {
+      setLoading(false)
+      return
+    }
     loadSavedJobs()
-  }, [])
+  }, [currentUser?.id, authLoading])
 
   const loadSavedJobs = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUser(user)
+      if (currentUser) {
+        const user = currentUser
 
         // Load saved jobs
         const { data: savedJobsData, error } = await supabase
@@ -280,7 +283,7 @@ export default function SavedJobsPage() {
                 <Bookmark className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-lg font-semibold mb-2">No Saved Jobs</h3>
                 <p className="text-muted-foreground mb-4">You haven't saved any jobs yet</p>
-                <Button onClick={() => router.push("/dashboard")} className="bg-primary hover:bg-primary-hover">
+                <Button onClick={() => router.push("/freelancer/dashboard")} className="bg-primary hover:bg-primary-hover">
                   Browse Jobs
                 </Button>
               </div>

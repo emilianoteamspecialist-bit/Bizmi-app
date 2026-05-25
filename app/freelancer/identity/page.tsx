@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function IdentityPage() {
+  const { user } = useAuth()
   const [nin, setNin] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [existingVerification, setExistingVerification] = useState<{
@@ -25,17 +27,16 @@ export default function IdentityPage() {
   }>({ type: null, message: "" })
 
   useEffect(() => {
+    if (!user?.id) {
+      setCheckingExisting(false)
+      return
+    }
     checkExistingVerification()
-  }, [])
+  }, [user?.id])
 
   const checkExistingVerification = async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-
-      if (userError || !user) {
+      if (!user) {
         setCheckingExisting(false)
         return
       }
@@ -120,12 +121,7 @@ export default function IdentityPage() {
         return
       }
 
-      // Get current user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) {
+      if (!user) {
         setStatus({ type: "error", message: "Please log in to continue" })
         setIsLoading(false)
         return

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import {
@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getJobs, toggleBookmark } from "@/app/actions/jobs"
+import { submitProposal } from "@/app/actions/proposals"
 import { JobCard } from "@/components/shared/job-card"
 import { MarketplaceJobCard } from "@/components/shared/marketplace-job-card"
 import { cn } from "@/lib/utils"
@@ -156,6 +157,8 @@ export default function MarketplaceClient({
   const [selectedAgency, setSelectedAgency] = useState<any>(null)
   const [creditBalance, setCreditBalance] = useState(initialCredits || 0)
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
+  // Synchronous double-submit guard; immune to React state batching lag.
+  const isSubmittingBidRef = useRef(false)
   const [profile] = useState<any>(initialProfile)
   const [location, setLocation] = useState<string>("")
   const [budgetRange, setBudgetRange] = useState<string>("any")
@@ -312,46 +315,53 @@ export default function MarketplaceClient({
   }
 
   const submitBid = async () => {
-    if (!currentUser || !selectedJob) return
-    setIsSubmittingBid(true)
+    if (!selectedJob) return
+    if (isSubmittingBidRef.current) return
+    isSubmittingBidRef.current = true
+
     try {
-      const { data: existingProposal } = await supabase.from("proposals").select("id").eq("job_id", selectedJob.id).eq("freelancer_id", currentUser.id).single()
-      if (existingProposal) {
-        alert("You have already submitted a proposal for this job!")
-        setIsSubmittingBid(false)
+      setIsSubmittingBid(true)
+      const result = await submitProposal(
+        selectedJob.id,
+        {
+          proposal_text: bidData.proposal,
+          timeline: bidData.timeline,
+          budget: bidData.budget,
+        },
+        selectedJob.credit_cost,
+      )
+
+      if (!result.success) {
+        const msg = result.error === "Unauthorized"
+          ? "You must be signed in to submit a proposal."
+          : `Error submitting proposal: ${result.error}`
+        alert(msg)
         return
       }
 
-      const { error: proposalError } = await supabase.from("proposals").insert([{
-        job_id: selectedJob.id,
-        freelancer_id: currentUser.id,
-        proposal_text: bidData.proposal,
-        timeline: bidData.timeline,
-        budget: bidData.budget,
-        status: "pending",
-      }])
+      if (result.alreadySubmitted) {
+        alert("You have already submitted a proposal for this job.")
+      } else {
+        setCreditBalance(Math.max(0, creditBalance - selectedJob.credit_cost))
+        alert(`Proposal submitted! ${selectedJob.credit_cost} credits deducted.`)
+      }
 
-      if (proposalError) throw proposalError
+      // Optimistic update: flip the applied flag on the local job so the card
+      // shows "Applied" immediately rather than waiting on the refetch below.
+      const appliedJobId = selectedJob.id
+      setJobs((prev) =>
+        prev.map((j) => (j.id === appliedJobId ? { ...j, has_applied: true } : j)),
+      )
 
-      await supabase.from("purchase_credits").insert([{
-        freelancer_id: currentUser.id,
-        amount: selectedJob.credit_cost * 50,
-        credits_amount: -selectedJob.credit_cost,
-        status: "completed",
-        paystack_reference: `job_bid_${selectedJob.id}_${currentUser.id}_${Date.now()}`,
-      }])
-
-      const newCreditBalance = Math.max(0, creditBalance - selectedJob.credit_cost)
-      setCreditBalance(newCreditBalance)
-      alert(`Proposal submitted! ${selectedJob.credit_cost} credits deducted.`)
       setShowPlaceBidModal(false)
       setBidData({ proposal: "", timeline: "", budget: "" })
       loadJobs(0, searchQuery, false)
     } catch (error) {
       console.error(error)
-      alert("Error submitting proposal.")
+      alert("Error submitting proposal. Please try again.")
     } finally {
       setIsSubmittingBid(false)
+      isSubmittingBidRef.current = false
     }
   }
 

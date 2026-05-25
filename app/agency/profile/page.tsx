@@ -13,8 +13,10 @@ import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { setCachedAvatar } from "@/lib/avatar-cache"
 import { getAvatarUrl, resolveAvatar } from "@/lib/avatar-url"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function AgencyProfile() {
+  const { user: authUser, loading: authLoading } = useAuth()
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -34,12 +36,17 @@ export default function AgencyProfile() {
   })
 
   useEffect(() => {
+    if (authLoading) return
+    if (!authUser?.id) {
+      setLoading(false)
+      return
+    }
     loadProfile()
-  }, [])
+  }, [authUser?.id, authLoading])
 
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = authUser
       if (!user) {
         router.push("/login")
         return
@@ -81,7 +88,7 @@ export default function AgencyProfile() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = authUser
       if (!user) return
 
       const updateData = {
