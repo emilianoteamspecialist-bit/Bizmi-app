@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase-server"
+import { getCurrentUser } from "@/lib/auth"
 
 export async function getJobs(params: {
   searchQuery?: string
@@ -14,7 +15,7 @@ export async function getJobs(params: {
 }) {
   const supabase = await createClient()
   
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   
   if (!user) {
     throw new Error("Unauthorized")
@@ -37,15 +38,112 @@ export async function getJobs(params: {
     return { jobs: [], totalCount: 0, error: error.message }
   }
 
+  const jobs = data || []
+
+  // Attach the freelancer's applied-status here (server-side) so the client
+  // doesn't need a second browser round-trip to the proposals table, and so
+  // the initial server-rendered jobs already reflect what the user applied to.
+  let jobsWithApplied = jobs
+  if (jobs.length > 0) {
+    const jobIds = jobs.map((j: any) => j.id)
+    const { data: applied } = await supabase
+      .from("proposals")
+      .select("job_id")
+      .eq("freelancer_id", user.id)
+      .in("job_id", jobIds)
+    const appliedSet = new Set((applied || []).map((p: any) => p.job_id))
+    jobsWithApplied = jobs.map((j: any) => ({ ...j, has_applied: appliedSet.has(j.id) }))
+  }
+
   return {
-    jobs: data || [],
+    jobs: jobsWithApplied,
     totalCount: data?.[0]?.total_count || 0,
   }
 }
 
+// Returns the freelancer's bookmarked jobs, enriched with agency info and that
+// agency's total job count. Previously run as a browser query + N+1 count loop;
+// now executed server-side.
+export async function getSavedJobs() {
+  const supabase = await createClient()
+  const user = await getCurrentUser()
+
+  if (!user) return []
+
+  const { data: savedJobsData, error } = await supabase
+    .from("saved_jobs")
+    .select(`
+      *,
+      jobs!saved_jobs_job_id_fkey (
+        *,
+        profiles!jobs_agency_id_fkey (
+          id,
+          full_name,
+          company_name,
+          company_size,
+          bio,
+          location,
+          phone,
+          website,
+          created_at
+        ),
+        proposals(count)
+      )
+    `)
+    .eq("freelancer_id", user.id)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error loading saved jobs:", error)
+    return []
+  }
+
+  // Total job count per agency.
+  const agencyIds = [
+    ...new Set((savedJobsData || []).map((item: any) => item.jobs?.profiles?.id).filter(Boolean)),
+  ]
+  const agencyJobCounts: Record<string, number> = {}
+  for (const agencyId of agencyIds) {
+    const { count } = await supabase
+      .from("jobs")
+      .select("*", { count: "exact", head: true })
+      .eq("agency_id", agencyId)
+    agencyJobCounts[agencyId as string] = count || 0
+  }
+
+  return (savedJobsData || []).map((item: any) => {
+    const job = item.jobs
+    return {
+      ...job,
+      savedAt: new Date(item.created_at).toLocaleDateString(),
+      budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
+      postedDate: new Date(job.created_at).toLocaleDateString(),
+      proposals: job.proposals?.[0]?.count || 0,
+      rating: 4.8,
+      isBookmarked: true,
+      agencyInfo: {
+        id: job.profiles?.id,
+        name: job.profiles?.company_name || job.profiles?.full_name || "Unknown Agency",
+        rating: 4.8,
+        reviews: 156,
+        location: job.profiles?.location || "Nigeria",
+        employees: job.profiles?.company_size || "10-50",
+        description: job.profiles?.bio || "Professional agency providing quality services.",
+        memberSince: job.profiles?.created_at ? new Date(job.profiles.created_at).getFullYear().toString() : "2020",
+        phone: job.profiles?.phone,
+        website: job.profiles?.website,
+        email: job.profiles?.email,
+        fullName: job.profiles?.full_name,
+        companyName: job.profiles?.company_name,
+        totalJobs: agencyJobCounts[job.profiles?.id] || 0,
+      },
+    }
+  })
+}
+
 export async function toggleBookmark(jobId: string, isBookmarked: boolean) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) throw new Error("Unauthorized")
 
@@ -68,7 +166,7 @@ export async function toggleBookmark(jobId: string, isBookmarked: boolean) {
 
 export async function getAgencyJobs() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) throw new Error("Unauthorized")
 
@@ -121,7 +219,7 @@ export async function createJob(
   idempotencyKey: string,
 ): Promise<CreateJobResult> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return { success: false, error: "Unauthorized" }
 
   const { error } = await supabase.from("jobs").insert([
@@ -153,7 +251,7 @@ export async function updateJob(
   input: JobInput,
 ): Promise<UpdateJobResult> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return { success: false, error: "Unauthorized" }
 
   // Ownership check is also enforced by RLS; the explicit filter keeps the
@@ -172,59 +270,121 @@ export async function updateJob(
   return { success: true }
 }
 
+// Returns the freelancer's proposals enriched with job details, agency name,
+// funding status and per-proposal freelancer status. Mirrors the multi-step,
+// embed-free fetch the proposals screen used to run in the browser — now done
+// server-side in one round-trip from the client's perspective.
 export async function getFreelancerProposals(params: {
   searchTerm?: string
   offset?: number
   limit?: number
-}) {
+}): Promise<{ proposals: any[]; hasMore: boolean }> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
-  if (!user) throw new Error("Unauthorized")
+  if (!user) return { proposals: [], hasMore: false }
 
-  let query = supabase
+  const limit = params.limit ?? 15
+  const offset = params.offset ?? 0
+  const searchTerm = params.searchTerm?.trim()
+
+  // Optional search: resolve matching job ids first (avoids embedded joins that
+  // break on FK naming).
+  let jobIdsToFilter: string[] | undefined
+  if (searchTerm) {
+    const { data: searchedJobs, error: searchError } = await supabase
+      .from("jobs")
+      .select("id")
+      .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+    if (searchError) {
+      console.error("Error searching jobs:", searchError)
+      return { proposals: [], hasMore: false }
+    }
+    jobIdsToFilter = (searchedJobs || []).map((j: any) => j.id)
+    if (jobIdsToFilter.length === 0) return { proposals: [], hasMore: false }
+  }
+
+  // Step 1: proposals page (no embedded joins).
+  let proposalsQuery = supabase
     .from("proposals")
-    .select(`
-      *,
-      jobs!inner(
-        title,
-        description,
-        budget_min,
-        budget_max,
-        job_type,
-        duration,
-        location,
-        skills,
-        status,
-        profiles!jobs_agency_id_fkey(company_name, full_name)
-      )
-    `)
+    .select("*")
     .eq("freelancer_id", user.id)
     .order("created_at", { ascending: false })
-    .range(params.offset || 0, (params.offset || 0) + (params.limit || 10) - 1)
-
-  if (params.searchTerm) {
-    query = query.or(`title.ilike.%${params.searchTerm}%,description.ilike.%${params.searchTerm}%`, { foreignTable: "jobs" })
+    .range(offset, offset + limit - 1)
+  if (jobIdsToFilter !== undefined) {
+    proposalsQuery = proposalsQuery.in("job_id", jobIdsToFilter)
   }
 
-  const { data, error } = await query
-
-  if (error) {
-    console.error("Error fetching proposals:", error)
-    return []
+  const { data: proposalsData, error: proposalsError } = await proposalsQuery
+  if (proposalsError) {
+    console.error("Error loading proposals:", proposalsError.message)
+    return { proposals: [], hasMore: false }
+  }
+  if (!proposalsData || proposalsData.length === 0) {
+    return { proposals: [], hasMore: false }
   }
 
-  return data.map((item: any) => ({
-    ...item,
-    job_title: item.jobs.title,
-    job_description: item.jobs.description,
-    job_budget_min: item.jobs.budget_min,
-    job_budget_max: item.jobs.budget_max,
-    job_type: item.jobs.job_type,
-    job_duration: item.jobs.duration,
-    job_location: item.jobs.location,
-    skills: item.jobs.skills,
-    agency_name: item.jobs.profiles?.company_name || item.jobs.profiles?.full_name || "Unknown",
-    job_status: item.jobs.status,
-  }))
+  // Step 2: related data in parallel.
+  const jobIds = Array.from(new Set(proposalsData.map((p: any) => p.job_id).filter(Boolean)))
+  const proposalIds = proposalsData.map((p: any) => p.id).filter(Boolean)
+
+  const [jobsRes, fundingRes, statusRes] = await Promise.all([
+    jobIds.length
+      ? supabase
+          .from("jobs")
+          .select("id, title, description, budget_min, budget_max, job_type, duration, location, skills, agency_id")
+          .in("id", jobIds)
+      : Promise.resolve({ data: [] as any[] }),
+    jobIds.length
+      ? supabase.from("job_funding_status").select("job_id, funding_status, job_status").in("job_id", jobIds)
+      : Promise.resolve({ data: [] as any[] }),
+    proposalIds.length
+      ? supabase.from("freelancer_proposal_status").select("proposal_id, freelancer_status").in("proposal_id", proposalIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ])
+
+  const jobById: Record<string, any> = {}
+  for (const j of (jobsRes.data as any[]) || []) jobById[j.id] = j
+  const fundingByJobId: Record<string, any> = {}
+  for (const f of (fundingRes.data as any[]) || []) fundingByJobId[f.job_id] = f
+  const statusByProposalId: Record<string, any> = {}
+  for (const s of (statusRes.data as any[]) || []) statusByProposalId[s.proposal_id] = s
+
+  // Step 3: agency profiles.
+  const agencyIds = Array.from(
+    new Set(Object.values(jobById).map((j: any) => j?.agency_id).filter(Boolean)),
+  )
+  const agencyById: Record<string, any> = {}
+  if (agencyIds.length > 0) {
+    const { data: agencies } = await supabase
+      .from("profiles")
+      .select("id, full_name, company_name")
+      .in("id", agencyIds)
+    for (const a of (agencies as any[]) || []) agencyById[a.id] = a
+  }
+
+  // Step 4: stitch.
+  const proposals = proposalsData.map((proposal: any) => {
+    const job = jobById[proposal.job_id]
+    const agency = job ? agencyById[job.agency_id] : null
+    const funding = fundingByJobId[proposal.job_id]
+    const fStatus = statusByProposalId[proposal.id]
+    return {
+      ...proposal,
+      job_title: job?.title || "Unknown Job",
+      job_description: job?.description || "No description available",
+      job_budget_min: job?.budget_min || 0,
+      job_budget_max: job?.budget_max || 0,
+      job_type: job?.job_type || "Not specified",
+      job_duration: job?.duration || "Not specified",
+      job_location: job?.location || "Not specified",
+      skills: job?.skills || [],
+      agency_name: agency?.company_name || agency?.full_name || "Unknown Agency",
+      funding_status: funding?.funding_status || "pending",
+      job_status: funding?.job_status || "open",
+      freelancer_status: fStatus?.freelancer_status || "pending",
+    }
+  })
+
+  return { proposals, hasMore: proposalsData.length === limit }
 }

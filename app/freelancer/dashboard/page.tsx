@@ -15,7 +15,7 @@ export default async function FreelancerDashboardPage() {
     redirect("/login")
   }
 
-  const { user, profile, credits, balance } = userData
+  const { user, profile, credits, balance, isVerified } = userData
 
   if (profile?.account_type === "agency") {
     redirect("/agency/dashboard")
@@ -52,8 +52,9 @@ export default async function FreelancerDashboardPage() {
       initialProfile={profile} 
       initialCredits={credits} 
       initialBalance={balance} 
-      initialJobs={transformedJobs} 
+      initialJobs={transformedJobs}
       initialTotalJobsCount={jobsData?.totalCount || 0}
+      initialIsVerified={isVerified}
     />
   )
 }

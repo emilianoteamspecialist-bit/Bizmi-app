@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase-server"
+import { getCurrentUser } from "@/lib/auth"
 
 export type ProposalInput = {
   proposal_text: string
@@ -18,7 +19,7 @@ export async function submitProposal(
   creditCost: number,
 ): Promise<SubmitProposalResult> {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return { success: false, error: "Unauthorized" }
 
   const { error: proposalError } = await supabase.from("proposals").insert([

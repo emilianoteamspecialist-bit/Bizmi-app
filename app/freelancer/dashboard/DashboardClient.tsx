@@ -28,7 +28,6 @@ import {
   Calendar,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
 import { ALL_CATEGORIES, getSkillsForCategory, type Category } from "@/lib/categories"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
@@ -54,7 +53,8 @@ export default function FreelancerDashboard({
   initialCredits,
   initialBalance,
   initialJobs,
-  initialTotalJobsCount
+  initialTotalJobsCount,
+  initialIsVerified
 }: {
   initialUser: any;
   initialProfile: any;
@@ -62,6 +62,7 @@ export default function FreelancerDashboard({
   initialBalance: number;
   initialJobs: any[];
   initialTotalJobsCount: number;
+  initialIsVerified: boolean;
 }) {
   const [selectedJob, setSelectedJob] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -96,6 +97,9 @@ export default function FreelancerDashboard({
   const [totalBalance, setTotalBalance] = useState(initialBalance || 0)
   const [isBalanceVisible, setIsBalanceVisible] = useState(true)
   const [profile] = useState<any>(initialProfile)
+  // NIN verification status is fetched server-side and passed in, so the
+  // "apply" gate doesn't need a browser round-trip when the user clicks.
+  const [isNINVerified] = useState<boolean>(!!initialIsVerified)
 
   useEffect(() => {
     if (!initialUser) {
@@ -151,25 +155,11 @@ export default function FreelancerDashboard({
               },
             })) || []
 
-          let finalJobs = transformedJobs
-          if (currentUser?.id && finalJobs.length > 0) {
-            const jobIds = finalJobs.map((j: any) => j.id)
-            const { data: userProposals } = await supabase
-              .from("proposals")
-              .select("job_id")
-              .eq("freelancer_id", currentUser.id)
-              .in("job_id", jobIds)
-            
-            const appliedJobIds = new Set(userProposals?.map(p => p.job_id) || [])
-            finalJobs = finalJobs.map((j: any) => ({
-              ...j,
-              has_applied: appliedJobIds.has(j.id)
-            }))
-          }
-
-          setJobs((prevJobs) => (append ? [...prevJobs, ...finalJobs] : finalJobs))
-          setHasMoreJobs(currentOffset + finalJobs.length < (totalCount || 0))
-          setJobsOffset(currentOffset + finalJobs.length)
+          // has_applied is now provided by getJobs (server-side), so the
+          // transformed jobs already carry it — no extra browser query needed.
+          setJobs((prevJobs) => (append ? [...prevJobs, ...transformedJobs] : transformedJobs))
+          setHasMoreJobs(currentOffset + transformedJobs.length < (totalCount || 0))
+          setJobsOffset(currentOffset + transformedJobs.length)
         }
       } catch (error) {
         console.error(error)
@@ -181,23 +171,6 @@ export default function FreelancerDashboard({
     [currentUser],
   )
 
-  const checkNINVerification = async (userId: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase
-        .from("freelancer_verification")
-        .select("status")
-        .eq("freelancer_id", userId)
-        .eq("status", "verified")
-        .single()
-      
-      if (error) return false
-      return !!data
-    } catch (err) {
-      console.error(err)
-      return false
-    }
-  }
-
   const handleJobAction = async (job: any, action: "bookmark" | "view" | "apply") => {
     if (action === "view") {
       setSelectedAgency(job.agencyInfo)
@@ -206,7 +179,6 @@ export default function FreelancerDashboard({
       if (!currentUser?.id) return
 
       try {
-        const isNINVerified = await checkNINVerification(currentUser.id)
         if (!isNINVerified) {
           alert("Please verify your identity (NIN) before placing a bid.")
           return

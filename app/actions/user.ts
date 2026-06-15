@@ -2,13 +2,14 @@
 
 import { createClient } from "@/lib/supabase-server"
 import { resolveAvatar } from "@/lib/avatar-url"
+import { getCurrentUser } from "@/lib/auth"
 
 export async function getUserCredits(userId?: string) {
   const supabase = await createClient()
   let finalUserId = userId
 
   if (!finalUserId) {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return 0
     finalUserId = user.id
   }
@@ -33,7 +34,7 @@ export async function getProfile(userId?: string) {
     let finalUserId = userId
 
     if (!finalUserId) {
-      const { data: { user } } = await supabase.auth.getUser()
+      const user = await getCurrentUser()
       if (!user) return null
       finalUserId = user.id
     }
@@ -57,7 +58,7 @@ export async function getTotalBalance(userId?: string) {
   let finalUserId = userId
 
   if (!finalUserId) {
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) return 0
     finalUserId = user.id
   }
@@ -80,24 +81,45 @@ export async function getTotalBalance(userId?: string) {
   return totalAmount
 }
 
-export async function getFullUserData() {
+export async function getNINVerified(userId?: string) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  let finalUserId = userId
+
+  if (!finalUserId) {
+    const user = await getCurrentUser()
+    if (!user) return false
+    finalUserId = user.id
+  }
+
+  const { data } = await supabase
+    .from("freelancer_verification")
+    .select("status")
+    .eq("freelancer_id", finalUserId)
+    .eq("status", "verified")
+    .maybeSingle()
+
+  return !!data
+}
+
+export async function getFullUserData() {
+  const user = await getCurrentUser()
 
   if (!user) return null
 
   // Fetch all user-related data in parallel with a single user object
-  const [profile, credits, balance] = await Promise.all([
+  const [profile, credits, balance, isVerified] = await Promise.all([
     getProfile(user.id),
     getUserCredits(user.id),
-    getTotalBalance(user.id)
+    getTotalBalance(user.id),
+    getNINVerified(user.id)
   ])
 
   return {
     user,
     profile,
     credits,
-    balance
+    balance,
+    isVerified
   }
 }
 
@@ -122,7 +144,7 @@ export async function getFreelancerLogos(freelancerIds: string[]) {
 
 export async function getAgencyImage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   if (!user) return null
 
