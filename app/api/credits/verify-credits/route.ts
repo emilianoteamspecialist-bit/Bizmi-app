@@ -96,24 +96,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create purchase record" }, { status: 500 })
     }
 
-    const { data: userProfile, error: profileError } = await supabase
-      .from("profiles")
-      .select("credits_balance")
-      .eq("id", user.id)
-      .single()
-
-    const currentCredits = userProfile?.credits_balance || 0
-    const newCredits = currentCredits + creditsToAdd
-
-    const { error: creditUpdateError } = await supabase
-      .from("profiles")
-      .update({ credits_balance: newCredits })
-      .eq("id", user.id)
-
-    if (creditUpdateError) {
-      console.error("❌ Error updating user credits:", creditUpdateError)
-      return NextResponse.json({ error: "Failed to update credits balance" }, { status: 500 })
-    }
+    // purchase_credits is the single source of truth — the insert above already
+    // credits the user. Derive the balance from the ledger for the response.
+    const { data: ledgerRows } = await supabase
+      .from("purchase_credits")
+      .select("credits_amount")
+      .eq("freelancer_id", user.id)
+      .eq("status", "completed")
+    const newCredits = (ledgerRows ?? []).reduce(
+      (sum: number, row: any) => sum + (row.credits_amount || 0),
+      0,
+    )
 
     console.log("✅ Credits purchase verified successfully!")
     return NextResponse.json({
@@ -221,24 +214,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to record purchase" }, { status: 500 })
     }
 
-    const { data: userProfile, error: profileError } = await supabase
-      .from("profiles")
-      .select("credits_balance")
-      .eq("id", user.id)
-      .single()
-
-    const currentCredits = userProfile?.credits_balance || 0
-    const newCredits = currentCredits + creditsToAdd
-
-    const { error: creditUpdateError } = await supabase
-      .from("profiles")
-      .update({ credits_balance: newCredits })
-      .eq("id", user.id)
-
-    if (creditUpdateError) {
-      console.error("❌ Error updating user credits:", creditUpdateError)
-      return NextResponse.json({ error: "Failed to update credits balance" }, { status: 500 })
-    }
+    // purchase_credits is the single source of truth — the insert above already
+    // credits the user. Derive the balance from the ledger for the response.
+    const { data: ledgerRows } = await supabase
+      .from("purchase_credits")
+      .select("credits_amount")
+      .eq("freelancer_id", user.id)
+      .eq("status", "completed")
+    const newCredits = (ledgerRows ?? []).reduce(
+      (sum: number, row: any) => sum + (row.credits_amount || 0),
+      0,
+    )
 
     console.log("✅ Credits purchase verified successfully!")
     return NextResponse.json({

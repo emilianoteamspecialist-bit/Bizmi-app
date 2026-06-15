@@ -69,45 +69,30 @@ export async function GET(req: NextRequest) {
 
     console.log("💳 Payment verified successfully, adding credits to user...")
 
-    // Use freelancer_id from the purchaseRecord to update credits
-    const freelancerId = purchaseRecord.freelancer_id;
+    const freelancerId = purchaseRecord.freelancer_id
 
-    // Add credits to user profile
-    const { data: currentProfile, error: profileError } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", freelancerId) // Use freelancerId from purchase record
-      .single()
-
-    if (profileError) {
-      console.error("❌ Error fetching user profile:", profileError)
-      return NextResponse.json({ error: "Failed to fetch user profile" }, { status: 500 })
-    }
-
-    const currentCredits = currentProfile.credits || 0
-    const newCredits = currentCredits + purchaseRecord.credits_amount
-    console.log("📊 Credits calculation:", {
-      current: currentCredits,
-      adding: purchaseRecord.credits_amount,
-      new_total: newCredits,
-    })
-
-    // Update user credits
-    const { error: updateError } = await supabase.from("profiles").update({ credits: newCredits }).eq("id", freelancerId) // Use freelancerId
-    if (updateError) {
-      console.error("❌ Error updating user credits:", updateError)
-      return NextResponse.json({ error: "Failed to add credits to account" }, { status: 500 })
-    }
-
-    // Update purchase record status
+    // Mark the purchase complete. purchase_credits is the single source of
+    // truth for a freelancer's balance (summed in getUserCredits), so completing
+    // this row IS the credit — there is no separate profile column to keep in sync.
     const { error: statusError } = await supabase
       .from("purchase_credits")
       .update({ status: "completed" })
       .eq("id", purchaseRecord.id)
     if (statusError) {
       console.error("❌ Error updating purchase status:", statusError)
-      // Don't fail the request, credits were already added
+      return NextResponse.json({ error: "Failed to complete credits purchase" }, { status: 500 })
     }
+
+    // Authoritative balance, derived from the ledger.
+    const { data: ledgerRows } = await supabase
+      .from("purchase_credits")
+      .select("credits_amount")
+      .eq("freelancer_id", freelancerId)
+      .eq("status", "completed")
+    const newBalance = (ledgerRows ?? []).reduce(
+      (sum: number, row: any) => sum + (row.credits_amount || 0),
+      0,
+    )
 
     console.log("✅ Credits added successfully!")
     return NextResponse.json({
@@ -115,7 +100,7 @@ export async function GET(req: NextRequest) {
       message: "Credits purchase completed successfully",
       credits_added: purchaseRecord.credits_amount,
       amount_paid: purchaseRecord.amount,
-      new_balance: newCredits,
+      new_balance: newBalance,
     })
   } catch (error: any) {
     console.error("💥 Credits verification error:", error)
