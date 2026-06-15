@@ -32,6 +32,26 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Admin authorisation at the edge. Previously /admin/* was gated by session
+  // only — any logged-in user could reach the admin console; the role check
+  // lived client-side in the login page. Enforce it here. (/admin/login is
+  // exempt so admins can still sign in.)
+  const isAdminRoute = pathname.startsWith('/admin') && pathname !== '/admin/login'
+  if (session && isAdminRoute) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, account_type')
+      .eq('id', session.user.id)
+      .maybeSingle()
+
+    // Allow either flag — the codebase is inconsistent (role vs account_type),
+    // so we accept either rather than risk locking out a legitimate admin.
+    const isAdmin = profile?.role === 'admin' || profile?.account_type === 'admin'
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/freelancer/dashboard', req.url))
+    }
+  }
+
   if (session && isAuthRoute) {
     // Redirect authenticated users to the freelancer dashboard.
     // /freelancer/dashboard performs a role-check and redirects agency/admin users
