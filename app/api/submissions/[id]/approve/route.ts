@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { createServiceRoleClient } from '@/lib/supabase-service';
 
+// Approves a freelancer's submission and marks the job ready for payout.
+//
+// Only the agency that owns the job may approve it. Previously this route had
+// no auth at all — anyone could mark any submission approved and flip a job to
+// payable. Now the caller is authenticated and must own the job; the privileged
+// writes go through the service-role client rather than relying on RLS.
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const submissionId = params.id;
@@ -10,34 +18,65 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       return NextResponse.json({ error: 'Missing IDs' }, { status: 400 });
     }
 
-    // 1. Update submission status
-    const { error: subError } = await supabase
+    const cookieStore = await cookies();
+    const userClient = createRouteHandlerClient({ cookies: () => cookieStore });
+    const {
+      data: { user },
+    } = await userClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const service = createServiceRoleClient();
+
+    // Authorisation: only the job's agency can approve work on it.
+    const { data: job, error: jobLookupError } = await service
+      .from('jobs')
+      .select('agency_id, payout_status')
+      .eq('id', job_id)
+      .maybeSingle();
+
+    if (jobLookupError) {
+      return NextResponse.json({ error: 'Failed to look up job' }, { status: 500 });
+    }
+    if (!job) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+    }
+    if (job.agency_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // 1. Approve the submission.
+    const { error: subError } = await service
       .from('project_submissions')
       .update({ status: 'approved', updated_at: new Date().toISOString() })
       .eq('id', submissionId);
 
     if (subError) throw subError;
 
-    // 2. Mark job as completed in Funded_jobs101 (releasing funds to freelancer dashboard)
-    const { error: fundedError } = await supabase
+    // 2. Mark the job completed for the freelancer's "Funded Jobs" view.
+    const { error: fundedError } = await service
       .from('Funded_jobs101')
       .update({ job_completed: true })
       .eq('job_id', job_id);
 
     if (fundedError) {
-       console.warn('Could not update Funded_jobs101, it might not exist for this job yet:', fundedError);
+      console.warn('Could not update Funded_jobs101 (may not exist yet):', fundedError);
     }
 
-    // 3. Update job status to closed
-    const { error: jobError } = await supabase
-      .from('jobs')
-      .update({ status: 'closed', payout_status: 'completed' })
-      .eq('id', job_id);
+    // 3. Close the job. Only flip payout_status to 'completed' (the payable
+    //    gate) when a payout hasn't already started — never re-open a payout
+    //    that is processing or already paid.
+    const jobUpdate =
+      job.payout_status === 'paid' || job.payout_status === 'processing'
+        ? { status: 'closed' }
+        : { status: 'closed', payout_status: 'completed' };
 
+    const { error: jobError } = await service.from('jobs').update(jobUpdate).eq('id', job_id);
     if (jobError) throw jobError;
 
-    // 4. Update escrow deposit status to confirmed
-    const { error: escrowError } = await supabase
+    // 4. Mark the escrow confirmed.
+    const { error: escrowError } = await service
       .from('escrow_deposits')
       .update({ status: 'confirmed' })
       .eq('job_id', job_id);

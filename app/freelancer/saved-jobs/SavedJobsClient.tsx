@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { getSavedJobs } from "@/app/actions/jobs"
+import { submitProposal } from "@/app/actions/proposals"
 
 export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs: any[] }) {
   const { user: currentUser } = useAuth()
@@ -116,45 +117,29 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
     try {
       if (!currentUser || !selectedJob) return
 
-      // Check if user has enough credits
-      const { data: profileData } = await supabase.from("profiles").select("credits").eq("id", currentUser.id).single()
+      // Proposal + credit charge happen atomically server-side (place_bid).
+      // The browser no longer reads or writes credit balances directly.
+      const result = await submitProposal(
+        selectedJob.id,
+        {
+          proposal_text: bidData.proposal,
+          timeline: bidData.timeline,
+          budget: bidData.budget,
+          attachments: selectedFiles.map((file) => file.name),
+        },
+        selectedJob.credit_cost,
+      )
 
-      if (!profileData || profileData.credits < selectedJob.credit_cost) {
-        alert("Insufficient credits to place this bid!")
+      if (!result.success) {
+        alert(result.error === "Unauthorized" ? "You must be signed in to bid." : result.error)
         return
       }
 
-      // Create proposal
-      const proposalData = {
-        job_id: selectedJob.id,
-        freelancer_id: currentUser.id,
-        proposal_text: bidData.proposal,
-        timeline: bidData.timeline,
-        budget: bidData.budget,
-        attachments: selectedFiles.map((file) => file.name),
-        status: "pending",
-      }
-
-      const { error: proposalError } = await supabase.from("proposals").insert([proposalData])
-
-      if (proposalError) {
-        console.error("Error submitting proposal:", proposalError)
-        alert("Error submitting proposal: " + proposalError.message)
-        return
-      }
-
-      // Deduct credits
-      const { error: creditError } = await supabase
-        .from("profiles")
-        .update({ credits: profileData.credits - selectedJob.credit_cost })
-        .eq("id", currentUser.id)
-
-      if (creditError) {
-        console.error("Error deducting credits:", creditError)
-        alert("Proposal submitted but error deducting credits")
-      } else {
-        alert("Proposal submitted successfully! Credits deducted.")
-      }
+      alert(
+        result.alreadySubmitted
+          ? "You've already applied to this job."
+          : "Proposal submitted successfully! Credits deducted.",
+      )
 
       setShowPlaceBidModal(false)
       setBidData({ proposal: "", timeline: "", budget: "" })
