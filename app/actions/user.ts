@@ -106,21 +106,31 @@ export async function getFullUserData() {
 
   if (!user) return null
 
-  // Fetch all user-related data in parallel with a single user object
+  // Fast path: one round-trip that also does the SUMs in Postgres.
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc("get_freelancer_dashboard")
+  if (!error && data) {
+    const d = data as { profile?: any; credits?: number; balance?: number; is_verified?: boolean }
+    return {
+      user,
+      profile: d.profile ?? null,
+      credits: d.credits ?? 0,
+      balance: Number(d.balance ?? 0),
+      isVerified: !!d.is_verified,
+    }
+  }
+
+  // Fallback (e.g. the RPC hasn't been deployed yet): the original parallel
+  // queries. Keeps the dashboard/profile/marketplace pages working regardless
+  // of migration order.
   const [profile, credits, balance, isVerified] = await Promise.all([
     getProfile(user.id),
     getUserCredits(user.id),
     getTotalBalance(user.id),
-    getNINVerified(user.id)
+    getNINVerified(user.id),
   ])
 
-  return {
-    user,
-    profile,
-    credits,
-    balance,
-    isVerified
-  }
+  return { user, profile, credits, balance, isVerified }
 }
 
 export async function getFreelancerLogos(freelancerIds: string[]) {
