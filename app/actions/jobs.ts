@@ -119,13 +119,10 @@ export async function getSavedJobs() {
       budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
       postedDate: new Date(job.created_at).toLocaleDateString(),
       proposals: job.proposals?.[0]?.count || 0,
-      rating: 4.8,
       isBookmarked: true,
       agencyInfo: {
         id: job.profiles?.id,
         name: job.profiles?.company_name || job.profiles?.full_name || "Unknown Agency",
-        rating: 4.8,
-        reviews: 156,
         location: job.profiles?.location || "Nigeria",
         employees: job.profiles?.company_size || "10-50",
         description: job.profiles?.bio || "Professional agency providing quality services.",

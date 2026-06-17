@@ -11,7 +11,6 @@ import {
   MapPin,
   Clock,
   Users,
-  Star,
   Bookmark,
   CreditCard,
   Upload,
@@ -218,10 +217,6 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
                                 {job.proposals} proposals
                               </span>
                               <span className="flex items-center">
-                                <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                                {job.rating}
-                              </span>
-                              <span className="flex items-center">
                                 <CreditCard className="h-4 w-4 mr-1 text-primary" />
                                 {job.credit_cost} credits
                               </span>
@@ -315,12 +310,6 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
                   </Avatar>
                   <div>
                     <CardTitle className="text-xl">{selectedAgency.name}</CardTitle>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Star className="h-4 w-4 text-yellow-500" />
-                      <span>
-                        {selectedAgency.rating} ({selectedAgency.reviews} reviews)
-                      </span>
-                    </div>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setShowAgencyModal(false)}>

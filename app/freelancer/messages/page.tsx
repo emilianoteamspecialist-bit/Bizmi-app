@@ -500,7 +500,6 @@ export default function FreelancerMessagesPage() {
                         </div>
                         {/* Placeholder for rating and skill as per screenshot */}
                         <div className="flex items-center text-xs text-muted-foreground mt-0.5">
-                          <span className="text-yellow-500 mr-1">★ 4.8</span>
                           <span className="bg-green-500 w-2 h-2 rounded-full mr-1"></span>
                           {/* <span className="truncate">React</span> */}
                         </div>
@@ -559,7 +558,6 @@ export default function FreelancerMessagesPage() {
                       {selectedParticipant?.full_name || "Unknown User"}
                     </CardTitle>
                     <div className="flex items-center text-sm text-muted-foreground mt-0.5">
-                      <span className="text-yellow-500 mr-1">★ 4.8</span>
                       <span className="bg-green-500 w-2 h-2 rounded-full mr-1"></span>
                       {/* <span>React</span> */}
                     </div>

@@ -201,14 +201,11 @@ export default function MarketplaceClient({
               budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
               postedDate: new Date(job.created_at).toLocaleDateString(),
               proposals: job.proposal_count || 0,
-              rating: 4.8,
               isLiked: false,
               agencyInfo: {
                 ...job.agency_info,
                 name: job.agency_info.company_name || job.agency_info.full_name || "Unknown Agency",
                 logo: getAvatarUrl(job.agency_info?.logo_path),
-                rating: 4.8,
-                reviews: 156,
                 founded: job.agency_info.created_at ? new Date(job.agency_info.created_at).getFullYear().toString() : "2020",
                 employees: job.agency_info.company_size || "10-50",
                 description: job.agency_info.bio || "Professional agency providing quality services.",
@@ -815,7 +812,6 @@ export default function MarketplaceClient({
                 { label: "Founded", val: selectedAgency.founded },
                 { label: "Total Jobs", val: selectedAgency.totalJobs },
                 { label: "Team Size", val: selectedAgency.employees },
-                { label: "Platform Rating", val: `${selectedAgency.rating} ★` },
               ].map((s, i) => (
                 <div key={i} className="bg-surface p-6 rounded-lg text-center space-y-2 border border-border shadow-inner">
                   <p className="eyebrow">{s.label}</p>
