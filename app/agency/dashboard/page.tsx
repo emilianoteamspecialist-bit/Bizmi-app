@@ -37,6 +37,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import { getAgencyJobs, updateJobStatus, createJob, updateJob } from "@/app/actions/jobs"
 import { getProfile, getAgencyImage, getFreelancerLogos } from "@/app/actions/user"
+import { respondToProposal } from "@/app/actions/proposals"
 import { ALL_SKILLS } from "@/lib/categories"
 
 // Available skills for selection
@@ -438,19 +439,14 @@ export default function AgencyDashboard() {
 
   const handleProposalAction = async (proposalId: string, action: "accept" | "reject") => {
     try {
-      console.log(`${action}ing proposal:`, proposalId)
-
-      const { error } = await supabase
-        .from("proposals")
-        .update({
-          status: action === "accept" ? "accepted" : "rejected",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", proposalId)
-
-      if (error) {
-        console.error("Error updating proposal:", error)
-        alert("Error updating proposal: " + error.message)
+      // Server action: verifies this agency owns the job before changing status.
+      const result = await respondToProposal(proposalId, action)
+      if (!result.success) {
+        alert(
+          result.error === "Forbidden"
+            ? "You can only act on proposals for your own jobs."
+            : `Error updating proposal: ${result.error}`,
+        )
         return
       }
 

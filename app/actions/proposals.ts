@@ -14,6 +14,45 @@ export type SubmitProposalResult =
   | { success: true; alreadySubmitted?: boolean }
   | { success: false; error: string; code?: string }
 
+export type RespondResult = { success: true } | { success: false; error: string }
+
+// Accept or reject a proposal. Only the agency that owns the job may do this —
+// previously this was a direct browser update with no ownership check, and
+// accepting a proposal gates funding. The ownership check is explicit here
+// (defence-in-depth beyond RLS).
+export async function respondToProposal(
+  proposalId: string,
+  action: "accept" | "reject",
+): Promise<RespondResult> {
+  const supabase = await createClient()
+  const user = await getCurrentUser()
+  if (!user) return { success: false, error: "Unauthorized" }
+
+  // The proposal's job must belong to the calling agency.
+  const { data: proposal, error: lookupError } = await supabase
+    .from("proposals")
+    .select("id, jobs!inner(agency_id)")
+    .eq("id", proposalId)
+    .maybeSingle()
+
+  if (lookupError) return { success: false, error: lookupError.message }
+  if (!proposal) return { success: false, error: "Proposal not found" }
+  if ((proposal as any).jobs?.agency_id !== user.id) {
+    return { success: false, error: "Forbidden" }
+  }
+
+  const { error } = await supabase
+    .from("proposals")
+    .update({
+      status: action === "accept" ? "accepted" : "rejected",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", proposalId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
 // Submitting a proposal charges the freelancer's credits. Both the proposal
 // insert and the charge happen inside the place_bid Postgres function as a
 // single transaction: balance-checked, idempotent (one charge per job), and
