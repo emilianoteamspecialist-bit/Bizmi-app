@@ -596,246 +596,166 @@ export default function AgencyDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-paper relative">
-        <div className="grain absolute inset-0 pointer-events-none" aria-hidden />
-        <div className="editorial-shell relative py-10 lg:py-14 space-y-10">
-          <div className="hairline-b pb-3 flex justify-between">
-            <div className="h-3 w-48 bg-foreground/5 animate-pulse" />
-            <div className="h-3 w-40 bg-foreground/5 animate-pulse" />
+      <div className="min-h-screen bg-surface">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-pulse">
+          <div className="flex items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="h-3 w-24 bg-foreground/5 rounded" />
+              <div className="h-7 w-56 bg-foreground/5 rounded" />
+              <div className="h-3 w-72 bg-foreground/5 rounded" />
+            </div>
+            <div className="h-10 w-28 bg-foreground/5 rounded-lg" />
           </div>
-          <div className="space-y-6">
-            <div className="h-3 w-32 bg-foreground/5 animate-pulse" />
-            <div className="h-16 w-2/3 bg-foreground/5 animate-pulse" />
-            <div className="h-4 w-1/2 bg-foreground/5 animate-pulse" />
-          </div>
-          <div className="hairline-strong" />
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="py-7 px-6 space-y-3">
-                <div className="h-3 w-12 bg-foreground/5 animate-pulse" />
-                <div className="h-12 w-16 bg-foreground/5 animate-pulse" />
-              </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 bg-card border border-border rounded-xl" />
             ))}
           </div>
-          <div className="hairline-strong" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-card border border-border rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
     )
   }
 
   const agencyName = profile?.company_name || profile?.full_name || "Your"
-  const editionNo = String(agencyJobs.length + 41).padStart(4, "0")
-  const today = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
 
   return (
-    <div className="min-h-screen bg-paper relative pb-20 selection:bg-primary/15 selection:text-primary">
-      {/* paper grain across the whole canvas */}
-      <div className="grain absolute inset-0 pointer-events-none" aria-hidden />
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-      <div className="editorial-shell relative py-10 lg:py-14 space-y-14 lg:space-y-20">
-
-        {/* ─────────────── MASTHEAD ─────────────── */}
-        <header className="space-y-9 animate-fade-up">
-          <div className="flex flex-wrap items-center justify-between gap-3 hairline-b pb-3">
-            <p className="eyebrow">
-              Bizimi · Hiring Desk · Vol. I · No. {editionNo}
-            </p>
-            <p className="marginalia">{today}</p>
+        {/* Toolbar header */}
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hiring desk</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground truncate">
+              {agencyName === "Your" ? "Your hiring desk" : agencyName}
+            </h1>
+            <p className="text-sm text-muted-foreground">Compose briefs, weigh proposals, hire decisively.</p>
           </div>
-
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-end">
-            <div className="lg:col-span-8 space-y-5 animate-fade-up delay-100">
-              <p className="eyebrow-primary">The Hiring Desk</p>
-              <h1 className="display-2xl">
-                <span className="italic text-muted-foreground/70">{agencyName}'s</span>{" "}
-                hiring desk.
-              </h1>
-              <p className="lede">
-                Compose briefs, weigh proposals, hire decisively. The work moves at the pace you set.
-              </p>
-            </div>
-
-            <div className="lg:col-span-4 space-y-3 lg:text-right animate-fade-up delay-200">
-              <Button
-                onClick={() => { resetJobForm(); setShowPostJobModal(true) }}
-                className="h-12 px-7 rounded-none bg-ink text-white font-medium hover:bg-ink/90 group"
-              >
-                Compose a new brief
-                <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </Button>
-              <p className="marginalia">Drafted from Lagos · filed for {agencyName}</p>
-            </div>
-          </div>
+          <Button
+            onClick={() => { resetJobForm(); setShowPostJobModal(true) }}
+            className="h-10 px-4 rounded-lg gap-2 shrink-0"
+          >
+            <Plus className="h-4 w-4" /> Post a job
+          </Button>
         </header>
 
-        {/* ─────────────── LEDGER STRIP ─────────────── */}
-        <section className="animate-fade-up delay-300">
-          <div className="hairline-strong" />
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
-            {[
-              { label: "Active", value: activeJobs, hint: "Currently hiring", accent: false },
-              { label: "Paused", value: pausedJobs, hint: "On the bench", accent: false },
-              { label: "Closed", value: closedJobs, hint: "Archived", accent: false },
-              { label: "Proposals", value: totalProposals, hint: "Awaiting your read", accent: true },
-            ].map((stat) => (
-              <div key={stat.label} className="py-7 px-2 md:px-6 first:md:pl-0 last:md:pr-0">
-                <p className="eyebrow mb-2">{stat.label}</p>
-                <p className="font-display text-5xl md:text-6xl leading-none tracking-tight numeric text-ink">
-                  {String(stat.value).padStart(2, "0")}
-                </p>
-                {stat.accent ? (
-                  <p className="mt-3 inline-flex items-center text-[10px] uppercase tracking-[0.18em] text-primary font-medium">
-                    <span className="w-3 h-px bg-primary mr-2" /> {stat.hint}
-                  </p>
-                ) : (
-                  <p className="marginalia mt-3">{stat.hint}</p>
-                )}
+        {/* Metric tiles */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "Active", value: activeJobs, icon: Play, tone: "text-success", accent: false },
+            { label: "Paused", value: pausedJobs, icon: Pause, tone: "text-warning", accent: false },
+            { label: "Closed", value: closedJobs, icon: X, tone: "text-muted-foreground", accent: false },
+            { label: "Proposals", value: totalProposals, icon: Users, tone: "text-primary", accent: true },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className={`rounded-xl border bg-card p-4 ${stat.accent ? "border-primary/30" : "border-border"}`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                <stat.icon className={`h-3.5 w-3.5 ${stat.tone}`} />
               </div>
-            ))}
-          </div>
-          <div className="hairline-strong" />
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{stat.value}</p>
+            </div>
+          ))}
         </section>
 
-        {/* ─────────────── ON THE BOOKS ─────────────── */}
-        <section className="space-y-8 animate-fade-up delay-400">
-          <div className="flex items-baseline justify-between gap-4">
-            <div className="space-y-1">
-              <p className="eyebrow">Section · 02</p>
-              <h2 className="display-md italic">On the books.</h2>
-            </div>
-            <p className="marginalia hidden sm:block">
-              {agencyJobs.length} {agencyJobs.length === 1 ? "brief" : "briefs"} · live ledger
-            </p>
-          </div>
+        {/* Jobs */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Your jobs <span className="font-normal text-muted-foreground">· {agencyJobs.length}</span>
+          </h2>
 
           {agencyJobs.length === 0 ? (
-            <div className="border border-border surface-paper px-8 py-20 lg:py-24 text-center space-y-5 relative overflow-hidden">
-              <div className="absolute inset-0 grain pointer-events-none opacity-50" aria-hidden />
-              <p className="eyebrow-primary relative">An empty desk</p>
-              <h3 className="display-lg italic relative">No briefs in the pipeline.</h3>
-              <p className="lede mx-auto relative">
-                Post your first opportunity and we'll bring qualified freelancers to your door.
-              </p>
-              <div className="pt-2 relative">
-                <Button
-                  onClick={() => { resetJobForm(); setShowPostJobModal(true) }}
-                  className="h-12 px-7 rounded-none bg-ink text-white font-medium hover:bg-ink/90 group"
-                >
-                  Compose your first brief
-                  <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </Button>
+            <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
+              <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <FileText className="h-5 w-5" />
               </div>
+              <h3 className="mt-4 text-sm font-semibold text-foreground">No jobs yet</h3>
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                Post your first opportunity and we&apos;ll bring qualified freelancers to your door.
+              </p>
+              <Button className="mt-5 gap-2" onClick={() => { resetJobForm(); setShowPostJobModal(true) }}>
+                <Plus className="h-4 w-4" /> Post a job
+              </Button>
             </div>
           ) : (
-            <ol className="hairline-b">
-              {agencyJobs.map((job, idx) => {
-                const statusTone =
-                  job.status === "active" ? "text-moss"
-                  : job.status === "paused" ? "text-warning"
-                  : "text-muted-foreground"
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {agencyJobs.map((job) => {
                 const proposalCount = job.proposals ?? 0
                 return (
-                  <li
-                    key={job.id}
-                    className="group relative grid grid-cols-12 gap-4 md:gap-8 py-8 hairline transition-colors duration-300 hover:bg-primary-soft/40"
-                  >
-                    {/* orange rail on hover */}
-                    <span
-                      className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300"
-                      aria-hidden
-                    />
-
-                    {/* numeral */}
-                    <div className="col-span-2 md:col-span-1 pl-2 md:pl-3">
-                      <p className="font-display text-3xl md:text-4xl leading-none text-muted-foreground/40 numeric group-hover:text-primary/70 transition-colors">
-                        {String(idx + 1).padStart(2, "0")}
-                      </p>
-                    </div>
-
-                    {/* main */}
-                    <div className="col-span-10 md:col-span-7 space-y-3">
-                      <div className="flex flex-wrap items-baseline gap-3">
-                        <h3 className="display-sm">{job.title}</h3>
-                        <span className={`text-[10px] uppercase tracking-[0.22em] font-medium ${statusTone}`}>
-                          · {job.status}
-                        </span>
+                  <div key={job.id} className="p-4 sm:p-5 transition-colors hover:bg-surface/60">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="text-sm font-semibold text-foreground truncate">{job.title}</h3>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${getStatusColor(job.status)}`}>
+                            {getStatusIcon(job.status)}
+                            {job.status}
+                          </span>
+                        </div>
+                        {job.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-1 max-w-2xl">{job.description}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground tabular-nums">
+                            ₦{job.budget_min?.toLocaleString() ?? "—"} – ₦{job.budget_max?.toLocaleString() ?? "—"}
+                          </span>
+                          <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{job.duration || "Flexible"}</span>
+                          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location || "Remote"}</span>
+                          <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{new Date(job.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</span>
+                          <span className="font-medium text-primary">{proposalCount} {proposalCount === 1 ? "proposal" : "proposals"}</span>
+                        </div>
                       </div>
-                      {job.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 max-w-[60ch] leading-relaxed">
-                          {job.description}
-                        </p>
-                      )}
-                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.18em] font-medium text-muted-foreground numeric">
-                        <span>₦{job.budget_min?.toLocaleString() ?? "—"} – ₦{job.budget_max?.toLocaleString() ?? "—"}</span>
-                        <span className="text-border">/</span>
-                        <span>{job.duration || "Flexible"}</span>
-                        <span className="text-border">/</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location || "Remote"}</span>
-                        <span className="text-border">/</span>
-                        <span>{new Date(job.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}</span>
-                        <span className="text-border">/</span>
-                        <span className="text-primary">{proposalCount} {proposalCount === 1 ? "proposal" : "proposals"}</span>
-                      </p>
-                      {!!job.skills?.length && (
-                        <p className="text-xs italic text-muted-foreground/80 font-display">
-                          {job.skills.slice(0, 6).join("  ·  ")}
-                          {job.skills.length > 6 && `  ·  +${job.skills.length - 6}`}
-                        </p>
-                      )}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button variant="outline" size="sm" onClick={() => handleViewProposals(job)}>Review bids</Button>
+                        {(job.status === "active" || job.status === "closed") && (
+                          <Button variant="ghost" size="sm" onClick={() => router.push(`/workspace/${job.id}`)}>Workspace</Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-52">
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleJobAction(job, "edit")}>
+                              <Edit className="mr-2 h-4 w-4 text-muted-foreground" /> Edit brief
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleJobAction(job, "pause")}>
+                              <Pause className="mr-2 h-4 w-4 text-muted-foreground" /> {job.status === "paused" ? "Resume hiring" : "Pause hiring"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => { setSelectedJob(job); setShowDisputeModal(true) }}>
+                              <ShieldAlert className="mr-2 h-4 w-4 text-primary" /> Open dispute
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5" onClick={() => handleJobAction(job, "close")}>
+                              <X className="mr-2 h-4 w-4" /> Close listing
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-
-                    {/* actions */}
-                    <div className="col-span-12 md:col-span-4 flex flex-row md:flex-col flex-wrap md:flex-nowrap md:items-end gap-x-5 gap-y-2 md:gap-y-2.5 pt-2 md:pt-1">
-                      <button
-                        onClick={() => handleViewProposals(job)}
-                        className="link-arrow"
-                      >
-                        Review bids
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                      </button>
-                      {(job.status === "active" || job.status === "closed") && (
-                        <button
-                          onClick={() => router.push(`/workspace/${job.id}`)}
-                          className="link-quiet hover:text-ink"
-                        >
-                          Open workspace
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="link-quiet hover:text-ink">
-                            More <MoreHorizontal className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-none border-border w-56 p-1 shadow-md">
-                          <DropdownMenuItem className="rounded-none font-medium text-sm cursor-pointer py-2" onClick={() => handleJobAction(job, "edit")}>
-                            <Edit className="mr-2 h-4 w-4 text-muted-foreground" /> Edit brief
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="rounded-none font-medium text-sm cursor-pointer py-2" onClick={() => handleJobAction(job, "pause")}>
-                            <Pause className="mr-2 h-4 w-4 text-muted-foreground" /> {job.status === "paused" ? "Resume hiring" : "Pause hiring"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="rounded-none font-medium text-sm cursor-pointer py-2" onClick={() => { setSelectedJob(job); setShowDisputeModal(true); }}>
-                            <ShieldAlert className="mr-2 h-4 w-4 text-primary" /> Open dispute
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="rounded-none font-medium text-sm text-destructive focus:text-destructive focus:bg-destructive/5 cursor-pointer py-2" onClick={() => handleJobAction(job, "close")}>
-                            <X className="mr-2 h-4 w-4" /> Close listing
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </li>
+                    {!!job.skills?.length && (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {job.skills.slice(0, 6).map((sk: string) => (
+                          <span key={sk} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">{sk}</span>
+                        ))}
+                        {job.skills.length > 6 && (
+                          <span className="px-2 py-0.5 text-[11px] text-muted-foreground">+{job.skills.length - 6}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )
               })}
-            </ol>
+            </div>
           )}
         </section>
-
-        {/* colophon */}
-        <footer className="pt-6 hairline flex flex-wrap items-center justify-between gap-2">
-          <p className="marginalia">Bizimi Trade Sheet · Hiring Desk Edition</p>
-          <p className="marginalia">Set in Instrument Serif & Inter · Filed in Lagos</p>
-        </footer>
       </div>
 
       {/* Proposals Modal */}
