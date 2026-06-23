@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AdminSidebar } from "@/components/admin-sidebar"
+import Link from "next/link"
 
 interface User {
   id: string
@@ -68,7 +69,12 @@ export default function UsersClient({ initialAgencies, initialFreelancers }: Use
               <div className="flex-1">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h3 className="font-medium">{user.full_name || "No name"}</h3>
+                    <Link
+                      href={`/admin/users/${user.id}`}
+                      className="font-medium hover:text-primary hover:underline"
+                    >
+                      {user.full_name || "No name"}
+                    </Link>
                     <p className="text-sm text-slate-600">{user.email}</p>
                   </div>
                   <Badge variant="outline" className="border-orange-200 text-primary">
@@ -89,6 +95,9 @@ export default function UsersClient({ initialAgencies, initialFreelancers }: Use
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/admin/users/${user.id}`}>View details</Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleSetDisabled(user.id, true)}
                     disabled={updatingUserId === user.id}
