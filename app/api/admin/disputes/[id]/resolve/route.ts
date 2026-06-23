@@ -1,14 +1,40 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { createServiceRoleClient } from '@/lib/supabase-service';
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
     const disputeId = params.id;
-    const { resolution_outcome, admin_id, partial_amount } = await req.json();
+    const { resolution_outcome, partial_amount } = await req.json();
 
-    if (!resolution_outcome || !admin_id) {
+    if (!resolution_outcome) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // --- Authn + authz: the caller must be a signed-in admin. The admin_id is
+    // derived from the session here and NEVER taken from the request body, so a
+    // client can't resolve disputes or attribute the action to someone else.
+    const cookieStore = await cookies();
+    const authClient = createRouteHandlerClient({ cookies: () => cookieStore });
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { data: adminProfile } = await authClient
+      .from('profiles')
+      .select('account_type')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (adminProfile?.account_type !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+    }
+    const admin_id = user.id;
+
+    // Privileged money movement runs with the service role.
+    const supabase = createServiceRoleClient();
 
     // 1. Fetch the dispute to know the job and users
     const { data: dispute, error: fetchError } = await supabase
@@ -19,6 +45,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
     if (fetchError || !dispute) {
       return NextResponse.json({ error: 'Dispute not found' }, { status: 404 });
+    }
+
+    if (dispute.status === 'resolved') {
+      return NextResponse.json({ error: 'Dispute is already resolved' }, { status: 409 });
     }
 
     // 2. Fetch the escrow deposit to know the exact balance
@@ -34,7 +64,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
 
     const totalBalance = Number(escrow.balance);
-    
+
     // Calculate split
     let freelancerAmount = 0;
     let agencyAmount = 0;
@@ -45,7 +75,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       agencyAmount = totalBalance;
     } else if (resolution_outcome === 'partial_release') {
       freelancerAmount = Number(partial_amount);
+      if (!Number.isFinite(freelancerAmount) || freelancerAmount < 0 || freelancerAmount > totalBalance) {
+        return NextResponse.json(
+          { error: 'partial_amount must be between 0 and the escrow balance' },
+          { status: 400 },
+        );
+      }
       agencyAmount = totalBalance - freelancerAmount;
+    } else {
+      return NextResponse.json({ error: 'Invalid resolution_outcome' }, { status: 400 });
     }
 
     // 3. Move the money (ideally this should be an RPC function for transactional integrity)
@@ -66,7 +104,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (agencyAmount > 0) {
       const { data: job } = await supabase.from('jobs').select('agency_id').eq('id', dispute.job_id).single();
       const agencyId = job?.agency_id;
-      
+
       await supabase.rpc('increment_user_wallet', {
         uid: agencyId,
         amt: agencyAmount,

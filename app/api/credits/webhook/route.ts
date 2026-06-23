@@ -16,14 +16,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Webhook not configured" }, { status: 500 })
     }
 
-    // Verify webhook signature (optional for testing)
-    if (signature) {
-      const hash = crypto.createHmac("sha512", PAYSTACK_SECRET_KEY).update(body).digest("hex")
+    // Mandatory signature verification. No escape hatch — this endpoint credits
+    // real money, so an unsigned or mis-signed request is always rejected.
+    if (!signature) {
+      console.error("❌ Missing webhook signature")
+      return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+    }
 
-      if (hash !== signature) {
-        console.error("❌ Invalid webhook signature")
-        return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
-      }
+    const hash = crypto.createHmac("sha512", PAYSTACK_SECRET_KEY).update(body).digest("hex")
+
+    if (hash !== signature) {
+      console.error("❌ Invalid webhook signature")
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
     }
 
     const event = JSON.parse(body)
