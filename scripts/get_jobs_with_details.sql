@@ -41,6 +41,7 @@ BEGIN
             (SELECT count(*) OVER()) as t_count
         FROM jobs j
         WHERE j.status = 'active'
+        AND (j.moderation_status IS DISTINCT FROM 'removed')
         AND (p_search_query = '' OR j.title ILIKE '%' || p_search_query || '%' OR j.description ILIKE '%' || p_search_query || '%')
         AND (p_from_date IS NULL OR j.created_at >= p_from_date::TIMESTAMP WITH TIME ZONE)
         AND (p_to_date IS NULL OR j.created_at <= p_to_date::TIMESTAMP WITH TIME ZONE)
