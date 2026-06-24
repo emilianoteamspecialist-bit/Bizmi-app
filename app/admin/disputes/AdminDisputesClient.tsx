@@ -7,7 +7,7 @@ import { AdminSidebar } from "@/components/admin-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ShieldAlert, CheckCircle, Clock } from "lucide-react"
+import { ShieldAlert, CheckCircle, Clock, MessageSquare, ChevronDown } from "lucide-react"
 
 interface Dispute {
   id: string
@@ -24,13 +24,36 @@ interface Dispute {
   respondent?: { full_name: string }
 }
 
-interface AdminDisputesClientProps {
-  initialDisputes: Dispute[]
+interface DisputeMessage {
+  id: string
+  dispute_id: string
+  sender_id: string
+  message: string
+  created_at: string
+  sender?: { full_name: string } | null
 }
 
-export default function AdminDisputesClient({ initialDisputes }: AdminDisputesClientProps) {
+interface AdminDisputesClientProps {
+  initialDisputes: Dispute[]
+  initialMessagesByDispute: Record<string, DisputeMessage[]>
+}
+
+export default function AdminDisputesClient({
+  initialDisputes,
+  initialMessagesByDispute,
+}: AdminDisputesClientProps) {
   const [disputes, setDisputes] = useState<Dispute[]>(initialDisputes)
   const [loading, setLoading] = useState(false)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const toggleConversation = (id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   // Initial disputes come from the server component as props (source-of-truth
   // pattern). loadDisputes is kept as a refetch, used after resolving a dispute.
@@ -158,6 +181,42 @@ export default function AdminDisputesClient({ initialDisputes }: AdminDisputesCl
                         {dispute.description}
                       </p>
                     </div>
+
+                    {/* Dispute-room conversation — review the evidence before deciding. */}
+                    {(() => {
+                      const msgs = initialMessagesByDispute[dispute.id] || []
+                      const isOpen = expanded.has(dispute.id)
+                      return (
+                        <div className="mb-6">
+                          <button
+                            type="button"
+                            onClick={() => toggleConversation(dispute.id)}
+                            className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            Conversation ({msgs.length})
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                          </button>
+                          {isOpen && (
+                            <div className="mt-3 max-h-72 overflow-y-auto space-y-3 bg-slate-50 border rounded-xl p-3">
+                              {msgs.length === 0 ? (
+                                <p className="text-sm text-slate-400">No messages in this dispute.</p>
+                              ) : (
+                                msgs.map((m) => (
+                                  <div key={m.id} className="text-sm">
+                                    <div className="flex items-baseline gap-2">
+                                      <span className="font-semibold text-slate-700">{m.sender?.full_name || "Unknown"}</span>
+                                      <span className="text-xs text-slate-400">{new Date(m.created_at).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-slate-600 whitespace-pre-wrap">{m.message}</p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
 
                     {dispute.status !== 'resolved' ? (
                       <div className="flex flex-wrap gap-2">

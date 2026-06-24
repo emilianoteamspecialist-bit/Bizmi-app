@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import AdminDisputesClient from "./AdminDisputesClient"
 import { getFullUserData } from "@/app/actions/user"
 import { createClient } from "@/lib/supabase-server"
+import { createServiceRoleClient } from "@/lib/supabase-service"
 
 export default async function AdminDisputesPage() {
   // Admin guard — authenticate before fetching any dispute data.
@@ -27,5 +28,27 @@ export default async function AdminDisputesPage() {
     `)
     .order("created_at", { ascending: false })
 
-  return <AdminDisputesClient initialDisputes={disputes || []} />
+  // Pull the dispute-room conversation for the listed disputes so the admin can
+  // review the evidence before resolving. Read with the service role (the admin
+  // is already authorised above) since dispute_messages RLS is scoped to the
+  // participants. Grouped by dispute_id for the client.
+  const disputeIds = (disputes || []).map((d: any) => d.id)
+  const messagesByDispute: Record<string, any[]> = {}
+  if (disputeIds.length) {
+    const service = createServiceRoleClient()
+    const { data: messages } = await service
+      .from("dispute_messages")
+      .select(`
+        id, dispute_id, sender_id, message, created_at,
+        sender:profiles!dispute_messages_sender_id_fkey(full_name)
+      `)
+      .in("dispute_id", disputeIds)
+      .order("created_at", { ascending: true })
+
+    for (const m of messages || []) {
+      ;(messagesByDispute[m.dispute_id] ||= []).push(m)
+    }
+  }
+
+  return <AdminDisputesClient initialDisputes={disputes || []} initialMessagesByDispute={messagesByDispute} />
 }
