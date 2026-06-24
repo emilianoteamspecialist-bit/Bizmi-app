@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import PayoutModal from "@/components/payout-modal"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface FundedJob {
@@ -48,7 +47,6 @@ export default function FundedJobsPage() {
     totalAmount: 0,
   })
 
-  const [showPayoutModal, setShowPayoutModal] = useState(false)
   const [selectedJob, setSelectedJob] = useState<FundedJob | null>(null)
   
   const [showDisputeModal, setShowDisputeModal] = useState(false)
@@ -212,31 +210,6 @@ export default function FundedJobsPage() {
         return newSet
       })
     }
-  }
-
-  const handlePayout = (job: FundedJob) => {
-    setSelectedJob(job)
-    setShowPayoutModal(true)
-  }
-
-  const handlePayoutSuccess = async () => {
-    if (selectedJob) {
-      // Update the job to mark payout as successful
-      const { error } = await supabase
-        .from("Funded_jobs101")
-        .update({
-          payout_successful: true,
-        })
-        .eq("id", selectedJob.id)
-
-      if (error) {
-        console.error("❌ Error updating payout status:", error)
-      }
-    }
-
-    setShowPayoutModal(false)
-    setSelectedJob(null)
-    fetchFundedJobs() // Refresh the jobs list to update balance
   }
 
   const handleCreateDispute = async () => {
@@ -526,18 +499,14 @@ export default function FundedJobsPage() {
                             </Button>
                           )}
                           {job.status === "verified" && job.job_completed && !job.payout_successful && (
-                            <div className="flex gap-2">
-                              <Badge className="bg-green-100 text-green-800">
+                            <div className="flex flex-col gap-1">
+                              <Badge className="bg-green-100 text-green-800 w-fit">
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Verified
                               </Badge>
-                              <Button
-                                size="sm"
-                                onClick={() => handlePayout(job)}
-                                className="bg-primary hover:bg-primary-hover"
-                              >
-                                Payout
-                              </Button>
+                              <span className="text-[11px] text-slate-500">
+                                Withdraw from the job in your Proposals once work is approved.
+                              </span>
                             </div>
                           )}
                           {job.status === "verified" && job.payout_successful && (
@@ -596,23 +565,6 @@ export default function FundedJobsPage() {
           </CardContent>
         </Card>
 
-        {/* Payout Modal */}
-        {showPayoutModal && selectedJob && (
-          <PayoutModal
-            isOpen={showPayoutModal}
-            onClose={() => {
-              setShowPayoutModal(false)
-              setSelectedJob(null)
-            }}
-            jobData={{
-              id: selectedJob.id,
-              job_title: selectedJob.job_title,
-              amount: selectedJob.amount,
-              agency_name: selectedJob.agency_name,
-            }}
-            onSuccess={handlePayoutSuccess}
-          />
-        )}
         {/* Dispute Modal */}
         {showDisputeModal && selectedJob && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
