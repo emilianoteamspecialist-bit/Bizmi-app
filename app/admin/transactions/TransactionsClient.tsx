@@ -125,38 +125,30 @@ export default function TransactionsClient({
     }
   }
 
-  const handleJobDone = async (transactionId: string) => {
+  // Both actions go through an admin-only server endpoint that authorises the
+  // caller and records the action in the audit log. The client no longer writes
+  // to Funded_jobs101 directly.
+  const runTransactionAction = async (transactionId: string, action: "mark_done" | "process_payout") => {
     try {
-      const { error } = await supabase
-        .from("Funded_jobs101")
-        .update({
-          job_confirmed: true,
-          job_completed: true,
-        })
-        .eq("id", transactionId)
-
-      if (error) throw error
-
+      const res = await fetch(`/api/admin/transactions/${transactionId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || "Action failed")
+        return
+      }
       loadTransactions()
     } catch (error) {
-      console.error("Error marking job as done:", error)
+      console.error(`Error running ${action}:`, error)
+      alert("Something went wrong.")
     }
   }
 
-  const handlePayout = async (transactionId: string) => {
-    try {
-      const { error } = await supabase
-        .from("Funded_jobs101")
-        .update({ payout_successful: true })
-        .eq("id", transactionId)
-
-      if (error) throw error
-
-      loadTransactions()
-    } catch (error) {
-      console.error("Error processing payout:", error)
-    }
-  }
+  const handleJobDone = (transactionId: string) => runTransactionAction(transactionId, "mark_done")
+  const handlePayout = (transactionId: string) => runTransactionAction(transactionId, "process_payout")
 
   const getStatusColor = (status: string) => {
     switch (status) {
