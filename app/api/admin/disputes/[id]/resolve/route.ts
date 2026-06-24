@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { createServiceRoleClient } from '@/lib/supabase-service';
+import { logAdminAction } from '@/lib/admin-audit';
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -128,6 +129,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (updateError) {
       return NextResponse.json({ error: 'Failed to update dispute status' }, { status: 500 });
     }
+
+    await logAdminAction(supabase, {
+      adminId: admin_id,
+      action: 'dispute.resolve',
+      targetType: 'dispute',
+      targetId: disputeId,
+      details: {
+        resolution_outcome,
+        job_id: dispute.job_id,
+        total_balance: totalBalance,
+        freelancer_amount: freelancerAmount,
+        agency_amount: agencyAmount,
+      },
+    });
 
     // Optional: Trust score penalty logic can be added here later (Phase 2)
 

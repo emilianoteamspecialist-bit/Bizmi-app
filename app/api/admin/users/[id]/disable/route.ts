@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { createServiceRoleClient } from '@/lib/supabase-service';
+import { logAdminAction } from '@/lib/admin-audit';
 
 // Disable (suspend) or re-enable a user. Disabling bans the auth account so the
 // user can no longer sign in or refresh their session. Admin-only.
@@ -61,6 +62,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       console.error('Failed to update user ban state:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await logAdminAction(service, {
+      adminId: user.id,
+      action: disabled ? 'user.disable' : 'user.enable',
+      targetType: 'user',
+      targetId: targetUserId,
+    });
 
     return NextResponse.json({ success: true, disabled });
   } catch (error) {
