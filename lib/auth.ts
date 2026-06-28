@@ -6,8 +6,15 @@ import { createClient } from "@/lib/supabase-server"
 // request/render share a single round-trip instead of each re-authenticating.
 export const getCurrentUser = cache(async () => {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    return user
+  } catch {
+    // An invalid/expired refresh token (e.g. a stale cookie after a server
+    // restart or sign-out) surfaces here. Treat it as "no user" so callers
+    // redirect to login cleanly instead of throwing.
+    return null
+  }
 })

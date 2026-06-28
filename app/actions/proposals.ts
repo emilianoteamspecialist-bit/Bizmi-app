@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase-server"
 import { getCurrentUser } from "@/lib/auth"
+import { notifyAgencyNewProposal, notifyFreelancerProposalDecision } from "@/lib/notifications"
 
 export type ProposalInput = {
   proposal_text: string
@@ -50,6 +51,10 @@ export async function respondToProposal(
     .eq("id", proposalId)
 
   if (error) return { success: false, error: error.message }
+
+  // Notify the freelancer of the decision (fail-soft — never blocks the action).
+  await notifyFreelancerProposalDecision(proposalId, action)
+
   return { success: true }
 }
 
@@ -84,6 +89,11 @@ export async function submitProposal(
   const result = (data ?? {}) as { ok?: boolean; code?: string; balance?: number }
 
   if (result.ok) {
+    // Only email the agency on a genuinely new proposal, not a duplicate submit.
+    if (result.code !== "already_submitted") {
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle()
+      await notifyAgencyNewProposal(jobId, profile?.full_name)
+    }
     return { success: true, alreadySubmitted: result.code === "already_submitted" }
   }
 

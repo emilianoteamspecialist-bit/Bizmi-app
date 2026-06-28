@@ -3,6 +3,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 import { paystack } from "@/lib/paystack"
 import { createServiceRoleClient } from "@/lib/supabase-service"
+import { notifyFreelancerPayout } from "@/lib/notifications"
 
 const PLATFORM_FEE = 0.15 // 15% platform fee
 
@@ -122,6 +123,9 @@ export async function POST(req: NextRequest) {
           paid_at: new Date().toISOString(),
         })
         .eq("id", jobId)
+
+      // Confirmation email (fail-soft — never affects the payout result).
+      await notifyFreelancerPayout(user.id, jobId, payoutAmount)
 
       return NextResponse.json({ success: true, payout_amount: payoutAmount })
     } catch (transferError) {

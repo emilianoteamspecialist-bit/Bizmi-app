@@ -6,12 +6,31 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
-  // Refresh session if expired - required for Server Components
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Refresh session if expired - required for Server Components.
+  // A stale/invalid refresh token (e.g. after a server restart or sign-out
+  // with a leftover cookie) throws here; treat it as "no session".
+  let session = null
+  try {
+    const {
+      data: { session: s },
+    } = await supabase.auth.getSession()
+    session = s
+  } catch {
+    session = null
+  }
 
   const pathname = req.nextUrl.pathname
+
+  // Drop any stale Supabase auth cookies so an invalid refresh token isn't
+  // replayed (and re-erroring) on every subsequent request.
+  const clearStaleAuthCookies = (response: NextResponse) => {
+    for (const c of req.cookies.getAll()) {
+      if (c.name.startsWith("sb-") && c.name.includes("-auth-token")) {
+        response.cookies.set(c.name, "", { maxAge: 0, path: "/" })
+      }
+    }
+    return response
+  }
 
   // Protected routes that require authentication
   const isProtectedRoute = 
@@ -27,9 +46,9 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith('/reset-password')
 
   if (!session && isProtectedRoute) {
-    // Redirect unauthenticated users to login
+    // Redirect unauthenticated users to login, clearing any stale auth cookie.
     const redirectUrl = new URL('/login', req.url)
-    return NextResponse.redirect(redirectUrl)
+    return clearStaleAuthCookies(NextResponse.redirect(redirectUrl))
   }
 
   // Admin authorisation at the edge. Previously /admin/* was gated by session

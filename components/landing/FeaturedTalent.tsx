@@ -8,13 +8,15 @@ interface Pro {
   rating: string
   rate: string
   skills: string[]
-  swatch: string
+  img: string
 }
 
+const IMG = "?auto=compress&cs=tinysrgb&w=900"
+
 const pros: Pro[] = [
-  { name: "Adaeze N.", role: "UI/UX Designer", city: "Lagos", rating: "4.9", rate: "₦18k/hr", skills: ["Figma", "Webflow", "Brand"], swatch: "bg-primary/30" },
-  { name: "Tunde A.", role: "React Engineer", city: "Abuja", rating: "5.0", rate: "₦24k/hr", skills: ["React", "Next.js", "TypeScript"], swatch: "bg-jade/40" },
-  { name: "Kemi O.", role: "Brand Strategist", city: "Ibadan", rating: "4.8", rate: "₦15k/hr", skills: ["Copy", "Strategy", "Identity"], swatch: "bg-gold/60" },
+  { name: "Adaeze N.", role: "UI/UX Designer", city: "Lagos", rating: "4.9", rate: "₦18k/hr", skills: ["Figma", "Webflow", "Brand"], img: `https://images.pexels.com/photos/9851773/pexels-photo-9851773.jpeg${IMG}` },
+  { name: "Tunde A.", role: "React Engineer", city: "Abuja", rating: "5.0", rate: "₦24k/hr", skills: ["React", "Next.js", "TypeScript"], img: `https://images.pexels.com/photos/9154594/pexels-photo-9154594.jpeg${IMG}` },
+  { name: "Kemi O.", role: "Brand Strategist", city: "Ibadan", rating: "4.8", rate: "₦15k/hr", skills: ["Copy", "Strategy", "Identity"], img: `https://images.pexels.com/photos/33672079/pexels-photo-33672079.jpeg${IMG}` },
 ]
 
 export function FeaturedTalent() {
@@ -41,7 +43,12 @@ export function FeaturedTalent() {
               key={p.name}
               className="bg-white rounded-3xl p-6 border border-aubergine/10 hover:border-aubergine/30 hover:shadow-xl hover:shadow-aubergine/5 transition-all"
             >
-              <div className={`w-full aspect-[4/3] rounded-2xl ${p.swatch} mb-5`} />
+              <img
+                src={p.img}
+                alt={`${p.name} — ${p.role}`}
+                loading="lazy"
+                className="w-full aspect-[4/3] rounded-2xl object-cover object-top mb-5 bg-cream"
+              />
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
                   <div className="font-heading font-black text-xl text-ink tracking-tight">{p.name}</div>
