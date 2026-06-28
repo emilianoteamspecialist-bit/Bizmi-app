@@ -367,7 +367,7 @@ export default function MarketplaceClient({
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
-        <p className="eyebrow">Loading marketplace…</p>
+        <p className="text-sm font-medium text-muted-foreground">Loading marketplace…</p>
       </div>
     )
   }
@@ -388,9 +388,16 @@ export default function MarketplaceClient({
 
   return (
     <div className="min-h-screen bg-surface pb-20">
-      {/* Top search section */}
-      <section className="bg-card border-b border-border">
-        <div className="editorial-shell py-6 space-y-4 animate-fade-up">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Header */}
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Marketplace</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Find projects</h1>
+          <p className="text-sm text-muted-foreground">Browse open briefs from agencies and file your proposal.</p>
+        </header>
+
+        {/* Search */}
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
           {/* Segmented search bar */}
           <div className="grid grid-cols-1 md:grid-cols-[1fr_220px_200px_180px_auto] gap-2">
             {/* Keyword */}
@@ -465,13 +472,12 @@ export default function MarketplaceClient({
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Two-column layout */}
-      <main className="editorial-shell py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start">
+        {/* Two-column layout */}
+        <main>
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-8 items-start">
           {/* LEFT: Filter sidebar */}
-          <aside className="space-y-5 lg:sticky lg:top-8 animate-fade-up delay-100">
+          <aside className="space-y-5 lg:sticky lg:top-20">
             <Card className="p-5 space-y-5 bg-card border-border shadow-none rounded-xl">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground">Filter</p>
@@ -508,7 +514,7 @@ export default function MarketplaceClient({
               />
 
               <div className="space-y-2">
-                <p className="eyebrow">Last updated</p>
+                <p className="text-xs font-medium text-muted-foreground">Last updated</p>
                 <Select value={lastUpdated} onValueChange={setLastUpdated}>
                   <SelectTrigger className="h-10 bg-card border-border rounded-md shadow-none">
                     <SelectValue placeholder="Any time" />
@@ -524,12 +530,12 @@ export default function MarketplaceClient({
             </Card>
 
             {/* Smart Match CTA */}
-            <Card className="p-5 bg-paper border-border shadow-none rounded-xl space-y-3">
+            <Card className="p-5 bg-surface-2 border-border shadow-none rounded-xl space-y-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
                 <p className="text-sm font-semibold text-foreground">Use Smart Match</p>
               </div>
-              <p className="caption">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Let Bizimi recommend projects based on your skills and past experience.
               </p>
               <Button
@@ -550,7 +556,7 @@ export default function MarketplaceClient({
           </aside>
 
           {/* RIGHT: Job grid */}
-          <section className="space-y-5 animate-fade-up delay-200">
+          <section className="space-y-5">
             {/* Result header */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-foreground">
@@ -563,7 +569,7 @@ export default function MarketplaceClient({
                   className={cn(
                     "h-7 w-7 flex items-center justify-center rounded-[5px] transition-colors",
                     viewMode === "grid"
-                      ? "bg-paper text-foreground"
+                      ? "bg-surface-2 text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   aria-label="Grid view"
@@ -575,7 +581,7 @@ export default function MarketplaceClient({
                   className={cn(
                     "h-7 w-7 flex items-center justify-center rounded-[5px] transition-colors",
                     viewMode === "list"
-                      ? "bg-paper text-foreground"
+                      ? "bg-surface-2 text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                   aria-label="List view"
@@ -626,18 +632,14 @@ export default function MarketplaceClient({
                   />
                 ))
               ) : jobs.length === 0 ? (
-                <Card className="col-span-full py-20 text-center border-dashed border-2 bg-card">
-                  <div className="h-14 w-14 bg-surface rounded-full flex items-center justify-center mx-auto mb-5">
-                    <Briefcase className="h-7 w-7 text-muted-foreground/40" />
+                <div className="col-span-full rounded-xl border border-border bg-card py-16 px-6 text-center">
+                  <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Briefcase className="h-5 w-5" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground">No projects match</h3>
-                  <p className="body-muted max-w-xs mx-auto mt-2">
-                    Reset your filters, or check back tomorrow.
-                  </p>
-                  <Button variant="outline" className="mt-6 px-7" onClick={resetFilters}>
-                    Reset filters
-                  </Button>
-                </Card>
+                  <h3 className="mt-4 text-sm font-semibold text-foreground">No projects match</h3>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">Reset your filters, or check back tomorrow.</p>
+                  <Button variant="outline" className="mt-5" onClick={resetFilters}>Reset filters</Button>
+                </div>
               ) : (
                 jobs.map((job) => (
                   <MarketplaceJobCard
@@ -663,8 +665,9 @@ export default function MarketplaceClient({
               </div>
             )}
           </section>
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* Filter Modal */}
       <Modal

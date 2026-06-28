@@ -65,7 +65,7 @@ export default function AgencyNavbar({ onPostJobClick }: AgencyNavbarProps) {
       const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single()
       if (profileData) setProfile(profileData)
 
-      const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", user.id).single()
+      const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", user.id).maybeSingle()
       if (imageData) {
         const url = resolveAvatar(imageData)
         setImagePreview(url)

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type React from "react"
 import { Button } from "@/components/ui/button"
+import { Reveal } from "@/components/reveal"
 import {
   MapPin,
   Search,
@@ -297,347 +298,295 @@ export default function FreelancerDashboard({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-paper relative">
-        <div className="grain absolute inset-0 pointer-events-none" aria-hidden />
-        <div className="editorial-shell relative py-10 lg:py-14 space-y-10">
-          <div className="hairline-b pb-3 flex justify-between">
-            <div className="h-3 w-48 bg-foreground/5 animate-pulse" />
-            <div className="h-3 w-40 bg-foreground/5 animate-pulse" />
+      <div className="min-h-screen bg-surface pb-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-pulse">
+          <div className="space-y-2">
+            <div className="h-3 w-24 bg-foreground/5 rounded" />
+            <div className="h-7 w-64 bg-foreground/5 rounded" />
+            <div className="h-3 w-80 bg-foreground/5 rounded" />
           </div>
-          <div className="space-y-6">
-            <div className="h-3 w-32 bg-foreground/5 animate-pulse" />
-            <div className="h-16 w-2/3 bg-foreground/5 animate-pulse" />
-            <div className="h-4 w-1/2 bg-foreground/5 animate-pulse" />
-          </div>
-          <div className="hairline-strong" />
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="py-7 px-6 space-y-3">
-                <div className="h-3 w-12 bg-foreground/5 animate-pulse" />
-                <div className="h-12 w-16 bg-foreground/5 animate-pulse" />
-              </div>
+              <div key={i} className="h-24 bg-card border border-border rounded-xl" />
             ))}
           </div>
-          <div className="hairline-strong" />
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-card border border-border rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
     )
   }
 
-  const today = new Date().toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-
   return (
-    <div className="min-h-screen bg-paper relative pb-20 selection:bg-primary/15 selection:text-primary">
-      <div className="grain absolute inset-0 pointer-events-none" aria-hidden />
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-      <main className="editorial-shell relative py-10 lg:py-14 space-y-14 lg:space-y-20">
-
-        {/* ─────────────── MASTHEAD ─────────────── */}
-        <header className="space-y-9 animate-fade-up">
-          <div className="flex flex-wrap items-center justify-between gap-3 hairline-b pb-3">
-            <p className="eyebrow">Bizimi · The Wire · {firstName}&rsquo;s desk</p>
-            <p className="marginalia">{greeting} · {today}</p>
+        {/* Toolbar header */}
+        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{greeting}, {firstName}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {openBriefs > 0
+                ? `${openBriefs} ${openBriefs === 1 ? "brief" : "briefs"} match your stack`
+                : "Let's find your next brief"}
+            </h1>
+            <p className="text-sm text-muted-foreground">Find projects, file proposals, and track your standing.</p>
           </div>
-
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-end">
-            <div className="lg:col-span-8 space-y-5 animate-fade-up delay-100">
-              <p className="eyebrow-primary">Today&rsquo;s brief</p>
-              <h1 className="display-2xl">
-                {openBriefs > 0 ? (
-                  <>
-                    <span className="italic text-primary numeric">{String(openBriefs).padStart(2, "0")}</span>{" "}
-                    <span className="italic">{openBriefs === 1 ? "brief" : "briefs"}</span> match your stack, {firstName}.
-                  </>
-                ) : (
-                  <>Welcome back, <span className="italic">{firstName}</span>. Let&rsquo;s find your next brief.</>
-                )}
-              </h1>
-              <p className="lede">
-                Proposals filed before noon get read first. Compose yours while the desk is warm.
-              </p>
-            </div>
-
-            <div className="lg:col-span-4 space-y-3 lg:text-right animate-fade-up delay-200">
-              <Button
-                onClick={() => router.push("/freelancer/marketplace")}
-                className="h-12 px-7 rounded-none bg-ink text-white font-medium hover:bg-ink/90 group"
-              >
-                {openBriefs > 0 ? "Browse the marketplace" : "Find projects"}
-                <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </Button>
-              <p className="marginalia">Filed from Lagos · for {profile?.full_name || firstName}</p>
-            </div>
-          </div>
+          <Button
+            onClick={() => router.push("/freelancer/marketplace")}
+            className="h-10 px-4 rounded-lg gap-2 shrink-0 w-full sm:w-auto justify-center"
+          >
+            {openBriefs > 0 ? "Browse marketplace" : "Find projects"}
+            <ArrowUpRight className="h-4 w-4" />
+          </Button>
         </header>
 
-        {/* ─────────────── LEDGER STRIP (honest stats) ─────────────── */}
-        <section className="animate-fade-up delay-300">
-          <div className="hairline-strong" />
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-border">
-            <button onClick={() => router.push("/freelancer/profile")} className="text-left py-7 px-2 md:px-6 first:md:pl-0 group">
-              <p className="eyebrow mb-2">Profile</p>
-              <p className="font-display text-5xl md:text-6xl leading-none tracking-tight numeric text-ink">
-                {profileCompletion}<span className="text-2xl text-muted-foreground">%</span>
-              </p>
-              <p className="marginalia mt-3">
-                {profileCompletion === 100 ? "hire-ready" : `${missing.length} field${missing.length !== 1 ? "s" : ""} to go`}
-              </p>
-            </button>
+        {/* Metric tiles */}
+        <Reveal>
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <button
+            onClick={() => router.push("/freelancer/profile")}
+            className="text-left rounded-xl border border-border bg-card p-4 hover:border-foreground/20 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">Profile</p>
+              <BadgeCheck className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">
+              {profileCompletion}
+              <span className="text-lg text-muted-foreground">%</span>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {profileCompletion === 100 ? "Hire-ready" : `${missing.length} field${missing.length !== 1 ? "s" : ""} to go`}
+            </p>
+          </button>
 
-            <button onClick={() => router.push("/freelancer/bizpal")} className="text-left py-7 px-2 md:px-6 group">
-              <p className="eyebrow mb-2">Credits</p>
-              <p className="font-display text-5xl md:text-6xl leading-none tracking-tight numeric text-ink">
-                {String(creditBalance).padStart(2, "0")}
-              </p>
-              <p className="marginalia mt-3 text-primary inline-flex items-center gap-1">for bidding · top up <ArrowUpRight className="h-3 w-3" /></p>
-            </button>
+          <button
+            onClick={() => router.push("/freelancer/bizpal")}
+            className="text-left rounded-xl border border-border bg-card p-4 hover:border-foreground/20 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">Credits</p>
+              <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+            <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{creditBalance}</p>
+            <p className="mt-1 inline-flex items-center gap-1 text-xs text-primary">Top up <ArrowUpRight className="h-3 w-3" /></p>
+          </button>
 
-            <div className="py-7 px-2 md:px-6">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="eyebrow">Escrow</p>
-                <button
-                  onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={isBalanceVisible ? "Hide balance" : "Show balance"}
-                >
-                  {isBalanceVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </button>
-              </div>
-              <p className="font-display text-3xl md:text-4xl leading-none tracking-tight numeric text-ink">
-                {isBalanceVisible ? `₦${totalBalance.toLocaleString()}` : "₦••••"}
-              </p>
-              <button onClick={() => router.push("/freelancer/bizpal")} className="marginalia mt-3 text-primary inline-flex items-center gap-1">
-                withdraw <ArrowUpRight className="h-3 w-3" />
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">Escrow</p>
+              <button
+                onClick={() => setIsBalanceVisible(!isBalanceVisible)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={isBalanceVisible ? "Hide balance" : "Show balance"}
+              >
+                {isBalanceVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
             </div>
-
-            <div className="py-7 px-2 md:px-6 last:md:pr-0">
-              <p className="eyebrow-primary mb-2">Open briefs</p>
-              <p className="font-display text-5xl md:text-6xl leading-none tracking-tight numeric text-ink">
-                {String(openBriefs).padStart(2, "0")}
-              </p>
-              <p className="mt-3 inline-flex items-center text-[10px] uppercase tracking-[0.18em] text-primary font-medium">
-                <span className="w-3 h-px bg-primary mr-2" /> matched to you
-              </p>
-            </div>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+              {isBalanceVisible ? `₦${totalBalance.toLocaleString()}` : "₦••••"}
+            </p>
+            <button
+              onClick={() => router.push("/freelancer/bizpal")}
+              className="mt-1 inline-flex items-center gap-1 text-xs text-primary"
+            >
+              Withdraw <ArrowUpRight className="h-3 w-3" />
+            </button>
           </div>
-          <div className="hairline-strong" />
+
+          <div className="rounded-xl border border-primary/30 bg-card p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-muted-foreground">Open briefs</p>
+              <Briefcase className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{openBriefs}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Matched to you</p>
+          </div>
         </section>
 
-        {/* ─────────────── SECTION 01 · MATCHED BRIEFS ─────────────── */}
-        <section className="space-y-8 animate-fade-up delay-400">
-          <div className="flex items-baseline justify-between gap-4">
-            <div className="space-y-1">
-              <p className="eyebrow">Section · 01</p>
-              <h2 className="display-md italic">Matched to your stack.</h2>
-            </div>
-            <div className="flex items-center gap-5">
-              <button onClick={() => setShowFilterModal(true)} className="link-quiet hover:text-ink">
-                Refine <Search className="h-3.5 w-3.5" />
-              </button>
-              <button onClick={() => router.push("/freelancer/marketplace")} className="link-arrow">
+        </Reveal>
+
+        {/* Matched briefs */}
+        <Reveal delay={0.08}>
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              Matched to your stack <span className="font-normal text-muted-foreground">· {jobs.length}</span>
+            </h2>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowFilterModal(true)}>
+                <Search className="h-3.5 w-3.5" /> Refine
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.push("/freelancer/marketplace")}>
                 View all <ArrowUpRight className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </div>
           </div>
 
           {jobsLoading && jobs.length === 0 ? (
-            <div className="space-y-px">
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="py-8 hairline space-y-3">
-                  <div className="h-6 w-2/3 bg-foreground/5 animate-pulse" />
-                  <div className="h-3 w-1/2 bg-foreground/5 animate-pulse" />
+                <div key={i} className="p-5 space-y-2 animate-pulse">
+                  <div className="h-4 w-2/3 bg-foreground/5 rounded" />
+                  <div className="h-3 w-1/2 bg-foreground/5 rounded" />
                 </div>
               ))}
             </div>
           ) : jobs.length === 0 ? (
-            <div className="border border-border surface-paper px-8 py-20 lg:py-24 text-center space-y-5 relative overflow-hidden">
-              <div className="absolute inset-0 grain pointer-events-none opacity-50" aria-hidden />
-              <p className="eyebrow-primary relative">An empty desk</p>
-              <h3 className="display-lg italic relative">No briefs match yet.</h3>
-              <p className="lede mx-auto relative">
-                Add a few more skills to your profile — that&rsquo;s how we match you to the right work.
-              </p>
-              <div className="pt-2 relative">
-                <Button
-                  onClick={() => router.push("/freelancer/profile")}
-                  className="h-12 px-7 rounded-none bg-ink text-white font-medium hover:bg-ink/90 group"
-                >
-                  Improve your profile
-                  <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </Button>
+            <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
+              <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Briefcase className="h-5 w-5" />
               </div>
+              <h3 className="mt-4 text-sm font-semibold text-foreground">No briefs match yet</h3>
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                Add a few more skills to your profile so we can match you to the right work.
+              </p>
+              <Button className="mt-5 gap-2" onClick={() => router.push("/freelancer/profile")}>
+                Improve your profile <ArrowUpRight className="h-4 w-4" />
+              </Button>
             </div>
           ) : (
-            <ol className="hairline-b">
-              {jobs.slice(0, 6).map((job, idx) => {
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {jobs.slice(0, 6).map((job) => {
                 const match = calcMatch(job.skills)
                 const comp = competitionLevel(job.proposals ?? 0)
                 const fresh = isFresh(job.created_at)
                 return (
-                  <li
-                    key={job.id}
-                    className="group relative grid grid-cols-12 gap-4 md:gap-8 py-8 hairline transition-colors duration-300 hover:bg-primary-soft/40"
-                  >
-                    <span
-                      className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300"
-                      aria-hidden
-                    />
-
-                    {/* numeral */}
-                    <div className="col-span-2 md:col-span-1 pl-2 md:pl-3">
-                      <p className="font-display text-3xl md:text-4xl leading-none text-muted-foreground/40 numeric group-hover:text-primary/70 transition-colors">
-                        {String(idx + 1).padStart(2, "0")}
-                      </p>
-                    </div>
-
-                    {/* main */}
-                    <div className="col-span-10 md:col-span-7 space-y-3">
-                      <div className="flex flex-wrap items-baseline gap-3">
-                        <h3 className="display-sm">{job.title}</h3>
-                        {fresh && (
-                          <span className="text-[10px] uppercase tracking-[0.22em] font-medium text-primary">· fresh</span>
+                  <div key={job.id} className="p-4 sm:p-5 transition-colors hover:bg-surface/60">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h3 className="text-sm font-semibold text-foreground">{job.title}</h3>
+                          {fresh && <span className="text-[11px] font-medium text-primary">Fresh</span>}
+                          {job.has_applied && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success">
+                              <CheckCircle className="h-3 w-3" /> Applied
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Avatar className="h-4 w-4 rounded-sm">
+                            <AvatarImage src={job.agencyInfo?.logo} className="object-cover" />
+                            <AvatarFallback className="rounded-sm bg-foreground text-white text-[8px] font-semibold">
+                              {job.agencyInfo?.name?.[0]?.toUpperCase() ?? "A"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">{job.agencyInfo?.name}</span>
+                        </div>
+                        {job.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-1 max-w-2xl">{job.description}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground tabular-nums">{job.budget}</span>
+                          <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location || "Remote"}</span>
+                          {match !== null && <span className="text-primary">{match}% match</span>}
+                          <span className={comp.tone}>
+                            {job.proposals ?? 0} {(job.proposals ?? 0) === 1 ? "bid" : "bids"} · {comp.label}
+                          </span>
+                        </div>
+                        {!!job.skills?.length && (
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {job.skills.slice(0, 6).map((s: string) => (
+                              <span key={s} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">{s}</span>
+                            ))}
+                            {job.skills.length > 6 && (
+                              <span className="px-2 py-0.5 text-[11px] text-muted-foreground">+{job.skills.length - 6}</span>
+                            )}
+                          </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Avatar className="h-5 w-5 rounded-sm border border-border">
-                          <AvatarImage src={job.agencyInfo?.logo} className="object-cover" />
-                          <AvatarFallback className="rounded-sm bg-ink text-white text-[9px] font-semibold">
-                            {job.agencyInfo?.name?.[0]?.toUpperCase() ?? "A"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="truncate">{job.agencyInfo?.name}</span>
-                      </div>
-                      {job.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 max-w-[60ch] leading-relaxed">
-                          {job.description}
-                        </p>
-                      )}
-                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] uppercase tracking-[0.18em] font-medium text-muted-foreground numeric">
-                        <span>{job.budget}</span>
-                        <span className="text-border">/</span>
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location || "Remote"}</span>
-                        {match !== null && (
-                          <>
-                            <span className="text-border">/</span>
-                            <span className="text-primary">{match}% skill match</span>
-                          </>
-                        )}
-                        <span className="text-border">/</span>
-                        <span className={comp.tone}>{job.proposals ?? 0} {(job.proposals ?? 0) === 1 ? "bid" : "bids"} · {comp.label}</span>
-                      </p>
-                      {!!job.skills?.length && (
-                        <p className="text-xs italic text-muted-foreground/80 font-display">
-                          {job.skills.slice(0, 6).join("  ·  ")}
-                          {job.skills.length > 6 && `  ·  +${job.skills.length - 6}`}
-                        </p>
-                      )}
-                    </div>
 
-                    {/* actions */}
-                    <div className="col-span-12 md:col-span-4 flex flex-row md:flex-col flex-wrap md:flex-nowrap md:items-end gap-x-5 gap-y-2 md:gap-y-2.5 pt-2 md:pt-1">
-                      <button onClick={() => handleJobAction(job, "view")} className="link-quiet hover:text-ink">
-                        Agency <ArrowUpRight className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => handleJobAction(job, "bookmark")} className="link-quiet hover:text-ink">
-                        {job.isBookmarked ? "Saved" : "Save"}
-                        <Bookmark className={`h-3.5 w-3.5 ${job.isBookmarked ? "fill-primary text-primary" : ""}`} />
-                      </button>
-                      <button
-                        onClick={() => handleJobAction(job, "apply")}
-                        disabled={job.has_applied}
-                        className="link-arrow text-primary disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {job.has_applied ? (
-                          <>Applied <CheckCircle className="h-3.5 w-3.5" /></>
-                        ) : (
-                          <>Quick apply <ArrowUpRight className="h-3.5 w-3.5" /></>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleJobAction(job, "view")}>Agency</Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleJobAction(job, "bookmark")}
+                          aria-label={job.isBookmarked ? "Saved" : "Save"}
+                        >
+                          <Bookmark className={`h-4 w-4 ${job.isBookmarked ? "fill-primary text-primary" : ""}`} />
+                        </Button>
+                        <Button size="sm" onClick={() => handleJobAction(job, "apply")} disabled={job.has_applied}>
+                          {job.has_applied ? "Applied" : "Quick apply"}
+                        </Button>
+                      </div>
                     </div>
-                  </li>
+                  </div>
                 )
               })}
-            </ol>
+            </div>
           )}
         </section>
 
-        {/* ─────────────── SECTION 02 · YOUR STANDING ─────────────── */}
-        <section className="space-y-8 animate-fade-up delay-500">
-          <div className="hairline-strong" />
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 pt-2">
-            <div className="lg:col-span-5 space-y-4">
-              <p className="eyebrow">Section · 02</p>
-              <h2 className="display-md italic">Your standing.</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[42ch]">
+        </Reveal>
+
+        {/* Your standing */}
+        <Reveal delay={0.16}>
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Your standing</h2>
+          <div className="grid lg:grid-cols-3 gap-4">
+            <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {profileCompletion === 100
                   ? "Your profile is complete — agencies see the full picture."
                   : `A complete profile gets seen first. You're ${profileCompletion}% there.`}
               </p>
-              <div className="pt-1">
-                {isNINVerified ? (
-                  <p className="flex items-center gap-2 text-sm">
-                    <BadgeCheck className="h-4 w-4 text-success" strokeWidth={2.5} />
-                    <span className="text-foreground font-medium">Identity verified</span>
-                    <span className="marginalia">· NIN</span>
-                  </p>
-                ) : (
-                  <button onClick={() => router.push("/freelancer/identity")} className="link-arrow text-primary">
-                    Verify your identity to bid <ArrowUpRight className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+              {isNINVerified ? (
+                <p className="flex items-center gap-2 text-sm">
+                  <BadgeCheck className="h-4 w-4 text-success" strokeWidth={2.5} />
+                  <span className="text-foreground font-medium">Identity verified</span>
+                  <span className="text-xs text-muted-foreground">· NIN</span>
+                </p>
+              ) : (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => router.push("/freelancer/identity")}>
+                  Verify your identity <ArrowUpRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
               {Array.isArray(profile?.skills) && profile.skills.length > 0 && (
-                <div className="pt-4 flex flex-wrap items-center gap-2">
-                  <span className="eyebrow mr-1">Your edge</span>
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
                   {profile.skills.slice(0, 6).map((s: string) => (
-                    <span key={s} className="px-2.5 py-1 bg-surface-2 text-foreground text-[11px] font-medium border border-border">
-                      {s}
-                    </span>
+                    <span key={s} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">{s}</span>
                   ))}
                   {profile.hourly_rate && (
-                    <span className="marginalia ml-1 numeric">₦{Number(profile.hourly_rate).toLocaleString()}/hr</span>
+                    <span className="ml-1 text-xs text-muted-foreground tabular-nums">₦{Number(profile.hourly_rate).toLocaleString()}/hr</span>
                   )}
                 </div>
               )}
             </div>
 
-            <div className="lg:col-span-7">
+            <div className="lg:col-span-2">
               {missing.length > 0 ? (
-                <ol className="hairline-b">
-                  {missing.map((field, i) => (
-                    <li key={field.key}>
-                      <button
-                        onClick={() => router.push("/freelancer/profile")}
-                        className="w-full flex items-center justify-between gap-4 py-4 hairline group text-left transition-colors hover:bg-primary-soft/40"
-                      >
-                        <span className="flex items-center gap-3 min-w-0">
-                          <span className="font-display text-xl text-muted-foreground/40 numeric">{String(i + 1).padStart(2, "0")}</span>
-                          <span className="text-sm text-foreground">Add {field.label}</span>
-                        </span>
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-                      </button>
-                    </li>
+                <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+                  {missing.map((field) => (
+                    <button
+                      key={field.key}
+                      onClick={() => router.push("/freelancer/profile")}
+                      className="w-full flex items-center justify-between gap-4 p-4 text-left transition-colors hover:bg-surface/60 group"
+                    >
+                      <span className="text-sm text-foreground">Add {field.label}</span>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                    </button>
                   ))}
-                </ol>
+                </div>
               ) : (
-                <div className="h-full border border-border surface-paper px-8 py-12 flex flex-col items-center justify-center text-center space-y-3">
-                  <Briefcase className="h-6 w-6 text-primary" />
-                  <p className="eyebrow-primary">All set</p>
-                  <h3 className="display-sm italic">Profile complete.</h3>
+                <div className="rounded-xl border border-border bg-card py-12 px-6 text-center h-full flex flex-col items-center justify-center">
+                  <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-sm font-semibold text-foreground">Profile complete</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Agencies see the full picture.</p>
                 </div>
               )}
             </div>
           </div>
-          <div className="hairline-strong" />
         </section>
-
-        {/* colophon */}
-        <footer className="pt-6 hairline flex flex-wrap items-center justify-between gap-2">
-          <p className="marginalia">Bizimi Trade Sheet · Freelancer Edition</p>
-          <p className="marginalia">Set in Instrument Serif &amp; Inter · Filed in Lagos</p>
-        </footer>
-      </main>
+        </Reveal>
+      </div>
 
       {/* Filter Modal */}
       <Modal

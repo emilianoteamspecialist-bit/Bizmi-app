@@ -16,7 +16,6 @@ import {
   ShieldCheck,
   MessageCircle,
   Loader2,
-  Users,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
@@ -281,68 +280,69 @@ export default function FindFreelancersClient({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-primaryxl font-bold text-slate-900 dark:text-white">Find Freelancers</h1>
-          <p className="text-muted-foreground mt-1">Search and connect with talented freelancers</p>
-        </div>
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Toolbar header */}
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Marketplace</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Find freelancers</h1>
+          <p className="text-sm text-muted-foreground">Search and connect with vetted talent across Nigeria.</p>
+        </header>
 
         {/* Search & Filter Bar */}
-        <Card className="mb-6">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, skills, or keywords..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleSearch} className="bg-primary hover:bg-primary-hover">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-                <Button variant="outline" className="bg-transparent" onClick={() => setShowFilterModal(true)}>
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                </Button>
-              </div>
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, skills, or keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Results Count */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-muted-foreground">
-            <Users className="inline h-4 w-4 mr-1" />
-            {freelancers.length} freelancer{freelancers.length !== 1 ? "s" : ""} found
-          </p>
-          {(filters.category || filters.trustLevel || filters.keywords) && (
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="text-primary">
-              Clear filters
-            </Button>
-          )}
+            <div className="flex gap-2">
+              <Button onClick={handleSearch} className="h-10 px-4 rounded-lg gap-2">
+                <Search className="h-4 w-4" />
+                Search
+              </Button>
+              <Button variant="outline" className="h-10 px-4 rounded-lg gap-2" onClick={() => setShowFilterModal(true)}>
+                <Filter className="h-4 w-4" />
+                Filters
+              </Button>
+            </div>
+          </div>
         </div>
+
+        {/* Results */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">
+              Freelancers <span className="font-normal text-muted-foreground">· {freelancers.length}</span>
+            </h2>
+            {(filters.category || filters.trustLevel || filters.keywords) && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-primary">
+                Clear filters
+              </Button>
+            )}
+          </div>
 
         {/* Freelancer Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="h-72 bg-slate-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+              <div key={i} className="h-64 rounded-xl border border-border bg-card animate-pulse" />
             ))}
           </div>
         ) : freelancers.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Search className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Freelancers Found</h3>
-            <p className="text-muted-foreground">Try adjusting your search or filters</p>
-          </Card>
+          <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
+            <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <Search className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-foreground">No freelancers found</h3>
+            <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">Try adjusting your search or filters.</p>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -356,9 +356,9 @@ export default function FindFreelancersClient({
                 return (
                   <Card
                     key={freelancer.id}
-                    className="group overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border border-slate-200 dark:border-gray-700"
+                    className="group overflow-hidden rounded-xl border border-border bg-card shadow-none hover:border-foreground/20 transition-colors"
                   >
-                    <CardContent className="p-4 sm:p-6">
+                    <CardContent className="p-5">
                       {/* Header: Avatar + Name + Badge */}
                       <div className="flex items-start gap-4 mb-4">
                         <Avatar className="h-14 w-14 flex-shrink-0">
@@ -369,7 +369,7 @@ export default function FindFreelancersClient({
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">
+                            <h3 className="font-semibold text-foreground truncate">
                               {freelancer.full_name}
                             </h3>
                             <Badge className={`text-xs ${trustBadge.color} border-0`}>
@@ -379,7 +379,7 @@ export default function FindFreelancersClient({
                               {trustBadge.label}
                             </Badge>
                           </div>
-                          <p className="text-sm text-primary dark:text-orange-400 font-medium mt-0.5">
+                          <p className="text-sm text-primary font-medium mt-0.5">
                             {mainSkill}
                           </p>
                           {freelancer.location && (
@@ -393,7 +393,7 @@ export default function FindFreelancersClient({
 
                       {/* Bio */}
                       {freelancer.bio && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                           {freelancer.bio}
                         </p>
                       )}
@@ -401,28 +401,28 @@ export default function FindFreelancersClient({
                       {/* Skills Preview */}
                       <div className="flex flex-wrap gap-1.5 mb-4">
                         {skillsArray.slice(0, 4).map((skill, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
+                          <span key={idx} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">
                             {skill}
-                          </Badge>
+                          </span>
                         ))}
                         {skillsArray.length > 4 && (
-                          <Badge variant="secondary" className="text-xs">
-                            +{skillsArray.length - 4} more
-                          </Badge>
+                          <span className="px-2 py-0.5 text-[11px] text-muted-foreground">
+                            +{skillsArray.length - 4}
+                          </span>
                         )}
                       </div>
 
                       {/* Stats Row */}
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-4 pb-4 border-b border-slate-100 dark:border-gray-700">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-4 pb-4 border-b border-border">
+                        <div className="flex items-center gap-1.5">
                           <Briefcase className="h-3.5 w-3.5" />
                           <span>{freelancer.jobs_completed} job{freelancer.jobs_completed !== 1 ? "s" : ""} done</span>
                         </div>
-                        {freelancer.hourly_rate && (
-                          <span className="font-medium text-slate-900 dark:text-white">
-                            ₦ {freelancer.hourly_rate.toLocaleString()}/hr
+                        {freelancer.hourly_rate ? (
+                          <span className="font-medium text-foreground tabular-nums">
+                            ₦{freelancer.hourly_rate.toLocaleString()}/hr
                           </span>
-                        )}
+                        ) : null}
                       </div>
 
                       {/* Actions */}
@@ -430,17 +430,17 @@ export default function FindFreelancersClient({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 bg-transparent"
+                          className="flex-1"
                           onClick={() => setSelectedFreelancer(freelancer)}
                         >
-                          View Profile
+                          View profile
                         </Button>
                         <Button
                           size="sm"
-                          className="flex-1 bg-primary hover:bg-primary-hover"
+                          className="flex-1 gap-1.5"
                           onClick={() => handleContactFreelancer(freelancer.id)}
                         >
-                          <MessageCircle className="h-4 w-4 mr-1" />
+                          <MessageCircle className="h-4 w-4" />
                           Contact
                         </Button>
                       </div>
@@ -457,7 +457,6 @@ export default function FindFreelancersClient({
                   variant="outline"
                   onClick={() => loadFreelancers(offset, true)}
                   disabled={loadingMore}
-                  className="bg-transparent"
                 >
                   {loadingMore ? (
                     <>
@@ -465,13 +464,14 @@ export default function FindFreelancersClient({
                       Loading...
                     </>
                   ) : (
-                    "Load More Freelancers"
+                    "Load more freelancers"
                   )}
                 </Button>
               </div>
             )}
           </>
         )}
+        </section>
       </div>
 
       {/* Filter Modal */}

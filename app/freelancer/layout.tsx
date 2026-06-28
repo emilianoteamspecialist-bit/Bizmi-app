@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { DashboardTopBar } from "@/components/dashboard-topbar"
+import { PageTransition } from "@/components/page-transition"
 
 export default function FreelancerLayout({
   children,
@@ -12,7 +13,7 @@ export default function FreelancerLayout({
       <AppSidebar />
       <SidebarInset>
         <DashboardTopBar />
-        {children}
+        <PageTransition>{children}</PageTransition>
       </SidebarInset>
     </SidebarProvider>
   )

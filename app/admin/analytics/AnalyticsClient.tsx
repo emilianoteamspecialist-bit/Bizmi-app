@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Users } from "lucide-react"
 import AdminSidebar from "@/components/admin-sidebar"
 
@@ -28,131 +26,124 @@ interface AnalyticsClientProps {
   initialTopAgencies: TopAgency[]
 }
 
-export default function AnalyticsClient({
-  initialTopFreelancers,
-  initialTopAgencies,
-}: AnalyticsClientProps) {
-  const [topFreelancers, setTopFreelancers] = useState<TopFreelancer[]>(initialTopFreelancers)
-  const [topAgencies, setTopAgencies] = useState<TopAgency[]>(initialTopAgencies)
-  const [loading, setLoading] = useState(false)
+export default function AnalyticsClient({ initialTopFreelancers, initialTopAgencies }: AnalyticsClientProps) {
+  const [topFreelancers] = useState<TopFreelancer[]>(initialTopFreelancers)
+  const [topAgencies] = useState<TopAgency[]>(initialTopAgencies)
+  const [loading] = useState(false)
+
+  const rankBadge = (index: number) =>
+    `inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums ${
+      index < 3 ? "bg-primary-soft text-primary" : "bg-surface-2 text-muted-foreground"
+    }`
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="flex h-screen bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-primaryxl font-bold text-slate-900">Analytics Dashboard</h1>
-          </div>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Header */}
+          <header className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
+            <p className="text-sm text-muted-foreground">Top performers across the platform.</p>
+          </header>
 
-          <Tabs defaultValue="freelancers" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="freelancers" className="flex items-center gap-2">
+          <Tabs defaultValue="freelancers" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2 sm:max-w-md">
+              <TabsTrigger value="freelancers" className="gap-2">
                 <TrendingUp className="h-4 w-4" />
-                Top Earning Freelancers
+                Top freelancers
               </TabsTrigger>
-              <TabsTrigger value="agencies" className="flex items-center gap-2">
+              <TabsTrigger value="agencies" className="gap-2">
                 <Users className="h-4 w-4" />
-                Top Agencies
+                Top agencies
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="freelancers">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-primary">Top Earning Freelancers</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-4 font-semibold">Rank</th>
-                          <th className="text-left p-4 font-semibold">Freelancer</th>
-                          <th className="text-left p-4 font-semibold">Email</th>
-                          <th className="text-left p-4 font-semibold">Total Earnings</th>
-                          <th className="text-left p-4 font-semibold">Completed Jobs</th>
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-border">
+                  <h2 className="text-base font-semibold text-foreground">Top earning freelancers</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                      <tr>
+                        <th className="px-5 py-3">Rank</th>
+                        <th className="px-5 py-3">Freelancer</th>
+                        <th className="px-5 py-3">Email</th>
+                        <th className="px-5 py-3">Total earnings</th>
+                        <th className="px-5 py-3">Completed jobs</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {topFreelancers.map((freelancer, index) => (
+                        <tr key={freelancer.id} className="hover:bg-surface/60 transition-colors">
+                          <td className="px-5 py-4">
+                            <span className={rankBadge(index)}>#{index + 1}</span>
+                          </td>
+                          <td className="px-5 py-4 font-medium text-foreground">{freelancer.full_name}</td>
+                          <td className="px-5 py-4 text-muted-foreground">{freelancer.email}</td>
+                          <td className="px-5 py-4 font-semibold text-success tabular-nums">
+                            ₦{freelancer.total_earnings.toLocaleString()}
+                          </td>
+                          <td className="px-5 py-4 text-muted-foreground tabular-nums">{freelancer.completed_jobs}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {topFreelancers.map((freelancer, index) => (
-                          <tr key={freelancer.id} className="border-b hover:bg-slate-50">
-                            <td className="p-4">
-                              <Badge
-                                className={`${index < 3 ? "bg-orange-100 text-orange-800" : "bg-slate-100 text-gray-800"}`}
-                              >
-                                #{index + 1}
-                              </Badge>
-                            </td>
-                            <td className="p-4 font-medium">{freelancer.full_name}</td>
-                            <td className="p-4 text-slate-600">{freelancer.email}</td>
-                            <td className="p-4 font-semibold text-green-600">
-                              ₦ {freelancer.total_earnings.toLocaleString()}
-                            </td>
-                            <td className="p-4 text-slate-600">{freelancer.completed_jobs}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {topFreelancers.length === 0 && (
-                      <div className="text-center py-8 text-slate-500">No freelancer earnings data found</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                  {topFreelancers.length === 0 && (
+                    <div className="py-12 text-center text-sm text-muted-foreground">No freelancer earnings data found</div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="agencies">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-primary">Top Agencies by Deposits</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-4 font-semibold">Rank</th>
-                          <th className="text-left p-4 font-semibold">Agency</th>
-                          <th className="text-left p-4 font-semibold">Email</th>
-                          <th className="text-left p-4 font-semibold">Total Deposits</th>
-                          <th className="text-left p-4 font-semibold">Funded Jobs</th>
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-border">
+                  <h2 className="text-base font-semibold text-foreground">Top agencies by deposits</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                      <tr>
+                        <th className="px-5 py-3">Rank</th>
+                        <th className="px-5 py-3">Agency</th>
+                        <th className="px-5 py-3">Email</th>
+                        <th className="px-5 py-3">Total deposits</th>
+                        <th className="px-5 py-3">Funded jobs</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {topAgencies.map((agency, index) => (
+                        <tr key={agency.id} className="hover:bg-surface/60 transition-colors">
+                          <td className="px-5 py-4">
+                            <span className={rankBadge(index)}>#{index + 1}</span>
+                          </td>
+                          <td className="px-5 py-4 font-medium text-foreground">{agency.full_name}</td>
+                          <td className="px-5 py-4 text-muted-foreground">{agency.email}</td>
+                          <td className="px-5 py-4 font-semibold text-info tabular-nums">
+                            ₦{agency.total_deposits.toLocaleString()}
+                          </td>
+                          <td className="px-5 py-4 text-muted-foreground tabular-nums">{agency.funded_jobs}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {topAgencies.map((agency, index) => (
-                          <tr key={agency.id} className="border-b hover:bg-slate-50">
-                            <td className="p-4">
-                              <Badge
-                                className={`${index < 3 ? "bg-orange-100 text-orange-800" : "bg-slate-100 text-gray-800"}`}
-                              >
-                                #{index + 1}
-                              </Badge>
-                            </td>
-                            <td className="p-4 font-medium">{agency.full_name}</td>
-                            <td className="p-4 text-slate-600">{agency.email}</td>
-                            <td className="p-4 font-semibold text-blue-600">
-                              ₦ {agency.total_deposits.toLocaleString()}
-                            </td>
-                            <td className="p-4 text-slate-600">{agency.funded_jobs}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {topAgencies.length === 0 && (
-                      <div className="text-center py-8 text-slate-500">No agency deposit data found</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                  {topAgencies.length === 0 && (
+                    <div className="py-12 text-center text-sm text-muted-foreground">No agency deposit data found</div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

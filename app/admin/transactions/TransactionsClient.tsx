@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -153,13 +151,13 @@ export default function TransactionsClient({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "verified":
-        return "bg-green-100 text-green-800"
+        return "bg-success/10 text-success"
       case "pending":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-warning/10 text-warning"
       case "failed":
-        return "bg-red-100 text-red-800"
+        return "bg-destructive/10 text-destructive"
       default:
-        return "bg-slate-100 text-gray-800"
+        return "bg-surface-2 text-muted-foreground"
     }
   }
 
@@ -174,78 +172,65 @@ export default function TransactionsClient({
     groupedData: GroupedTransactions
     type: "agency" | "freelancer"
   }) => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {Object.values(groupedData).map((group) => (
-        <Card key={group.user_id}>
-          <CardHeader className="bg-primary/10 border-b">
-            <CardTitle className="text-primary flex items-center justify-between">
-              <span>{group.user_name}</span>
-              <Badge variant="outline" className="border-orange-200 text-primary">
-                Total: ₦ {group.total_amount.toLocaleString()}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            <div className="space-y-3">
-              {group.transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <h4 className="font-medium">₦{transaction.amount.toLocaleString()}</h4>
-                        <p className="text-sm text-slate-600">
-                          Job ID: {transaction.job_id} • Ref: {transaction.reference_id}
-                        </p>
-                      </div>
-                      <Badge className={getStatusColor(transaction.status)}>{transaction.status}</Badge>
-                      {transaction.job_completed && (
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
-                          Job Done
-                        </Badge>
-                      )}
-                      {transaction.payout_successful && (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          Paid Out
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-500">
-                      {formatDate(transaction.created_at)}
-                      {transaction.failure_reason && (
-                        <span className="ml-2 text-red-600">• {transaction.failure_reason}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {type === "agency" && transaction.status === "verified" && !transaction.job_completed && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-primary text-primary hover:bg-primary/10 bg-transparent"
-                        onClick={() => handleJobDone(transaction.id)}
-                      >
-                        Mark Job Done
-                      </Button>
+        <div key={group.user_id} className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border bg-surface-2">
+            <span className="text-sm font-semibold text-foreground truncate">{group.user_name}</span>
+            <span className="shrink-0 inline-flex items-center rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-primary tabular-nums">
+              Total ₦{group.total_amount.toLocaleString()}
+            </span>
+          </div>
+          <div className="divide-y divide-border">
+            {group.transactions.map((transaction) => (
+              <div key={transaction.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-sm font-semibold text-foreground tabular-nums">₦{transaction.amount.toLocaleString()}</h4>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium capitalize ${getStatusColor(transaction.status)}`}>
+                      {transaction.status}
+                    </span>
+                    {transaction.job_completed && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success">Job done</span>
                     )}
-                    {type === "freelancer" && transaction.job_completed && !transaction.payout_successful && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-green-500 text-green-600 hover:bg-green-50 bg-transparent"
-                        onClick={() => handlePayout(transaction.id)}
-                      >
-                        Process Payout
-                      </Button>
+                    {transaction.payout_successful && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-info/10 text-info">Paid out</span>
                     )}
                   </div>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Job {transaction.job_id} · Ref {transaction.reference_id}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatDate(transaction.created_at)}
+                    {transaction.failure_reason && <span className="text-destructive"> · {transaction.failure_reason}</span>}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <div className="flex gap-2 shrink-0">
+                  {type === "agency" && transaction.status === "verified" && !transaction.job_completed && (
+                    <Button variant="outline" size="sm" onClick={() => handleJobDone(transaction.id)}>
+                      Mark job done
+                    </Button>
+                  )}
+                  {type === "freelancer" && transaction.job_completed && !transaction.payout_successful && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-success border-success/30 hover:bg-success/10"
+                      onClick={() => handlePayout(transaction.id)}
+                    >
+                      Process payout
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ))}
       {Object.keys(groupedData).length === 0 && (
-        <div className="text-center py-8 text-slate-500">No {type} transactions found</div>
+        <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+          No {type} transactions found
+        </div>
       )}
     </div>
   )
@@ -291,8 +276,8 @@ export default function TransactionsClient({
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
-          <div className="p-4 lg:p-6">
-            <div className="text-lg">Loading transactions...</div>
+          <div className="min-h-svh bg-surface flex items-center justify-center text-sm text-muted-foreground">
+            Loading transactions…
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -303,38 +288,32 @@ export default function TransactionsClient({
     <SidebarProvider>
       <AdminSidebar />
       <SidebarInset>
-        <div className="p-4 lg:p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">Transactions</h1>
-            <p className="text-slate-600">Monitor and manage all platform transactions</p>
-          </div>
+        <div className="min-h-svh bg-surface">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <header className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Transactions</h1>
+              <p className="text-sm text-muted-foreground">Monitor and manage all platform transactions.</p>
+            </header>
 
-          <div className="mb-6">
             <Input
-              placeholder="Search by reference ID, job ID, or user name..."
+              placeholder="Search by reference ID, job ID, or user name…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md border-orange-200 focus:border-primary focus:ring-primary"
+              className="sm:max-w-md"
             />
-          </div>
 
-          <Tabs defaultValue="agencies" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-orange-100">
-              <TabsTrigger
-                value="agencies"
-                className="data-[state=active]:bg-primary data-[state=active]:text-white"
-              >
-                Agencies ({Object.keys(filterTransactions(agencyTransactions, "agency")).length})
-              </TabsTrigger>
-              <TabsTrigger
-                value="freelancers"
-                className="data-[state=active]:bg-primary data-[state=active]:text-white"
-              >
-                Freelancers ({Object.keys(filterTransactions(freelancerTransactions, "freelancer")).length})
-              </TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="agencies" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 sm:max-w-md">
+                <TabsTrigger value="agencies">
+                  Agencies ({Object.keys(filterTransactions(agencyTransactions, "agency")).length})
+                </TabsTrigger>
+                <TabsTrigger value="freelancers">
+                  Freelancers ({Object.keys(filterTransactions(freelancerTransactions, "freelancer")).length})
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="agencies" className="mt-6">
+              <TabsContent value="agencies" className="mt-4">
               <TransactionGroup groupedData={filterTransactions(agencyTransactions, "agency")} type="agency" />
             </TabsContent>
 
@@ -345,6 +324,7 @@ export default function TransactionsClient({
               />
             </TabsContent>
           </Tabs>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

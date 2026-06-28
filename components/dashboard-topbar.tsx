@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   Bell,
   Search,
@@ -43,13 +43,22 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 export function DashboardTopBar() {
   const router = useRouter()
+  const pathname = usePathname()
   const { user, profile, signOut } = useAuth()
   const [imagePreview, setImagePreview] = useState("")
   const [unread, setUnread] = useState(0)
   const [recent, setRecent] = useState<any[]>([])
   const [searchValue, setSearchValue] = useState("")
-  const [searchScope, setSearchScope] = useState("jobs")
-  const role = profile?.account_type || "freelancer"
+  // Derive role from the URL section (reliable, synchronous) rather than the
+  // async-loaded profile — otherwise the agency topbar shows the freelancer
+  // search until the profile resolves.
+  const role = pathname.startsWith("/agency")
+    ? "agency"
+    : pathname.startsWith("/freelancer")
+      ? "freelancer"
+      : profile?.account_type || "freelancer"
+  const isAgency = role === "agency"
+  const [searchScope, setSearchScope] = useState(isAgency ? "freelancers" : "jobs")
 
   const load = useCallback(async (userId: string, r: string) => {
     try {
@@ -106,14 +115,20 @@ export function DashboardTopBar() {
     }
   }, [user?.id, profile?.account_type, role, load])
 
+  // Keep the search scope valid for the current section.
+  useEffect(() => {
+    setSearchScope(isAgency ? "freelancers" : "jobs")
+  }, [isAgency])
+
   const triggerSearch = () => {
     if (!searchValue.trim()) return
-    const base =
-      searchScope === "agencies"
-        ? "/freelancer/marketplace"
-        : searchScope === "messages"
-          ? "/freelancer/messages"
-          : "/freelancer/marketplace"
+    const base = isAgency
+      ? searchScope === "messages"
+        ? "/agency/messages"
+        : "/agency/find-freelancers"
+      : searchScope === "messages"
+        ? "/freelancer/messages"
+        : "/freelancer/marketplace"
     router.push(`${base}?q=${encodeURIComponent(searchValue)}`)
   }
 
@@ -127,23 +142,35 @@ export function DashboardTopBar() {
       <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
 
       {/* Search */}
-      <div className="flex items-center gap-1 max-w-md w-full bg-surface-2 rounded-full pl-4 pr-1.5 h-10 ml-2">
+      <div className="flex items-center gap-1 w-full max-w-md min-w-0 bg-surface-2 rounded-full pl-3 sm:pl-4 pr-1.5 h-10 ml-1 sm:ml-2">
         <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         <Input
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && triggerSearch()}
-          placeholder="Search for a project, agency, or skill"
-          className="border-0 shadow-none bg-transparent h-8 px-2 text-sm focus-visible:ring-0 placeholder:text-muted-foreground"
+          placeholder={isAgency ? "Search freelancers, skills, talent" : "Search for a project, agency, or skill"}
+          className="border-0 shadow-none bg-transparent h-8 px-2 text-sm focus-visible:ring-0 placeholder:text-muted-foreground min-w-0"
         />
         <Select value={searchScope} onValueChange={setSearchScope}>
-          <SelectTrigger className="h-7 w-auto gap-1 border-0 bg-card rounded-full px-3 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-3">
+          <SelectTrigger className="h-7 w-auto shrink-0 gap-1 border-0 bg-card rounded-full px-2.5 sm:px-3 text-xs font-medium shadow-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-3">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="jobs">Jobs</SelectItem>
-            <SelectItem value="agencies">Agencies</SelectItem>
-            <SelectItem value="messages">Messages</SelectItem>
+            {(isAgency
+              ? [
+                  { value: "freelancers", label: "Freelancers" },
+                  { value: "messages", label: "Messages" },
+                ]
+              : [
+                  { value: "jobs", label: "Jobs" },
+                  { value: "agencies", label: "Agencies" },
+                  { value: "messages", label: "Messages" },
+                ]
+            ).map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

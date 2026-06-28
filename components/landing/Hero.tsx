@@ -4,7 +4,6 @@ import NextLink from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { ArrowRight, Lock, BadgeCheck } from "lucide-react"
-import { AuberginePanel } from "./AuberginePanel"
 
 export function Hero() {
   return (
@@ -60,11 +59,15 @@ export function Hero() {
 
           <div className="flex items-center gap-4 justify-center lg:justify-start pt-2">
             <div className="flex">
-              {["bg-primary", "bg-jade", "bg-gold", "bg-aubergine"].map((c, i) => (
-                <div
-                  key={i}
-                  className={`w-10 h-10 rounded-full border-[3px] border-cream ${c}`}
-                  style={{ marginLeft: i === 0 ? 0 : -10 }}
+              {[1, 2, 3, 4].map((n, i) => (
+                <Image
+                  key={n}
+                  src={`/images/avatars/avatar-${n}.jpg`}
+                  alt={`Bizimi member ${n}`}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-full border-[3px] border-cream object-cover bg-cream"
+                  style={{ marginLeft: i === 0 ? 0 : -10, zIndex: 4 - i }}
                 />
               ))}
             </div>
@@ -81,27 +84,38 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="relative hidden lg:block"
         >
-          <AuberginePanel className="h-[560px]" rounded="3xl">
-            <div className="absolute inset-0 flex items-center justify-center p-8">
-              <div className="relative w-[78%] h-[78%] rounded-3xl overflow-hidden bg-gradient-to-b from-[#3a1810] to-aubergine">
-                <Image
-                  src="/placeholder.svg"
-                  alt="Featured Bizimi freelancer"
-                  fill
-                  className="object-cover opacity-90"
-                  priority
-                />
-              </div>
+          <div className="relative h-[560px]">
+            <div className="pointer-events-none absolute -top-10 -right-8 w-44 h-44 bg-gold rounded-full opacity-95" />
+            <div className="pointer-events-none absolute -bottom-6 -left-8 w-40 h-40 bg-primary rounded-full" />
+            <div className="pointer-events-none absolute top-[40%] right-[30%] w-20 h-20 bg-jade rounded-2xl rotate-12" />
+            <div className="absolute inset-0 z-10 flex items-end justify-center -translate-y-8">
+              <Image
+                src="/images/user.png"
+                alt="Featured Bizimi freelancer"
+                fill
+                className="object-contain object-bottom scale-[1.3]"
+                style={{
+                  maskImage:
+                    "linear-gradient(to bottom, black 78%, transparent 100%)",
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, black 78%, transparent 100%)",
+                }}
+                priority
+              />
             </div>
-          </AuberginePanel>
+          </div>
 
           {/* Floating talent card */}
-          <div className="absolute -left-6 bottom-10 z-20 bg-white rounded-2xl p-4 w-[19rem] shadow-2xl shadow-aubergine/25">
+          <motion.div
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -left-8 -bottom-4 z-20 bg-white rounded-2xl p-4 w-[18rem] shadow-2xl shadow-aubergine/25"
+          >
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-primary/30 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-extrabold text-ink">Adaeze N.</span>
+                  <span className="text-sm font-extrabold text-ink">Emeka O.</span>
                   <BadgeCheck className="h-4 w-4 text-jade flex-shrink-0" />
                 </div>
                 <div className="text-xs text-ink/60 truncate">UI/UX Designer · Lagos</div>
@@ -118,10 +132,14 @@ export function Hero() {
                 <span className="w-1.5 h-1.5 bg-jade rounded-full" /> Available now
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Floating escrow micro-card */}
-          <div className="absolute -right-4 top-12 z-20 bg-white rounded-2xl p-4 shadow-2xl shadow-aubergine/25 flex items-center gap-3">
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+            className="absolute -right-4 top-12 z-20 bg-white rounded-2xl p-4 shadow-2xl shadow-aubergine/25 flex items-center gap-3"
+          >
             <div className="w-10 h-10 bg-jade rounded-xl flex items-center justify-center">
               <Lock className="h-5 w-5 text-white" />
             </div>
@@ -129,7 +147,7 @@ export function Hero() {
               <div className="text-xs font-extrabold text-ink">Escrow secured</div>
               <div className="text-[11px] text-ink/60">₦450,000 held</div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>

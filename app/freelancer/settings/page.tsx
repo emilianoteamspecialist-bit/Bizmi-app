@@ -138,15 +138,13 @@ export default function FreelancerSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-4xl mx-auto py-8 px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-            </div>
+      <div className="min-h-screen bg-surface">
+        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-foreground/5 rounded w-1/4 mb-6"></div>
+            <div className="h-32 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
           </div>
         </div>
       </div>
@@ -154,13 +152,13 @@ export default function FreelancerSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        <div className="mb-6">
-          <h1 className="text-primaryxl font-bold text-slate-900 dark:text-white">Settings</h1>
-          <p className="text-muted-foreground">Manage your account settings and preferences</p>
-        </div>
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <header className="space-y-1 mb-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Account</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage your account settings and preferences.</p>
+        </header>
 
         <Tabs defaultValue="account" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
@@ -171,9 +169,9 @@ export default function FreelancerSettings() {
           </TabsList>
 
           <TabsContent value="account" className="space-y-6">
-            <Card>
+            <Card className="rounded-xl border border-border bg-card shadow-none">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Mail className="h-5 w-5" />
                   Account Information
                 </CardTitle>
@@ -192,9 +190,9 @@ export default function FreelancerSettings() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="rounded-xl border border-border bg-card shadow-none">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Lock className="h-5 w-5" />
                   Change Password
                 </CardTitle>
@@ -272,9 +270,9 @@ export default function FreelancerSettings() {
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
-            <Card>
+            <Card className="rounded-xl border border-border bg-card shadow-none">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Bell className="h-5 w-5" />
                   Notification Preferences
                 </CardTitle>
@@ -350,9 +348,9 @@ export default function FreelancerSettings() {
           </TabsContent>
 
           <TabsContent value="privacy" className="space-y-6">
-            <Card>
+            <Card className="rounded-xl border border-border bg-card shadow-none">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Shield className="h-5 w-5" />
                   Privacy Settings
                 </CardTitle>
@@ -464,9 +462,9 @@ export default function FreelancerSettings() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
-            <Card>
+            <Card className="rounded-xl border border-border bg-card shadow-none">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Shield className="h-5 w-5" />
                   Security Settings
                 </CardTitle>

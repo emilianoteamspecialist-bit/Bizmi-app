@@ -45,7 +45,7 @@ export function MarketplaceJobCard({ job, onAction, className }: MarketplaceJobC
     <Card
       onClick={() => onAction(job, "view")}
       className={cn(
-        "group flex flex-col bg-card border border-border rounded-xl overflow-hidden shadow-none hover:border-rule hover:shadow-[var(--shadow-warm)] transition-all duration-200 cursor-pointer",
+        "group flex flex-col bg-card border border-border rounded-xl overflow-hidden shadow-none hover:border-foreground/20 transition-colors duration-200 cursor-pointer",
         className
       )}
     >
@@ -55,7 +55,7 @@ export function MarketplaceJobCard({ job, onAction, className }: MarketplaceJobC
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <Avatar className="h-10 w-10 rounded-lg border border-border shrink-0">
               <AvatarImage src={job.agencyInfo.logo} className="object-cover" />
-              <AvatarFallback className="bg-paper text-foreground font-display text-base rounded-lg">
+              <AvatarFallback className="bg-surface-2 text-foreground font-semibold text-base rounded-lg">
                 {job.agencyInfo.name.charAt(0)}
               </AvatarFallback>
             </Avatar>
@@ -119,8 +119,8 @@ export function MarketplaceJobCard({ job, onAction, className }: MarketplaceJobC
 
         {/* Salary + date */}
         <div className="flex items-baseline justify-between pt-1">
-          <p className="text-sm font-semibold text-foreground numeric">{job.budget}</p>
-          <p className="caption">{formatRelative(job.created_at)}</p>
+          <p className="text-sm font-semibold text-foreground tabular-nums">{job.budget}</p>
+          <p className="text-xs text-muted-foreground">{formatRelative(job.created_at)}</p>
         </div>
       </div>
 

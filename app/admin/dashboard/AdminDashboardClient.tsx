@@ -1,15 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Briefcase } from "lucide-react"
+import { Users, Briefcase, UserPlus, Shield, MoreVertical } from "lucide-react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 
 interface DashboardStats {
@@ -39,12 +36,17 @@ export default function AdminDashboardClient({
   initialAgencies,
   initialFreelancers,
 }: AdminDashboardClientProps) {
-  const [stats, setStats] = useState<DashboardStats>(initialStats)
-  const [agencies, setAgencies] = useState<User[]>(initialAgencies)
-  const [freelancers, setFreelancers] = useState<User[]>(initialFreelancers)
-  const [loading, setLoading] = useState(false)
+  const [stats] = useState<DashboardStats>(initialStats)
+  const [agencies] = useState<User[]>(initialAgencies)
+  const [freelancers] = useState<User[]>(initialFreelancers)
+  const [loading] = useState(false)
+  const [allSearchQuery, setAllSearchQuery] = useState("")
   const [agencySearchQuery, setAgencySearchQuery] = useState("")
   const [freelancerSearchQuery, setFreelancerSearchQuery] = useState("")
+
+  const allUsers = [...agencies, ...freelancers].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )
 
   const handleDisableUser = async (userId: string) => {
     try {
@@ -55,54 +57,65 @@ export default function AdminDashboardClient({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
+
+  const tiles = [
+    { label: "Total users", value: stats.totalUsers, icon: Users, tile: "bg-primary/10 text-primary" },
+    { label: "New today", value: stats.newUsersToday, icon: UserPlus, tile: "bg-jade/10 text-jade" },
+    { label: "Agencies", value: stats.totalAgencies, icon: Briefcase, tile: "bg-info/10 text-info" },
+    { label: "Freelancers", value: stats.totalFreelancers, icon: Users, tile: "bg-aubergine/10 text-aubergine" },
+  ]
 
   const UserTable = ({ users, type, searchQuery }: { users: User[]; type: string; searchQuery: string }) => {
-    const filteredUsers = users.filter(
+    const filtered = users.filter(
       (user) =>
-        user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase()),
+        user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
     )
+
+    if (filtered.length === 0) {
+      return <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">No {type === "all" ? "users" : `${type}s`} found</div>
+    }
+
     return (
-      <div className="space-y-4">
-        {filteredUsers.map((user) => (
-          <Card key={user.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h3 className="font-medium">{user.full_name || "No name"}</h3>
-                      <p className="text-sm text-slate-600">{user.email}</p>
-                    </div>
-                    <Badge variant="outline" className="border-orange-200 text-primary">
-                      {user.account_type}
-                    </Badge>
-                  </div>
-                  <div className="mt-2 text-sm text-slate-500">
-                    Joined: {formatDate(user.created_at)}
-                    {type === "agency" && user.wallet_balance !== undefined && (
-                      <span className="ml-4">Wallet: ₦ {user.wallet_balance.toLocaleString()}</span>
-                    )}
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleDisableUser(user.id)}>Disable User</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+      <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+        {filtered.map((user) => (
+          <div key={user.id} className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-surface/60">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-sm font-semibold text-foreground">
+                {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
               </div>
-            </CardContent>
-          </Card>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-foreground truncate">{user.full_name || "No name"}</h3>
+                  <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary-soft text-primary capitalize">
+                    {user.account_type}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                  Joined {formatDate(user.created_at)}
+                  {user.account_type === "agency" && user.wallet_balance !== undefined && ` · Wallet ₦${user.wallet_balance.toLocaleString()}`}
+                </p>
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => handleDisableUser(user.id)}
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  Disable user
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ))}
-        {filteredUsers.length === 0 && <div className="text-center py-8 text-slate-500">No {type}s found</div>}
       </div>
     )
   }
@@ -112,8 +125,8 @@ export default function AdminDashboardClient({
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
-          <div className="p-4 lg:p-6">
-            <div className="text-lg">Loading dashboard...</div>
+          <div className="min-h-svh bg-surface flex items-center justify-center text-sm text-muted-foreground">
+            Loading dashboard…
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -124,99 +137,76 @@ export default function AdminDashboardClient({
     <SidebarProvider>
       <AdminSidebar />
       <SidebarInset>
-        <div className="p-4 lg:p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">Admin Dashboard</h1>
-            <p className="text-slate-600">Overview of platform activity</p>
-          </div>
+        <div className="min-h-svh bg-surface">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            {/* Header */}
+            <header className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
+                <Shield className="h-3.5 w-3.5 text-primary" /> Admin console
+              </span>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Overview of platform activity.</p>
+              </div>
+            </header>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-            <Card className="border-l-4 border-l-orange-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Total Users</CardTitle>
-                <Users className="h-5 w-5 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-primary">{stats.totalUsers}</div>
-              </CardContent>
-            </Card>
+            {/* Stat medallions */}
+            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {tiles.map((t) => (
+                <div key={t.label} className="rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground">{t.label}</p>
+                    <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.tile}`}>
+                      <t.icon className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{t.value}</p>
+                </div>
+              ))}
+            </section>
 
-            <Card className="border-l-4 border-l-green-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">New Users Today</CardTitle>
-                <Users className="h-5 w-5 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{stats.newUsersToday}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-blue-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Total Agencies</CardTitle>
-                <Briefcase className="h-5 w-5 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{stats.totalAgencies}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-purple-500">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">Total Freelancers</CardTitle>
-                <Users className="h-5 w-5 text-purple-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-600">{stats.totalFreelancers}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="bg-primary/10 border-b">
-              <CardTitle className="text-primary">User Management</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 lg:p-6 max-h-[60vh] overflow-y-auto">
-              <Tabs defaultValue="agencies" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-orange-100">
-                  <TabsTrigger
-                    value="agencies"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
-                  >
-                    Agencies ({stats.totalAgencies})
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="freelancers"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
-                  >
-                    Freelancers ({stats.totalFreelancers})
-                  </TabsTrigger>
+            {/* User management */}
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-foreground">User management</h2>
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 sm:max-w-lg">
+                  <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
+                  <TabsTrigger value="agencies">Agencies ({stats.totalAgencies})</TabsTrigger>
+                  <TabsTrigger value="freelancers">Freelancers ({stats.totalFreelancers})</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="agencies" className="mt-6">
-                  <div className="mb-4">
-                    <Input
-                      placeholder="Search agencies by name or email..."
-                      value={agencySearchQuery}
-                      onChange={(e) => setAgencySearchQuery(e.target.value)}
-                    />
-                  </div>
+                <TabsContent value="all" className="mt-4 space-y-3">
+                  <Input
+                    placeholder="Search all users by name or email…"
+                    value={allSearchQuery}
+                    onChange={(e) => setAllSearchQuery(e.target.value)}
+                    className="sm:max-w-sm"
+                  />
+                  <UserTable users={allUsers} type="all" searchQuery={allSearchQuery} />
+                </TabsContent>
+
+                <TabsContent value="agencies" className="mt-4 space-y-3">
+                  <Input
+                    placeholder="Search agencies by name or email…"
+                    value={agencySearchQuery}
+                    onChange={(e) => setAgencySearchQuery(e.target.value)}
+                    className="sm:max-w-sm"
+                  />
                   <UserTable users={agencies} type="agency" searchQuery={agencySearchQuery} />
                 </TabsContent>
 
-                <TabsContent value="freelancers" className="mt-6">
-                  <div className="mb-4">
-                    <Input
-                      placeholder="Search freelancers by name or email..."
-                      value={freelancerSearchQuery}
-                      onChange={(e) => setFreelancerSearchQuery(e.target.value)}
-                    />
-                  </div>
+                <TabsContent value="freelancers" className="mt-4 space-y-3">
+                  <Input
+                    placeholder="Search freelancers by name or email…"
+                    value={freelancerSearchQuery}
+                    onChange={(e) => setFreelancerSearchQuery(e.target.value)}
+                    className="sm:max-w-sm"
+                  />
                   <UserTable users={freelancers} type="freelancer" searchQuery={freelancerSearchQuery} />
                 </TabsContent>
               </Tabs>
-            </CardContent>
-          </Card>
+            </section>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

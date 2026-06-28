@@ -152,15 +152,13 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-7xl mx-auto py-8 px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-            </div>
+      <div className="min-h-screen bg-surface">
+        <div className="max-w-6xl mx-auto py-8 px-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-foreground/5 rounded w-1/4 mb-6"></div>
+            <div className="h-32 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
           </div>
         </div>
       </div>
@@ -168,127 +166,96 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-
-      <div className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-primaryxl font-bold text-slate-900 dark:text-white mb-2">Saved Jobs</h1>
-          <p className="text-muted-foreground">Jobs you've bookmarked for later</p>
-        </div>
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Saved</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Saved jobs</h1>
+          <p className="text-sm text-muted-foreground">Jobs you&apos;ve bookmarked for later.</p>
+        </header>
 
-        {/* Saved Jobs */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Your Saved Jobs ({savedJobs.length})</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {savedJobs.length === 0 ? (
-              <div className="p-8 text-center">
-                <Bookmark className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No Saved Jobs</h3>
-                <p className="text-muted-foreground mb-4">You haven't saved any jobs yet</p>
-                <Button onClick={() => router.push("/freelancer/dashboard")} className="bg-primary hover:bg-primary-hover">
-                  Browse Jobs
-                </Button>
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Your saved jobs <span className="font-normal text-muted-foreground">· {savedJobs.length}</span>
+          </h2>
+
+          {savedJobs.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
+              <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Bookmark className="h-5 w-5" />
               </div>
-            ) : (
-              <div className="space-y-0">
-                {savedJobs.map((job, index) => (
-                  <div
-                    key={job.id}
-                    className={`p-4 sm:p-6 ${index !== savedJobs.length - 1 ? "border-b border-slate-200 dark:border-gray-700" : ""}`}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 line-clamp-1">
-                              {job.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground mb-2">{job.agencyInfo.name}</p>
-                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
-                              <span className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                Saved {job.savedAt}
-                              </span>
-                              <span className="flex items-center">
-                                <Users className="h-4 w-4 mr-1" />
-                                {job.proposals} proposals
-                              </span>
-                              <span className="flex items-center">
-                                <CreditCard className="h-4 w-4 mr-1 text-primary" />
-                                {job.credit_cost} credits
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleJobAction(job, "unsave")}
-                              className="h-8 w-8 text-primary hover:text-red-600"
-                            >
-                              <BookmarkX className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleJobAction(job, "view")}
-                              className="bg-transparent"
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                          </div>
+              <h3 className="mt-4 text-sm font-semibold text-foreground">No saved jobs yet</h3>
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                Bookmark jobs from the marketplace to find them here later.
+              </p>
+              <Button className="mt-5" onClick={() => router.push("/freelancer/dashboard")}>Browse jobs</Button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {savedJobs.map((job) => (
+                <div key={job.id} className="p-4 sm:p-5">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold text-foreground line-clamp-1">{job.title}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">{job.agencyInfo.name}</p>
                         </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleJobAction(job, "unsave")}
+                            aria-label="Remove from saved"
+                          >
+                            <BookmarkX className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleJobAction(job, "view")}>
+                            <Eye className="h-4 w-4" /> View
+                          </Button>
+                        </div>
+                      </div>
 
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                      {job.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">{job.description}</p>
+                      )}
 
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {job.skills?.slice(0, 4).map((skill: string, skillIndex: number) => (
-                            <Badge key={skillIndex} variant="outline" className="text-xs">
+                      {!!job.skills?.length && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {job.skills.slice(0, 4).map((skill: string, i: number) => (
+                            <span key={i} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">
                               {skill}
-                            </Badge>
+                            </span>
                           ))}
-                          {job.skills?.length > 4 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{job.skills.length - 4} more
-                            </Badge>
+                          {job.skills.length > 4 && (
+                            <span className="px-2 py-0.5 text-[11px] text-muted-foreground">+{job.skills.length - 4}</span>
                           )}
                         </div>
+                      )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
-                          <div className="flex items-center">
-                            <span className="font-semibold text-primary truncate">{job.budget}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 text-muted-foreground mr-1 flex-shrink-0" />
-                            <span className="truncate">{job.duration}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 text-muted-foreground mr-1 flex-shrink-0" />
-                            <span className="truncate">{job.location}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex-shrink-0">
-                        <Button
-                          className="w-full sm:w-auto bg-primary hover:bg-primary-hover"
-                          onClick={() => handleJobAction(job, "placeBid")}
-                        >
-                          <Send className="h-4 w-4 mr-2" />
-                          Place Bid
-                        </Button>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground tabular-nums">{job.budget}</span>
+                        <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{job.duration || "Flexible"}</span>
+                        <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{job.location || "Remote"}</span>
+                        <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" />{job.proposals} proposals</span>
+                        <span className="inline-flex items-center gap-1"><CreditCard className="h-3 w-3 text-primary" />{job.credit_cost} credits</span>
+                        <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Saved {job.savedAt}</span>
                       </div>
                     </div>
+
+                    <div className="shrink-0">
+                      <Button className="w-full lg:w-auto gap-2" onClick={() => handleJobAction(job, "placeBid")}>
+                        <Send className="h-4 w-4" /> Place bid
+                      </Button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
       {/* Agency Profile Modal */}
@@ -304,7 +271,7 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
                       alt={selectedAgency.name}
                       className="object-cover"
                     />
-                    <AvatarFallback className="text-lg font-semibold bg-orange-100 text-primary">
+                    <AvatarFallback className="text-lg font-semibold bg-surface-2 text-foreground">
                       {selectedAgency.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -385,7 +352,7 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
       {/* Place Bid Modal */}
       {showPlaceBidModal && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-end z-50">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-md h-full overflow-y-auto animate-in slide-in-from-right">
+          <div className="bg-card w-full max-w-md h-full overflow-y-auto animate-in slide-in-from-right">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold">Place Your Bid</h3>
@@ -404,7 +371,7 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
                       {selectedJob.budget.replace("₦", "")}
                     </span>
                     <span className="flex items-center">
-                      <CreditCard className="h-4 w-4 mr-1 text-blue-500" />
+                      <CreditCard className="h-4 w-4 mr-1 text-primary" />
                       {selectedJob.credit_cost} credits
                     </span>
                   </div>
@@ -442,11 +409,11 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Attachments</label>
-                  <div className="border-2 border-dashed border-slate-300 dark:border-gray-600 rounded-lg p-4">
+                  <div className="border-2 border-dashed border-border rounded-lg p-4">
                     <input type="file" multiple onChange={handleFileSelect} className="hidden" id="file-upload" />
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <div className="text-center">
-                        <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground">Click to upload files</p>
                       </div>
                     </label>
@@ -457,7 +424,7 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
                       {selectedFiles.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between bg-slate-100 dark:bg-gray-700 p-2 rounded"
+                          className="flex items-center justify-between bg-surface-2 p-2 rounded"
                         >
                           <span className="text-sm truncate">{file.name}</span>
                           <Button variant="ghost" size="sm" onClick={() => removeFile(index)}>
@@ -469,9 +436,9 @@ export default function SavedJobsClient({ initialSavedJobs }: { initialSavedJobs
                   )}
                 </div>
 
-                <div className="bg-primary/10 dark:bg-orange-900/20 p-4 rounded-lg">
+                <div className="bg-primary-soft p-4 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Credits Required:</span>
+                    <span className="text-sm font-medium">Credits required</span>
                     <span className="text-lg font-bold text-primary">{selectedJob.credit_cost}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">This will be deducted from your credit balance</p>

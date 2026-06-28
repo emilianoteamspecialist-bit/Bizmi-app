@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { Reveal } from "@/components/reveal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
@@ -628,7 +629,7 @@ export default function AgencyDashboard() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         {/* Toolbar header */}
-        <header className="flex flex-wrap items-end justify-between gap-4">
+        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-1 min-w-0">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hiring desk</p>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground truncate">
@@ -638,13 +639,14 @@ export default function AgencyDashboard() {
           </div>
           <Button
             onClick={() => { resetJobForm(); setShowPostJobModal(true) }}
-            className="h-10 px-4 rounded-lg gap-2 shrink-0"
+            className="h-10 px-4 rounded-lg gap-2 shrink-0 w-full sm:w-auto justify-center"
           >
             <Plus className="h-4 w-4" /> Post a job
           </Button>
         </header>
 
         {/* Metric tiles */}
+        <Reveal>
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Active", value: activeJobs, icon: Play, tone: "text-success", accent: false },
@@ -664,8 +666,10 @@ export default function AgencyDashboard() {
             </div>
           ))}
         </section>
+        </Reveal>
 
         {/* Jobs */}
+        <Reveal delay={0.08}>
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-foreground">
             Your jobs <span className="font-normal text-muted-foreground">· {agencyJobs.length}</span>
@@ -690,7 +694,7 @@ export default function AgencyDashboard() {
                 const proposalCount = job.proposals ?? 0
                 return (
                   <div key={job.id} className="p-4 sm:p-5 transition-colors hover:bg-surface/60">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <div className="flex items-center gap-2.5">
                           <h3 className="text-sm font-semibold text-foreground truncate">{job.title}</h3>
@@ -756,6 +760,7 @@ export default function AgencyDashboard() {
             </div>
           )}
         </section>
+        </Reveal>
       </div>
 
       {/* Proposals Modal */}

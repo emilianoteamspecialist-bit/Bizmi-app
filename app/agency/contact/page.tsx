@@ -2,11 +2,11 @@
 
 import { Mail, MessageCircle, Instagram, Facebook } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Reveal } from "@/components/reveal"
 
 export default function FreelancerContactPage() {
   const handleEmailClick = () => {
-    window.open("mailto:Bizimisocials12@gmail.com", "_blank")
+    window.open("mailto:contact@bizimii.com", "_blank")
   }
 
   const handleWhatsAppClick = (phoneNumber: string, name: string) => {
@@ -18,168 +18,132 @@ export default function FreelancerContactPage() {
     window.open(url, "_blank")
   }
 
+  const channels = [
+    {
+      icon: Mail,
+      title: "Email support",
+      desc: "Send us an email and we'll get back within 24 hours.",
+      action: "Email us",
+      onClick: handleEmailClick,
+      meta: "contact@bizimii.com",
+    },
+    {
+      icon: MessageCircle,
+      title: "WhatsApp support",
+      desc: "Chat with us for immediate assistance.",
+      action: "Chat with us",
+      onClick: () => handleWhatsAppClick("+2347026875518", "Support"),
+      meta: "+234 702 687 5518",
+    },
+    {
+      icon: MessageCircle,
+      title: "Join community",
+      desc: "Connect with other freelancers and agencies.",
+      action: "Join community",
+      onClick: () => handleSocialClick("https://chat.whatsapp.com/H5yku22xKV35cAFDyinj6y?mode=ems_share_c"),
+      meta: "WhatsApp group",
+    },
+  ]
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">Contact Us</h1>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Need help or have questions? We're here to assist you. Reach out to us through any of the channels below.
-            </p>
-          </div>
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header */}
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Support</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Contact &amp; support</h1>
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Need help or have questions? Reach us through any of the channels below — we&apos;re happy to assist.
+          </p>
+        </header>
 
-          {/* Contact Cards */}
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {/* Email Contact */}
-            <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
-              <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <Mail className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-xl text-slate-900">Email Support</CardTitle>
-                <CardDescription>Send us an email and we'll get back to you within 24 hours</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button onClick={handleEmailClick} className="w-full bg-primary hover:bg-primary-hover text-white">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Email Us
-                </Button>
-                <p className="text-sm text-slate-500 mt-2">Bizimisocials12@gmail.com</p>
-              </CardContent>
-            </Card>
-
-            {/* WhatsApp Support */}
-            <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
-              <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <MessageCircle className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-xl text-slate-900">WhatsApp Support</CardTitle>
-                <CardDescription>Chat with us for immediate assistance</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button
-                  onClick={() => handleWhatsAppClick("+2347026875518", "Support")}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Chat with Us
-                </Button>
-                <p className="text-sm text-slate-500 mt-2">+2347026875518</p>
-              </CardContent>
-            </Card>
-
-            {/* WhatsApp Community */}
-            <Card className="hover:shadow-lg transition-shadow duration-300 border-orange-200">
-              <CardHeader className="text-center">
-                <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                  <MessageCircle className="h-8 w-8 text-orange-400" />
-                </div>
-                <CardTitle className="text-xl text-slate-900">Join Community</CardTitle>
-                <CardDescription>Connect with other freelancers and agencies</CardDescription>
-              </CardHeader>
-              <CardContent className="text-center">
-                <Button
-                  onClick={() => handleSocialClick("https://chat.whatsapp.com/H5yku22xKV35cAFDyinj6y?mode=ems_share_c")}
-                  className="w-full bg-orange-400 hover:bg-primary text-white"
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Join Community
-                </Button>
-                <p className="text-sm text-slate-500 mt-2">WhatsApp Group</p>
-              </CardContent>
-            </Card>
-          </div>
-
-            <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200 mb-8">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-6 text-center">
-              Follow Us on Social Media
-            </h2>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6">
-              <Button
-                onClick={() =>
-                  handleSocialClick(
-                    "https://www.instagram.com/bizimisocials12?igsh=cDNsNzNwd3h0ejI5"
-                  )
-                }
-                className="bg-primary hover:bg-primary-hover text-white px-6 py-3 w-full sm:w-auto"
-              >
-                <Instagram className="mr-2 h-5 w-5" />
-                Instagram
-              </Button>
-              <Button
-                onClick={() =>
-                  handleSocialClick("https://www.facebook.com/share/15CBRyPXjGf/")
-                }
-                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 w-full sm:w-auto"
-              >
-                <Facebook className="mr-2 h-5 w-5" />
-                Facebook
-              </Button>
-              <Button
-                onClick={() =>
-                  handleSocialClick(
-                    "https://www.tiktok.com/@bizimi0?_t=ZM-8zAXJDSR2d3&_r=1"
-                  )
-                }
-                className="bg-orange-400 hover:bg-primary text-white px-6 py-3 w-full sm:w-auto"
-              >
-                <svg
-                  className="mr-2 h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
-                </svg>
-                TikTok
-              </Button>
-            </div>
-          </div>
-          
-          {/* Additional Info */}
-          <div className="bg-white rounded-lg shadow-md p-8 border border-orange-200">
-            <h2 className="text-2xl font-semibold text-slate-900 mb-4 text-center">How We Can Help</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-primary mb-2">For Freelancers</h3>
-                <ul className="text-slate-600 space-y-1">
-                  <li>• Account setup and verification</li>
-                  <li>• Proposal submission help</li>
-                  <li>• Payment and payout assistance</li>
-                  <li>• Profile optimization tips</li>
-                </ul>
+        {/* Contact channels */}
+        <Reveal>
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {channels.map((c) => (
+            <div key={c.title} className="rounded-xl border border-border bg-card p-6 text-center">
+              <div className="mx-auto h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <c.icon className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="font-semibent text-primary mb-2">For Agencies</h3>
-                <ul className="text-slate-600 space-y-1">
-                  <li>• Job posting guidance</li>
-                  <li>• Freelancer selection process</li>
-                  <li>• Payment and funding support</li>
-                  <li>• Platform feature tutorials</li>
-                </ul>
-              </div>
+              <h3 className="mt-4 text-sm font-semibold text-foreground">{c.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{c.desc}</p>
+              <Button onClick={c.onClick} className="w-full gap-2 mt-4">
+                <c.icon className="h-4 w-4" />
+                {c.action}
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">{c.meta}</p>
             </div>
-          </div>
+          ))}
+        </section>
+        </Reveal>
 
-          {/* Response Time */}
-          <div className="text-center mt-8">
-            <p className="text-slate-600">
-              <strong>Response Times:</strong> Email within 24 hours • WhatsApp within 2 hours during business hours
-            </p>
+        {/* Social */}
+        <Reveal>
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-base font-semibold text-foreground text-center">Follow us on social media</h2>
+          <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
+            <Button
+              variant="outline"
+              className="gap-2 w-full sm:w-auto"
+              onClick={() => handleSocialClick("https://www.instagram.com/bizimisocials12?igsh=cDNsNzNwd3h0ejI5")}
+            >
+              <Instagram className="h-4 w-4" />
+              Instagram
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 w-full sm:w-auto"
+              onClick={() => handleSocialClick("https://www.facebook.com/share/15CBRyPXjGf/")}
+            >
+              <Facebook className="h-4 w-4" />
+              Facebook
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2 w-full sm:w-auto"
+              onClick={() => handleSocialClick("https://www.tiktok.com/@bizimi0?_t=ZM-8zAXJDSR2d3&_r=1")}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+              </svg>
+              TikTok
+            </Button>
           </div>
         </div>
+        </Reveal>
+
+        {/* How we can help */}
+        <Reveal>
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-base font-semibold text-foreground text-center">How we can help</h2>
+          <div className="mt-5 grid md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-semibold text-primary mb-2">For freelancers</h3>
+              <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5 marker:text-border">
+                <li>Account setup and verification</li>
+                <li>Proposal submission help</li>
+                <li>Payment and payout assistance</li>
+                <li>Profile optimization tips</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-primary mb-2">For agencies</h3>
+              <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5 marker:text-border">
+                <li>Job posting guidance</li>
+                <li>Freelancer selection process</li>
+                <li>Payment and funding support</li>
+                <li>Platform feature tutorials</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        </Reveal>
+
+        {/* Response time */}
+        <p className="text-center text-sm text-muted-foreground">
+          <strong className="font-medium text-foreground">Response times:</strong> Email within 24 hours · WhatsApp within 2 hours during business hours
+        </p>
       </div>
     </div>
   )
 }
-
-
-
-
-
-
-
-
-

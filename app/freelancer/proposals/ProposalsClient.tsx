@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -16,6 +15,9 @@ import {
   FileText,
   Search,
   MapPin,
+  Rocket,
+  Loader2,
+  X,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
@@ -65,6 +67,7 @@ export default function ProposalsClient({
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [offset, setOffset] = useState(initialOffset)
   const [searchTerm, setSearchTerm] = useState("")
+  const [viewingProposal, setViewingProposal] = useState<Proposal | null>(null)
   const isFirstRender = useRef(true)
 
   // Reads now run server-side via getFreelancerProposals — no browser queries.
@@ -212,22 +215,22 @@ export default function ProposalsClient({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "accepted":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-3.5 w-3.5 text-success" />
       case "rejected":
-        return <XCircle className="h-4 w-4 text-red-500" />
+        return <XCircle className="h-3.5 w-3.5 text-destructive" />
       default:
-        return <AlertCircle className="h-4 w-4 text-primary" />
+        return <AlertCircle className="h-3.5 w-3.5 text-primary" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "accepted":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+        return "bg-success/10 text-success"
       case "rejected":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+        return "bg-destructive/10 text-destructive"
       default:
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200"
+        return "bg-primary-soft text-primary"
     }
   }
 
@@ -241,29 +244,17 @@ export default function ProposalsClient({
 
   if (loading && proposals.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-full sm:max-w-6xl lg:max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
-          <div className="mb-4 sm:mb-6 lg:mb-8">
-            <div className="h-8 bg-slate-200 dark:bg-gray-700 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-96 animate-pulse"></div>
-            <div className="relative mt-4">
-              <div className="h-10 bg-slate-200 dark:bg-gray-700 rounded animate-pulse"></div>
-            </div>
+      <div className="min-h-screen bg-surface pb-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          <div className="space-y-2 animate-pulse">
+            <div className="h-3 w-24 bg-foreground/5 rounded" />
+            <div className="h-7 w-56 bg-foreground/5 rounded" />
+            <div className="h-3 w-72 bg-foreground/5 rounded" />
           </div>
-          <div className="animate-pulse space-y-6">
-            {[...Array(LIMIT)].map((_, i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <div className="h-6 bg-slate-200 dark:bg-gray-700 rounded w-3/4"></div>
-                  <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-5/6"></div>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="h-12 bg-card border border-border rounded-xl animate-pulse" />
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-40 bg-card border border-border rounded-xl animate-pulse" />
             ))}
           </div>
         </div>
@@ -272,19 +263,23 @@ export default function ProposalsClient({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="max-w-full sm:max-w-6xl lg:max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="mb-4 sm:mb-6 lg:mb-8">
-          <h1 className="text-xl sm:text-2xl lg:text-primaryxl font-bold text-slate-900 dark:text-white">My Proposals</h1>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1 sm:mt-2">
-            Track the status of your job applications
-          </p>
-          <div className="relative mt-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Header */}
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Proposals</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">My proposals</h1>
+          <p className="text-sm text-muted-foreground">Track the status of your job applications.</p>
+        </header>
+
+        {/* Search */}
+        <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search proposals by job title or description..."
-              className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-300 dark:border-gray-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-primary focus:border-primary"
+              className="pl-10"
               value={searchTerm}
               onChange={handleSearchChange}
             />
@@ -292,205 +287,175 @@ export default function ProposalsClient({
         </div>
 
         {proposals.length === 0 && !loading ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <div className="mx-auto w-24 h-24 bg-primary/10 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
-                <FileText className="h-12 w-12 text-primary" />
-              </div>
-              <h3 className="text-base sm:text-lg font-medium text-slate-900 dark:text-white mb-2">
-                {searchTerm ? "No matching proposals found" : "No proposals yet"}
-              </h3>
-              <p className="text-sm sm:text-base text-slate-500 dark:text-slate-400 mb-6">
-                {searchTerm
-                  ? "Try a different search term or clear the search."
-                  : "Start applying to jobs to see your proposals here."}
-              </p>
-              {!searchTerm && (
-                <Button
-                  onClick={() => (window.location.href = "/freelancer/dashboard")}
-                  className="bg-primary hover:bg-primary-hover text-white"
-                >
-                  Browse Jobs
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
+            <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <FileText className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-foreground">
+              {searchTerm ? "No matching proposals" : "No proposals yet"}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+              {searchTerm
+                ? "Try a different search term or clear the search."
+                : "Start applying to jobs to see your proposals here."}
+            </p>
+            {!searchTerm && (
+              <Button className="mt-5" onClick={() => (window.location.href = "/freelancer/dashboard")}>
+                Browse jobs
+              </Button>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             {proposals.map((proposal) => (
-              <Card
-                key={proposal.id}
-                className="border-l-4 border-primary shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                <CardHeader className="p-4 sm:p-6 pb-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white line-clamp-2">
-                        {proposal.job_title}
-                      </CardTitle>
-                      <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        <Avatar className="h-6 w-6 mr-2">
-                          <AvatarFallback className="text-xs bg-orange-100 text-primary">
+              <div key={proposal.id} className="rounded-xl border border-border bg-card p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <h3 className="text-base font-semibold text-foreground line-clamp-2">{proposal.job_title}</h3>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Avatar className="h-5 w-5">
+                          <AvatarFallback className="text-[10px] bg-surface-2 text-foreground">
                             {proposal.agency_name?.charAt(0) || "A"}
                           </AvatarFallback>
                         </Avatar>
                         <span className="truncate">{proposal.agency_name}</span>
-                        <span className="mx-2">•</span>
-                        <CalendarDays className="h-4 w-4 mr-1 text-primary" />
-                        <span>Applied {formatDate(proposal.created_at)}</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Badge className={`${getStatusColor(proposal.status)} text-sm px-3 py-1 flex items-center gap-1`}>
-                        {getStatusIcon(proposal.status)}
-                        {proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}
-                      </Badge>
-                      {proposal.status === "accepted" && proposal.funding_status === "funded" && (
-                        <Badge className="text-sm px-3 py-1 bg-green-100 text-green-800">✅ Funded</Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 sm:p-6 pt-4">
-                  <p className="text-sm text-slate-700 dark:text-gray-300 mb-4 line-clamp-3">
-                    {proposal.job_description}
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 border-t border-b border-slate-200 dark:border-gray-700 py-4">
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">Your Budget</p>
-                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                          {proposal.budget || "Not specified"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">Client Budget</p>
-                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                          ₦ {proposal.job_budget_min?.toLocaleString()} - ₦ {proposal.job_budget_max?.toLocaleString()}                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">Your Timeline</p>
-                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                          {proposal.timeline || "Not specified"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">Job Duration</p>
-                        <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                          {proposal.job_duration || "Not specified"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {proposal.job_location && (
-                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400 mb-4">
-                      <MapPin className="h-4 w-4 mr-2 text-primary" />
-                      <span>
-                        Location:{" "}
-                        <span className="font-medium text-slate-900 dark:text-white">{proposal.job_location}</span>
+                      </span>
+                      <span className="text-border">·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" /> Applied {formatDate(proposal.created_at)}
                       </span>
                     </div>
-                  )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(proposal.status)}`}>
+                      {getStatusIcon(proposal.status)}
+                      {proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}
+                    </span>
+                    {proposal.status === "accepted" && proposal.funding_status === "funded" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
+                        <CheckCircle className="h-3 w-3" /> Funded
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Skills:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {proposal.skills?.map((skill, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="text-xs bg-primary/10 text-primary dark:bg-orange-900/20 dark:text-orange-300"
-                        >
+                {proposal.job_description && (
+                  <p className="mt-3 text-sm text-muted-foreground line-clamp-3">{proposal.job_description}</p>
+                )}
+
+                <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4 border-y border-border py-4">
+                  {[
+                    { icon: DollarSign, label: "Your budget", val: proposal.budget || "Not specified" },
+                    {
+                      icon: DollarSign,
+                      label: "Client budget",
+                      val: `₦${proposal.job_budget_min?.toLocaleString()} – ₦${proposal.job_budget_max?.toLocaleString()}`,
+                    },
+                    { icon: Clock, label: "Your timeline", val: proposal.timeline || "Not specified" },
+                    { icon: Clock, label: "Job duration", val: proposal.job_duration || "Not specified" },
+                  ].map((m, i) => (
+                    <div key={i} className="flex items-start gap-2 min-w-0">
+                      <m.icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">{m.label}</p>
+                        <p className="text-sm font-medium text-foreground truncate tabular-nums">{m.val}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {proposal.job_location && (
+                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span>
+                      Location: <span className="font-medium text-foreground">{proposal.job_location}</span>
+                    </span>
+                  </div>
+                )}
+
+                {!!proposal.skills?.length && (
+                  <div className="mt-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Skills</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {proposal.skills.map((skill, index) => (
+                        <span key={index} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">
                           {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4 rounded-lg border border-border bg-surface-2 p-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Your proposal</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-4">{proposal.proposal_text}</p>
+                  {(proposal.proposal_text?.length ?? 0) > 240 && (
+                    <button
+                      onClick={() => setViewingProposal(proposal)}
+                      className="mt-2 text-xs font-medium text-primary hover:underline"
+                    >
+                      View all
+                    </button>
+                  )}
+                </div>
+
+                {proposal.attachments && proposal.attachments.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Attachments</p>
+                    <div className="flex flex-wrap gap-2">
+                      {proposal.attachments.map((attachment, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          📎 {attachment}
                         </Badge>
                       ))}
                     </div>
                   </div>
+                )}
 
-                  <div className="bg-primary/10 dark:bg-orange-900/10 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Your Proposal:</p>
-                    <p className="text-sm text-slate-700 dark:text-gray-300 whitespace-pre-wrap">
-                      {proposal.proposal_text}
-                    </p>
-                  </div>
-
-                  {proposal.attachments && proposal.attachments.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Attachments:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {proposal.attachments.map((attachment, index) => (
-                          <Badge key={index} variant="outline" className="text-sm">
-                            📎 {attachment}
-                          </Badge>
-                        ))}
+                {/* Freelancer Action Buttons */}
+                {proposal.status === "accepted" && proposal.funding_status === "funded" && (
+                  <div className="mt-4 border-t border-border pt-4 space-y-2">
+                    {proposal.freelancer_status === "pending" && (
+                      <Button onClick={() => handleStartWork(proposal.id, proposal.job_id)} className="w-full gap-2">
+                        <Rocket className="h-4 w-4" /> Start work
+                      </Button>
+                    )}
+                    {proposal.freelancer_status === "started" && proposal.job_status === "completed" && (
+                      <Button
+                        onClick={() => handleCompleteWork(proposal.id, proposal.job_id)}
+                        variant="outline"
+                        className="w-full gap-2 text-success border-success/30 hover:bg-success/10"
+                      >
+                        <CheckCircle className="h-4 w-4" /> Complete work
+                      </Button>
+                    )}
+                    {proposal.freelancer_status === "started" && proposal.job_status !== "completed" && (
+                      <div className="w-full p-3 rounded-lg border border-warning/30 bg-warning/10 text-center">
+                        <p className="text-sm text-warning">Work in progress — waiting for the agency to mark the job as done.</p>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Freelancer Action Buttons */}
-                  {proposal.status === "accepted" && proposal.funding_status === "funded" && (
-                    <div className="mt-4 border-t pt-4 space-y-2">
-                      {proposal.freelancer_status === "pending" && (
-                        <Button
-                          onClick={() => handleStartWork(proposal.id, proposal.job_id)}
-                          className="w-full bg-blue-500 hover:bg-blue-600"
-                        >
-                          🚀 Bix (Start Work)
-                        </Button>
-                      )}
-                      {proposal.freelancer_status === "started" && proposal.job_status === "completed" && (
-                        <Button
-                          onClick={() => handleCompleteWork(proposal.id, proposal.job_id)}
-                          className="w-full bg-green-500 hover:bg-green-600"
-                        >
-                          ✅ Complete Work
-                        </Button>
-                      )}
-                      {proposal.freelancer_status === "started" && proposal.job_status !== "completed" && (
-                        <div className="w-full p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
-                          <p className="text-sm text-yellow-800">
-                            Work in progress... Waiting for agency to mark job as done
-                          </p>
-                        </div>
-                      )}
-                      {proposal.freelancer_status === "completed" && (
-                        <div className="w-full p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                          <p className="text-sm text-green-800">✅ Work completed successfully!</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    )}
+                    {proposal.freelancer_status === "completed" && (
+                      <div className="w-full p-3 rounded-lg border border-success/30 bg-success/10 text-center">
+                        <p className="inline-flex items-center justify-center gap-1.5 text-sm text-success">
+                          <CheckCircle className="h-4 w-4" /> Work completed successfully.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
 
             {hasMore && proposals.length > 0 && (
-              <div className="text-center py-6">
-                <Button
-                  onClick={() => loadProposals(true)}
-                  disabled={loadingMore}
-                  variant="outline"
-                  className="min-w-32 border-primary text-primary hover:bg-primary/10 dark:hover:bg-orange-900/20"
-                >
+              <div className="flex justify-center pt-2">
+                <Button onClick={() => loadProposals(true)} disabled={loadingMore} variant="outline">
                   {loadingMore ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                      Loading...
-                    </div>
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Loading...
+                    </>
                   ) : (
-                    "Load More"
+                    "Load more"
                   )}
                 </Button>
               </div>
@@ -498,6 +463,40 @@ export default function ProposalsClient({
           </div>
         )}
       </div>
+
+      {/* View full proposal */}
+      {viewingProposal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setViewingProposal(null)}
+        >
+          <div
+            className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-border bg-card shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Your proposal</p>
+                <h3 className="text-base font-semibold text-foreground truncate">{viewingProposal.job_title}</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => setViewingProposal(null)}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                {viewingProposal.proposal_text}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

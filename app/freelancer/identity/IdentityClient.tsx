@@ -4,10 +4,9 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react"
+import { Loader2, AlertCircle, Clock, ShieldCheck, BadgeCheck, Lock } from "lucide-react"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -162,124 +161,113 @@ export default function IdentityClient({ initialVerification }: IdentityClientPr
 
   if (checkingExisting) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-2xl mx-auto p-6 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-xl px-4 sm:px-6 py-8 sm:py-12 space-y-6">
+        {/* Header */}
+        <header className="space-y-1 text-center">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Verification</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Identity verification</h1>
+          <p className="text-sm text-muted-foreground">A verified badge helps agencies trust and hire you faster.</p>
+        </header>
 
-      <div className="max-w-2xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">Identity Verification</CardTitle>
-            <CardDescription>Please provide your National Identity Number (NIN) for verification</CardDescription>
+        {existingVerification?.status === "verified" ? (
+          /* Verified */
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <div className="mx-auto h-16 w-16 rounded-full bg-success/10 text-success flex items-center justify-center ring-8 ring-success/5">
+              <ShieldCheck className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 text-lg font-semibold text-foreground">Identity verified</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You&apos;re all set — bid and get hired with a verified badge on your profile.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-4 py-2">
+              <BadgeCheck className="h-4 w-4 text-success shrink-0" />
+              <span className="text-sm font-medium text-foreground tabular-nums">NIN {existingVerification.nin}</span>
+            </div>
+          </div>
+        ) : existingVerification ? (
+          /* Pending */
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <div className="mx-auto h-16 w-16 rounded-full bg-warning/10 text-warning flex items-center justify-center ring-8 ring-warning/5">
+              <Clock className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 text-lg font-semibold text-foreground">Verification in progress</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              We&apos;re confirming your details — this usually takes a moment.
+            </p>
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-4 py-2">
+              <Loader2 className="h-4 w-4 text-warning animate-spin shrink-0" />
+              <span className="text-sm font-medium text-foreground tabular-nums">NIN {existingVerification.nin}</span>
+            </div>
+          </div>
+        ) : (
+          /* Form */
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <ShieldCheck className="h-7 w-7" />
+            </div>
+            <h2 className="mt-5 text-lg font-semibold text-foreground">Verify your identity</h2>
+            <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+              Enter your 11-digit National Identity Number (NIN) to get verified.
+            </p>
 
-            {existingVerification && (
-              <div
-                className={`rounded-lg p-4 mt-4 ${
-                  existingVerification.status === "verified"
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-yellow-50 border border-yellow-200"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {existingVerification.status === "verified" ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <Clock className="h-5 w-5 text-yellow-600" />
-                  )}
-                  <div>
-                    <p
-                      className={`font-medium ${
-                        existingVerification.status === "verified" ? "text-green-700" : "text-yellow-700"
-                      }`}
-                    >
-                      {existingVerification.status === "verified" ? "Verification Complete" : "Verification Pending"}
-                    </p>
-                    <p
-                      className={`text-sm ${
-                        existingVerification.status === "verified" ? "text-green-600" : "text-yellow-600"
-                      }`}
-                    >
-                      NIN: {existingVerification.nin}
-                      {existingVerification.status === "pending" && " -In progress..."}
-                    </p>
-                  </div>
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left max-w-sm mx-auto">
+              <div className="space-y-2">
+                <Label htmlFor="nin" className="text-sm font-medium text-foreground">
+                  National Identity Number (NIN)
+                </Label>
+                <Input
+                  id="nin"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="• • • • • • • • • • •"
+                  value={nin}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 11)
+                    setNin(value)
+                    if (status.type === "error") {
+                      setStatus({ type: null, message: "" })
+                    }
+                  }}
+                  maxLength={11}
+                  required
+                  disabled={isLoading}
+                  className="h-12 text-center text-lg font-medium tracking-[0.3em] tabular-nums"
+                />
+                <p className="text-xs text-muted-foreground text-center">{nin.length}/11 digits</p>
+              </div>
+
+              {status.type === "error" && (
+                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <span className="text-sm text-destructive">{status.message}</span>
                 </div>
-              </div>
-            )}
+              )}
 
-            {status.type && (
-              <div
-                className={`rounded-lg p-3 flex items-start gap-2 mt-4 ${
-                  status.type === "success" ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"
-                }`}
-              >
-                {status.type === "success" && <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />}
-                {status.type === "error" && <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />}
-                <span className={`text-sm ${status.type === "success" ? "text-green-700" : "text-red-700"}`}>
-                  {status.message}
-                </span>
-              </div>
-            )}
-          </CardHeader>
+              <Button type="submit" className="w-full h-11" disabled={isLoading || nin.length !== 11}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting…
+                  </>
+                ) : (
+                  "Submit for verification"
+                )}
+              </Button>
+            </form>
 
-          <CardContent>
-            {!existingVerification ? (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="nin">National Identity Number (NIN) *</Label>
-                  <Input
-                    id="nin"
-                    type="text"
-                    placeholder="Enter your 11-digit NIN"
-                    value={nin}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 11)
-                      setNin(value)
-                      if (status.type === "error") {
-                        setStatus({ type: null, message: "" })
-                      }
-                    }}
-                    maxLength={11}
-                    required
-                    disabled={isLoading}
-                    className="text-lg tracking-wider"
-                  />
-                  <p className="text-sm text-slate-600">Your NIN must be exactly 11 digits</p>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary-hover disabled:bg-gray-400"
-                  disabled={isLoading || nin.length !== 11}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit for Verification"
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-slate-600">
-                  {existingVerification.status === "verified"
-                    ? "Your identity has been successfully verified."
-                    : "Your NIN has been submitted and is being processed."}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <p className="mt-5 inline-flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" /> Your NIN is encrypted and never shared.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

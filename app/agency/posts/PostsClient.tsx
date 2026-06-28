@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
-import { Search, Loader2, X, FileText, CheckCircle, XCircle, Eye } from "lucide-react"
+import { Search, Loader2, X, FileText, CheckCircle, XCircle, Eye, Plus, Wallet, MessageSquare } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -61,6 +61,8 @@ export default function PostsClient({
   const [messageInputOpenForProposalId, setMessageInputOpenForProposalId] = useState<string | null>(null)
   const [currentMessageText, setCurrentMessageText] = useState<string>("")
   const [proposalSearchTerm, setProposalSearchTerm] = useState("")
+  const [proposalsError, setProposalsError] = useState<string | null>(null)
+  const [selectedJobEscrowStatus, setSelectedJobEscrowStatus] = useState<string | null>(null)
 
   const [fundingProposalId, setFundingProposalId] = useState<string | null>(null)
 
@@ -179,40 +181,58 @@ export default function PostsClient({
   }
 
   const handleViewProposals = async (job: JobPost) => {
+    // Open the modal immediately so the click always produces visible feedback,
+    // then load proposals into it. Previously a failed/empty query returned
+    // before setShowProposalsModal(true), so clicking "Review bids" did nothing.
+    setSelectedJob(job)
+    setProposalSearchTerm("")
+    setSelectedJobProposals([])
+    setProposalsError(null)
+    setSelectedJobEscrowStatus(null)
+    setShowProposalsModal(true)
+
+    // Has this job already been funded into escrow? Fired in parallel — only
+    // used to show "Funded" instead of "Fund job" on accepted proposals.
+    supabase
+      .from("escrow_deposits")
+      .select("status_v2")
+      .eq("job_id", job.id)
+      .not("status_v2", "is", null)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("escrow status lookup error:", error)
+          return
+        }
+        setSelectedJobEscrowStatus(data?.status_v2 ?? null)
+      })
+
     try {
       const { data: proposalsData, error } = await supabase
         .from("proposals")
         .select(
           `*,
           profiles!proposals_freelancer_id_fkey (
-            id,
-            full_name,
-            bio,
-            location,
-            phone,
-            website,
-            email
-          )
-        `,
+            id, full_name, bio, location, phone, website, email
+          )`,
         )
         .eq("job_id", job.id)
         .order("created_at", { ascending: false })
 
       if (error) {
         console.error("Error loading proposals:", error)
+        setProposalsError(`Couldn't load proposals: ${error.message}`)
         return
       }
 
       setSelectedJobProposals(proposalsData || [])
-      setSelectedJob(job)
-      setProposalSearchTerm("")
       const freelancerIds = proposalsData?.map((proposal) => proposal.freelancer_id) || []
       if (freelancerIds.length > 0) {
         await loadFreelancerImages(freelancerIds)
       }
-      setShowProposalsModal(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading proposals:", error)
+      setProposalsError(`Couldn't load proposals: ${error?.message ?? String(error)}`)
     }
   }
 
@@ -419,97 +439,106 @@ export default function PostsClient({
   })
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900">
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-primaryxl font-bold text-slate-900 dark:text-gray-50 mb-6">Manage Job Posts</h1>
-          <div className="mb-6">
+    <div className="flex flex-col min-h-screen bg-surface">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20">
+        <div className="mx-auto max-w-6xl space-y-8">
+          {/* Toolbar header */}
+          <header className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hiring desk</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Job posts</h1>
+            <p className="text-sm text-muted-foreground">Track your listings and review incoming proposals.</p>
+          </header>
+
+          {/* Search */}
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search job posts by title or description..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-gray-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-gray-50 focus:ring-primary focus:border-primary"
+                className="pl-10"
               />
             </div>
           </div>
           {loading && jobs.length === 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
+                <Card key={i} className="rounded-xl border border-border bg-card shadow-none animate-pulse">
                   <CardHeader>
-                    <div className="h-6 bg-slate-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-1/2"></div>
+                    <div className="h-6 bg-foreground/5 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-foreground/5 rounded w-1/2"></div>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-5/6"></div>
-                    <div className="h-4 bg-slate-200 dark:bg-gray-700 rounded w-2/3"></div>
-                    <div className="h-8 bg-slate-200 dark:bg-gray-700 rounded w-full mt-4"></div>
+                    <div className="h-4 bg-foreground/5 rounded"></div>
+                    <div className="h-4 bg-foreground/5 rounded w-5/6"></div>
+                    <div className="h-4 bg-foreground/5 rounded w-2/3"></div>
+                    <div className="h-8 bg-foreground/5 rounded w-full mt-4"></div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : jobs.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-              <p className="text-lg">
-                {searchTerm ? "No matching job posts found." : "You haven't created any job posts yet."}
+            <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
+              <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <FileText className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-sm font-semibold text-foreground">
+                {searchTerm ? "No matching job posts" : "No job posts yet"}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                {searchTerm
+                  ? "Try a different title or keyword."
+                  : "Post your first opportunity from the dashboard and proposals will land here."}
               </p>
               {!searchTerm && (
-                <Button
-                  onClick={() => router.push("/agency/dashboard")}
-                  className="mt-4 bg-primary hover:bg-primary-hover"
-                >
-                  Create a New Post
+                <Button className="mt-5 gap-2" onClick={() => router.push("/agency/dashboard")}>
+                  <Plus className="h-4 w-4" /> Post a job
                 </Button>
               )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {jobs.map((job) => (
-                <Card key={job.id} className="flex flex-col">
+                <Card key={job.id} className="flex flex-col rounded-xl border border-border bg-card shadow-none hover:border-foreground/20 transition-colors">
                   <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg font-semibold">{job.title}</CardTitle>
-                        <CardDescription className="text-sm text-slate-500 dark:text-slate-400">
-                          Posted: {new Date(job.created_at).toLocaleDateString()}
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base font-semibold text-foreground truncate">{job.title}</CardTitle>
+                        <CardDescription className="text-xs text-muted-foreground mt-1">
+                          Posted {new Date(job.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                         </CardDescription>
                       </div>
-                      <div className="flex gap-2">
-                        {job.funding_status === "funded" && (
-                          <Button
-                            onClick={() => handleJobDone(job.id)}
-                            className="bg-green-500 hover:bg-green-600"
-                            size="sm"
-                          >
-                            ✅ Job Done
-                          </Button>
-                        )}
-                      </div>
+                      {job.funding_status === "funded" && (
+                        <Button
+                          onClick={() => handleJobDone(job.id)}
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 gap-1.5 text-success border-success/30 hover:bg-success/10"
+                        >
+                          <CheckCircle className="h-4 w-4" /> Mark done
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col justify-between">
-                    <p className="text-slate-700 dark:text-gray-300 mb-4 line-clamp-3">{job.description}</p>
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge
-                        variant="secondary"
-                        className="text-sm bg-orange-100 text-primary dark:bg-orange-900/20 dark:text-orange-300"
-                      >
-                        Budget: ₦ {job.budget_min?.toLocaleString()} - ₦ {job.budget_max?.toLocaleString()}
-                      </Badge>
-                      <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                        Proposals: {job.proposals}
-                      </Badge>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3">{job.description}</p>
+                    <div className="flex flex-wrap items-center gap-2 mb-4">
+                      <span className="px-2 py-0.5 rounded-md bg-surface-2 text-foreground text-[11px] font-medium tabular-nums">
+                        ₦{job.budget_min?.toLocaleString()} – ₦{job.budget_max?.toLocaleString()}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-primary-soft text-primary text-[11px] font-medium">
+                        {job.proposals} {job.proposals === 1 ? "proposal" : "proposals"}
+                      </span>
                     </div>
                     <Button
+                      variant="outline"
                       onClick={() => handleViewProposals(job)}
-                      className="w-full bg-primary hover:bg-primary-hover"
+                      className="w-full gap-2"
                     >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Proposals ({job.proposals})
+                      <Eye className="h-4 w-4" />
+                      Review bids ({job.proposals})
                     </Button>
                   </CardContent>
                 </Card>
@@ -517,10 +546,10 @@ export default function PostsClient({
             </div>
           )}
           {hasMore && !loading && jobs.length > 0 && (
-            <div className="flex justify-center mt-8">
-              <Button onClick={handleLoadMore} disabled={loading} className="bg-primary hover:bg-primary-hover">
+            <div className="flex justify-center">
+              <Button variant="outline" onClick={handleLoadMore} disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {loading ? "Loading..." : "Load More"}
+                {loading ? "Loading..." : "Load more"}
               </Button>
             </div>
           )}
@@ -544,7 +573,7 @@ export default function PostsClient({
               </div>
               <div className="mt-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Search freelancers by name, location, or proposal..."
@@ -567,11 +596,16 @@ export default function PostsClient({
                       ? "No proposals match your search criteria. Try different keywords."
                       : "Freelancers haven't submitted any proposals for this job yet."}
                   </p>
+                  {proposalsError && (
+                    <p className="mt-4 mx-auto max-w-md text-xs text-destructive font-mono break-words">
+                      {proposalsError}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-6">
                   {filteredProposals.map((proposal) => (
-                    <div key={proposal.id} className="border border-slate-200 dark:border-gray-700 rounded-lg p-6">
+                    <div key={proposal.id} className="border border-border rounded-xl p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-12 w-12">
@@ -652,25 +686,40 @@ export default function PostsClient({
                             {!messageInputOpenForProposalId || messageInputOpenForProposalId !== proposal.id ? (
                               <div className="flex space-x-2">
                                 <Button
-                                  className="flex-1 bg-primary hover:bg-primary-hover"
+                                  variant="outline"
+                                  className="flex-1 gap-2"
                                   onClick={() => {
                                     setMessageInputOpenForProposalId(proposal.id)
                                     setCurrentMessageText("")
                                   }}
                                 >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Message Freelancer
+                                  <MessageSquare className="h-4 w-4" />
+                                  Message freelancer
                                 </Button>
-                                <Button
-                                  className="flex-1 bg-primary hover:bg-primary-hover"
-                                  onClick={() => handleFundProposal(proposal.id)}
-                                  disabled={fundingProposalId === proposal.id}
-                                >
-                                  {fundingProposalId === proposal.id ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  ) : null}
-                                  💰 Fund Job
-                                </Button>
+                                {selectedJobEscrowStatus &&
+                                ["funded", "released", "paid_out"].includes(selectedJobEscrowStatus) ? (
+                                  <Button className="flex-1 gap-2" variant="outline" disabled>
+                                    <CheckCircle className="h-4 w-4 text-success" />
+                                    {selectedJobEscrowStatus === "funded"
+                                      ? "Funded"
+                                      : selectedJobEscrowStatus === "released"
+                                        ? "Released"
+                                        : "Paid out"}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    className="flex-1 gap-2"
+                                    onClick={() => handleFundProposal(proposal.id)}
+                                    disabled={fundingProposalId === proposal.id}
+                                  >
+                                    {fundingProposalId === proposal.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Wallet className="h-4 w-4" />
+                                    )}
+                                    Fund job
+                                  </Button>
+                                )}
                               </div>
                             ) : (
                               <div className="space-y-3">

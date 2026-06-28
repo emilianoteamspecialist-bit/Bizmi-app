@@ -213,15 +213,13 @@ export default function WalletClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto py-8 px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-              <div className="h-20 bg-gray-300 rounded"></div>
-            </div>
+      <div className="min-h-screen bg-surface">
+        <div className="max-w-6xl mx-auto py-8 px-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-foreground/5 rounded w-1/4 mb-6"></div>
+            <div className="h-32 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
           </div>
         </div>
       </div>
@@ -234,89 +232,81 @@ export default function WalletClient({
   const hasMore = endIndex < fundedJobs.length
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Toolbar header */}
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Wallet</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agency wallet</h1>
+          <p className="text-sm text-muted-foreground">Manage funding and review the jobs you&apos;ve funded for freelancers.</p>
+        </header>
 
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-primaryxl font-bold text-slate-900">Agency Wallet</h1>
-          <p className="text-slate-600 mt-2">Manage your wallet balance and fund freelancer jobs</p>
-        </div>
-
-        {/* Wallet Balance Card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Contact Us Card */}
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Wallet className="h-5 w-5 mr-2 text-primary" />
-                Need Help?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <p className="text-lg font-medium text-slate-900">Contact Support</p>
-                  <p className="text-slate-600 mt-1">Get help with your wallet or transactions</p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button
-                    onClick={() =>
-                      window.open("mailto:Bizimisocials12@gmail.com?subject=Wallet Support Request", "_blank")
-                    }
-                    className="bg-primary hover:bg-primary-hover text-white"
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Contact Us
-                  </Button>
-                  <Button
-                    onClick={handleDepositClick}
-                    variant="outline"
-                    className="border-primary text-primary hover:bg-primary/10 bg-transparent"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Make a Deposit
-                  </Button>
-                </div>
+        {/* Metric tiles */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { label: "Wallet balance", value: formatCurrency(walletBalance), icon: Wallet, tone: "text-primary", accent: true },
+            { label: "Funded jobs", value: fundedJobs.length, icon: TrendingUp, tone: "text-foreground", accent: false },
+            {
+              label: "Pending verification",
+              value: fundedJobs.filter((job) => job.status === "pending_verification").length,
+              icon: Clock,
+              tone: "text-warning",
+              accent: false,
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className={`rounded-xl border bg-card p-4 ${stat.accent ? "border-primary/30" : "border-border"}`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                <stat.icon className={`h-3.5 w-3.5 ${stat.tone}`} />
               </div>
-            </CardContent>
-          </Card>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">{stat.value}</p>
+            </div>
+          ))}
+        </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                Quick Stats
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-slate-600">Total Funded Jobs</p>
-                  <p className="text-2xl font-bold text-slate-900">{fundedJobs.length}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-600">Pending Verification</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {fundedJobs.filter((job) => job.status === "pending_verification").length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Help / Deposit */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Need help, or want to add funds?</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Reach support or make a deposit to fund jobs.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={() =>
+                  window.open("mailto:contact@bizimii.com?subject=Wallet Support Request", "_blank")
+                }
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Contact us
+              </Button>
+              <Button onClick={handleDepositClick} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Make a deposit
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* Funded Jobs Section */}
-        <Card className="mb-8">
+        <Card className="rounded-xl border border-border bg-card shadow-none">
           <CardHeader>
-            <CardTitle className="text-xl text-slate-900">Funded Jobs</CardTitle>
-            <p className="text-slate-600">Jobs you have funded for freelancers</p>
+            <CardTitle className="text-base font-semibold text-foreground">Funded jobs</CardTitle>
+            <p className="text-sm text-muted-foreground">Jobs you have funded for freelancers.</p>
           </CardHeader>
           <CardContent>
             {fundedJobs.length === 0 ? (
-              <div className="text-center py-8">
-                <Clock className="h-16 w-16 mx-auto mb-4 text-slate-400" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">No Funded Jobs Yet</h3>
-                <p className="text-slate-500">Jobs you fund will appear here</p>
+              <div className="py-16 px-6 text-center">
+                <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Clock className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-sm font-semibold text-foreground">No funded jobs yet</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Jobs you fund will appear here.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -342,9 +332,9 @@ export default function WalletClient({
                         <TableCell className="font-semibold text-primary">{formatCurrency(job.amount)}</TableCell>
                         <TableCell className="font-mono text-sm">{job.reference_id}</TableCell>
                         <TableCell>{getStatusBadge(job.status)}</TableCell>
-                        <TableCell className="text-sm text-slate-600">
+                        <TableCell className="text-sm text-muted-foreground">
                           {job.status === "failed" && job.failure_reason ? (
-                            <span className="text-red-600">{job.failure_reason}</span>
+                            <span className="text-destructive">{job.failure_reason}</span>
                           ) : (
                             "-"
                           )}
@@ -359,9 +349,10 @@ export default function WalletClient({
                           {job.job_confirmed && !job.job_completed && (
                             <Button
                               size="sm"
+                              variant="outline"
                               onClick={() => handleCompleteJob(job)}
                               disabled={completingJobs.has(job.id)}
-                              className="bg-green-500 hover:bg-green-600"
+                              className="gap-1.5 text-success border-success/30 hover:bg-success/10"
                             >
                               {completingJobs.has(job.id) ? (
                                 <>
@@ -377,7 +368,7 @@ export default function WalletClient({
                             </Button>
                           )}
                           {!job.job_confirmed && (
-                            <Badge className="bg-slate-100 text-gray-800">
+                            <Badge className="bg-surface-2 text-muted-foreground">
                               <Clock className="w-3 h-3 mr-1" />
                               Waiting
                             </Badge>
@@ -390,7 +381,6 @@ export default function WalletClient({
                             variant="destructive"
                             onClick={() => handleDeleteJob(job.id)}
                             disabled={deletingJobs.has(job.id)}
-                            className="bg-red-500 hover:bg-red-600"
                           >
                             {deletingJobs.has(job.id) ? (
                               <Clock className="w-3 h-3 animate-spin" />
@@ -407,11 +397,8 @@ export default function WalletClient({
             )}
             {hasMore && (
               <div className="flex justify-center mt-4">
-                <Button
-                  onClick={() => setCurrentPage((prev) => prev + 1)}
-                  className="bg-primary hover:bg-primary-hover text-white"
-                >
-                  Load More
+                <Button variant="outline" onClick={() => setCurrentPage((prev) => prev + 1)}>
+                  Load more
                 </Button>
               </div>
             )}

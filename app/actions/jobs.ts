@@ -76,17 +76,6 @@ export async function getSavedJobs() {
       *,
       jobs!saved_jobs_job_id_fkey (
         *,
-        profiles!jobs_agency_id_fkey (
-          id,
-          full_name,
-          company_name,
-          company_size,
-          bio,
-          location,
-          phone,
-          website,
-          created_at
-        ),
         proposals(count)
       )
     `)
@@ -98,10 +87,22 @@ export async function getSavedJobs() {
     return []
   }
 
-  // Total job count per agency.
+  // There's no declared FK between jobs.agency_id and profiles.id, so PostgREST
+  // can't embed the agency — fetch the agency profiles separately and merge.
   const agencyIds = [
-    ...new Set((savedJobsData || []).map((item: any) => item.jobs?.profiles?.id).filter(Boolean)),
+    ...new Set((savedJobsData || []).map((item: any) => item.jobs?.agency_id).filter(Boolean)),
   ]
+
+  const profilesById: Record<string, any> = {}
+  if (agencyIds.length > 0) {
+    const { data: agencyProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, company_name, company_size, bio, location, phone, website, email, created_at")
+      .in("id", agencyIds)
+    for (const p of agencyProfiles || []) profilesById[(p as any).id] = p
+  }
+
+  // Total job count per agency.
   const agencyJobCounts: Record<string, number> = {}
   for (const agencyId of agencyIds) {
     const { count } = await supabase
@@ -113,6 +114,7 @@ export async function getSavedJobs() {
 
   return (savedJobsData || []).map((item: any) => {
     const job = item.jobs
+    const profile = profilesById[job?.agency_id] || null
     return {
       ...job,
       savedAt: new Date(item.created_at).toLocaleDateString(),
@@ -121,18 +123,18 @@ export async function getSavedJobs() {
       proposals: job.proposals?.[0]?.count || 0,
       isBookmarked: true,
       agencyInfo: {
-        id: job.profiles?.id,
-        name: job.profiles?.company_name || job.profiles?.full_name || "Unknown Agency",
-        location: job.profiles?.location || "Nigeria",
-        employees: job.profiles?.company_size || "10-50",
-        description: job.profiles?.bio || "Professional agency providing quality services.",
-        memberSince: job.profiles?.created_at ? new Date(job.profiles.created_at).getFullYear().toString() : "2020",
-        phone: job.profiles?.phone,
-        website: job.profiles?.website,
-        email: job.profiles?.email,
-        fullName: job.profiles?.full_name,
-        companyName: job.profiles?.company_name,
-        totalJobs: agencyJobCounts[job.profiles?.id] || 0,
+        id: profile?.id,
+        name: profile?.company_name || profile?.full_name || "Unknown Agency",
+        location: profile?.location || "Nigeria",
+        employees: profile?.company_size || "10-50",
+        description: profile?.bio || "Professional agency providing quality services.",
+        memberSince: profile?.created_at ? new Date(profile.created_at).getFullYear().toString() : "2020",
+        phone: profile?.phone,
+        website: profile?.website,
+        email: profile?.email,
+        fullName: profile?.full_name,
+        companyName: profile?.company_name,
+        totalJobs: agencyJobCounts[job?.agency_id] || 0,
       },
     }
   })

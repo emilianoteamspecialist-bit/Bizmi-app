@@ -1,12 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminSidebar } from "@/components/admin-sidebar"
-import { ScrollText } from "lucide-react"
 
 interface AuditEntry {
   id: string
@@ -27,11 +24,11 @@ const fmtDateTime = (d?: string) => (d ? new Date(d).toLocaleString() : "—")
 function actionBadge(action: string) {
   const danger = action.includes("disable") || action.includes("refund")
   const cls = danger
-    ? "bg-red-100 text-red-800"
+    ? "bg-destructive/10 text-destructive"
     : action.includes("resolve")
-      ? "bg-blue-100 text-blue-800"
-      : "bg-slate-100 text-slate-800"
-  return <Badge className={`${cls} border-none font-mono text-xs`}>{action}</Badge>
+      ? "bg-info/10 text-info"
+      : "bg-surface-2 text-muted-foreground"
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-mono text-[11px] font-medium ${cls}`}>{action}</span>
 }
 
 export default function AuditLogClient({ initialLogs }: AuditLogClientProps) {
@@ -50,32 +47,32 @@ export default function AuditLogClient({ initialLogs }: AuditLogClientProps) {
   })
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex h-screen bg-surface">
       <AdminSidebar />
-      <div className="lg:pl-64">
-        <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <ScrollText className="h-6 w-6 text-primary" /> Audit Log
-              </h1>
-              <p className="text-slate-600">A record of consequential admin actions (money movement, account changes).</p>
-            </div>
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+            <header className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Audit log</h1>
+              <p className="text-sm text-muted-foreground">A record of consequential admin actions (money movement, account changes).</p>
+            </header>
             <Input
               placeholder="Search action, admin, target…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="max-w-xs"
+              className="md:max-w-xs"
             />
           </div>
 
-          <Card>
-            <CardHeader className="border-b">
-              <CardTitle className="text-base">Recent actions ({logs.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground">Recent actions ({logs.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
               {logs.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-sm">
+                <div className="p-12 text-center text-sm text-muted-foreground">
                   No audit entries yet. Admin actions (dispute resolutions, user disable/enable) will appear here.
                 </div>
               ) : (
@@ -92,28 +89,22 @@ export default function AuditLogClient({ initialLogs }: AuditLogClientProps) {
                   <TableBody>
                     {logs.map((l) => (
                       <TableRow key={l.id}>
-                        <TableCell className="whitespace-nowrap text-sm">{fmtDateTime(l.created_at)}</TableCell>
-                        <TableCell className="text-sm">
-                          {l.admin?.full_name || l.admin?.email || "—"}
-                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground tabular-nums">{fmtDateTime(l.created_at)}</TableCell>
+                        <TableCell className="text-sm text-foreground">{l.admin?.full_name || l.admin?.email || "—"}</TableCell>
                         <TableCell>{actionBadge(l.action)}</TableCell>
-                        <TableCell className="text-sm">
+                        <TableCell className="text-sm text-muted-foreground">
                           {l.target_type ? (
                             <span>
                               {l.target_type}
-                              {l.target_id && (
-                                <span className="block font-mono text-[11px] text-slate-400">{l.target_id}</span>
-                              )}
+                              {l.target_id && <span className="block font-mono text-[11px] text-muted-foreground/70">{l.target_id}</span>}
                             </span>
                           ) : (
                             "—"
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-slate-600 max-w-xs">
+                        <TableCell className="text-xs text-muted-foreground max-w-xs">
                           {l.details ? (
-                            <pre className="whitespace-pre-wrap break-words font-mono">
-                              {JSON.stringify(l.details)}
-                            </pre>
+                            <pre className="whitespace-pre-wrap break-words font-mono">{JSON.stringify(l.details)}</pre>
                           ) : (
                             "—"
                           )}
@@ -123,8 +114,8 @@ export default function AuditLogClient({ initialLogs }: AuditLogClientProps) {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>

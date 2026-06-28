@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -72,7 +71,7 @@ export default function AgencyProfileClient({
         })
       }
 
-      const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", user.id).single()
+      const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", user.id).maybeSingle()
       if (imageData) setImagePreview(resolveAvatar(imageData))
     } catch (error) {
       console.error(error)
@@ -145,153 +144,149 @@ export default function AgencyProfileClient({
   }
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400">Loading Profile...</div>
+    return <div className="min-h-screen bg-surface flex items-center justify-center text-sm font-medium text-muted-foreground">Loading profile…</div>
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 selection:bg-orange-100">
-      
-      <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Header Area */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
-           <div className="flex items-center gap-6">
-              <div className="relative group">
-                 <Avatar className="h-32 w-32 border-8 border-white shadow-2xl rounded-[2.5rem]">
-                   <AvatarImage src={imagePreview} />
-                   <AvatarFallback className="bg-slate-900 text-white text-4xl font-black uppercase">
-                     {formData.company_name?.charAt(0) || formData.full_name?.charAt(0) || "A"}
-                   </AvatarFallback>
-                 </Avatar>
-                 {isEditing && (
-                   <label htmlFor="image-upload" className="absolute inset-0 bg-slate-900/60 rounded-[2.5rem] flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="text-white h-8 w-8" />
-                      <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="image-upload" />
-                   </label>
-                 )}
-              </div>
-              <div className="space-y-1 pb-2">
-                 <h1 className="text-4xl font-black text-slate-900 tracking-tight">{formData.company_name || formData.full_name || "New Agency"}</h1>
-                 <p className="text-slate-400 font-bold flex items-center gap-2">
-                    <MapPin className="h-4 w-4" /> {formData.location || "Location not set"}
-                 </p>
-              </div>
-           </div>
-           <div className="pb-2">
-              {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} className="bg-slate-900 hover:bg-slate-800 rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-slate-200/50">
-                  <Edit className="mr-2 h-5 w-5" /> Edit Profile
-                </Button>
-              ) : (
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setIsEditing(false)} className="rounded-2xl h-14 px-8 font-bold border-slate-200">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary-hover rounded-2xl h-14 px-8 font-black text-lg shadow-xl shadow-primary/25">
-                    {saving ? "Saving..." : "Save Changes"}
-                  </Button>
-                </div>
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div className="relative group shrink-0">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl border border-border">
+                <AvatarImage src={imagePreview} className="object-cover" />
+                <AvatarFallback className="bg-foreground text-white text-xl sm:text-2xl font-semibold uppercase rounded-2xl">
+                  {formData.company_name?.charAt(0) || formData.full_name?.charAt(0) || "A"}
+                </AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <label htmlFor="image-upload" className="absolute inset-0 bg-foreground/60 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="text-white h-6 w-6" />
+                  <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" id="image-upload" />
+                </label>
               )}
-           </div>
-        </div>
+            </div>
+            <div className="space-y-1 min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Agency profile</p>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground truncate">{formData.company_name || formData.full_name || "New agency"}</h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-1.5 min-w-0">
+                <MapPin className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{formData.location || "Location not set"}</span>
+              </p>
+            </div>
+          </div>
+          <div className="w-full md:w-auto md:shrink-0">
+            {!isEditing ? (
+              <Button onClick={() => setIsEditing(true)} className="h-10 px-4 rounded-lg gap-2 w-full md:w-auto justify-center">
+                <Edit className="h-4 w-4" /> Edit profile
+              </Button>
+            ) : (
+              <div className="flex gap-2 w-full md:w-auto">
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="h-10 px-4 rounded-lg flex-1 md:flex-none justify-center">
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={saving} className="h-10 px-4 rounded-lg flex-1 md:flex-none justify-center">
+                  {saving ? "Saving…" : "Save changes"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           {/* Sidebar Info */}
-           <div className="space-y-6">
-              <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] bg-white overflow-hidden">
-                 <CardHeader className="bg-slate-50 border-b border-slate-100 p-8">
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-slate-400">Company Overview</CardTitle>
-                 </CardHeader>
-                 <CardContent className="p-8 space-y-6">
-                    <div className="space-y-4">
-                       <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-50 rounded-xl"><Users className="h-4 w-4 text-blue-500" /></div>
-                          <div>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Team Size</p>
-                             <p className="font-black text-slate-900">{formData.company_size || "Not set"}</p>
-                          </div>
-                       </div>
-                       <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10 rounded-xl"><Globe className="h-4 w-4 text-primary" /></div>
-                          <div className="min-w-0 flex-1">
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Website</p>
-                             <p className="font-bold text-slate-900 truncate">{formData.website || "No website"}</p>
-                          </div>
-                       </div>
-                       <div className="flex items-center gap-3">
-                          <div className="p-2 bg-green-50 rounded-xl"><Phone className="h-4 w-4 text-green-500" /></div>
-                          <div>
-                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contact</p>
-                             <p className="font-bold text-slate-900">{formData.phone || "No phone"}</p>
-                          </div>
-                       </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Sidebar Info */}
+          <div className="space-y-6">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Company overview</p>
+              </div>
+              <div className="p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-surface-2 flex items-center justify-center shrink-0"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Team size</p>
+                    <p className="text-sm font-medium text-foreground">{formData.company_size || "Not set"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-surface-2 flex items-center justify-center shrink-0"><Globe className="h-4 w-4 text-muted-foreground" /></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Website</p>
+                    <p className="text-sm font-medium text-foreground truncate">{formData.website || "No website"}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-surface-2 flex items-center justify-center shrink-0"><Phone className="h-4 w-4 text-muted-foreground" /></div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Contact</p>
+                    <p className="text-sm font-medium text-foreground">{formData.phone || "No phone"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Form */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="rounded-xl border border-border bg-card">
+              <div className="p-6 pb-4">
+                <h2 className="text-base font-semibold text-foreground">About agency</h2>
+                <p className="text-sm text-muted-foreground mt-0.5">Information visible to freelancers you hire.</p>
+              </div>
+              <div className="p-6 pt-0 space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Agency bio / about</Label>
+                  <Textarea
+                    rows={6}
+                    className="min-h-[160px] resize-none"
+                    placeholder="Describe your company, what you do, and what you look for in talent..."
+                    value={formData.bio}
+                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                    disabled={!isEditing}
+                  />
+                </div>
+
+                {isEditing && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Company name</Label>
+                      <Input value={formData.company_name} onChange={(e) => setFormData({...formData, company_name: e.target.value})} />
                     </div>
-                 </CardContent>
-              </Card>
-           </div>
-
-           {/* Main Form */}
-           <div className="lg:col-span-2 space-y-6">
-              <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2.5rem] bg-white">
-                 <CardHeader className="p-10 pb-4">
-                    <CardTitle className="text-2xl font-black text-slate-900">About Agency</CardTitle>
-                    <CardDescription className="font-medium">Information visible to freelancers you hire.</CardDescription>
-                 </CardHeader>
-                 <CardContent className="p-10 pt-0 space-y-8">
-                    <div className="space-y-6">
-                       <div className="space-y-2">
-                          <Label className="font-black uppercase tracking-widest text-[10px] text-slate-400">Agency Bio / About</Label>
-                          <Textarea 
-                            rows={6}
-                            className="rounded-[1.5rem] border-slate-200 focus:ring-primary min-h-[160px] p-6 text-slate-600 font-medium leading-relaxed"
-                            placeholder="Describe your company, what you do, and what you look for in talent..."
-                            value={formData.bio}
-                            onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                            disabled={!isEditing}
-                          />
-                       </div>
-
-                       {isEditing && (
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                            <div className="space-y-2">
-                               <Label className="font-bold text-slate-700">Company Name</Label>
-                               <Input className="h-12 rounded-xl" value={formData.company_name} onChange={(e) => setFormData({...formData, company_name: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="font-bold text-slate-700">Point of Contact</Label>
-                               <Input className="h-12 rounded-xl" value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="font-bold text-slate-700">Location</Label>
-                               <Input className="h-12 rounded-xl" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="font-bold text-slate-700">Company Size</Label>
-                               <select 
-                                 className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
-                                 value={formData.company_size}
-                                 onChange={(e) => setFormData({...formData, company_size: e.target.value})}
-                               >
-                                  <option value="">Select Size</option>
-                                  <option value="1-10">1-10 Employees</option>
-                                  <option value="11-50">11-50 Employees</option>
-                                  <option value="51-200">51-200 Employees</option>
-                                  <option value="200+">200+ Employees</option>
-                               </select>
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="font-bold text-slate-700">Phone</Label>
-                               <Input className="h-12 rounded-xl" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
-                            </div>
-                            <div className="space-y-2">
-                               <Label className="font-bold text-slate-700">Website</Label>
-                               <Input className="h-12 rounded-xl" value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} />
-                            </div>
-                         </div>
-                       )}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Point of contact</Label>
+                      <Input value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} />
                     </div>
-                 </CardContent>
-              </Card>
-           </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Location</Label>
+                      <Input value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Company size</Label>
+                      <select
+                        className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        value={formData.company_size}
+                        onChange={(e) => setFormData({...formData, company_size: e.target.value})}
+                      >
+                        <option value="">Select size</option>
+                        <option value="1-10">1-10 employees</option>
+                        <option value="11-50">11-50 employees</option>
+                        <option value="51-200">51-200 employees</option>
+                        <option value="200+">200+ employees</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Phone</Label>
+                      <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-foreground">Website</Label>
+                      <Input value={formData.website} onChange={(e) => setFormData({...formData, website: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

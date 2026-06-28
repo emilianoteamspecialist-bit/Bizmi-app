@@ -59,7 +59,7 @@ export default function FreelancerNavbar() {
     try {
       // Fetch logo and message count in parallel
       const [logoResult, countResult, recentResult] = await Promise.all([
-        supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).single(),
+        supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).maybeSingle(),
         supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", userId).eq("is_read", false),
         supabase.from("messages").select(`id, message_text, created_at, sender_id, conversation_id, sender_profile:profiles!messages_sender_id_fkey (full_name, account_type, company_name)`).eq("receiver_id", userId).eq("is_read", false).order("created_at", { ascending: false }).limit(7)
       ])

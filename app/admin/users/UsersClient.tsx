@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -25,11 +23,14 @@ interface UsersClientProps {
 }
 
 export default function UsersClient({ initialAgencies, initialFreelancers }: UsersClientProps) {
-  const [agencies, setAgencies] = useState<User[]>(initialAgencies)
-  const [freelancers, setFreelancers] = useState<User[]>(initialFreelancers)
-  const [loading, setLoading] = useState(false)
-
+  const [agencies] = useState<User[]>(initialAgencies)
+  const [freelancers] = useState<User[]>(initialFreelancers)
+  const [loading] = useState(false)
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
+
+  const allUsers = [...agencies, ...freelancers].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )
 
   const handleSetDisabled = async (userId: string, disabled: boolean) => {
     const action = disabled ? "disable" : "enable"
@@ -56,125 +57,112 @@ export default function UsersClient({ initialAgencies, initialFreelancers }: Use
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
 
-  const UserTable = ({ users, type }: { users: User[]; type: string }) => (
-    <div className="space-y-4">
-      {users.map((user) => (
-        <Card key={user.id}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <Link
-                      href={`/admin/users/${user.id}`}
-                      className="font-medium hover:text-primary hover:underline"
-                    >
-                      {user.full_name || "No name"}
-                    </Link>
-                    <p className="text-sm text-slate-600">{user.email}</p>
-                  </div>
-                  <Badge variant="outline" className="border-orange-200 text-primary">
-                    {user.account_type}
-                  </Badge>
-                </div>
-                <div className="mt-2 text-sm text-slate-500">
-                  Joined: {formatDate(user.created_at)}
-                  {type === "agency" && user.wallet_balance !== undefined && (
-                    <span className="ml-4">Wallet: ₦ {user.wallet_balance.toLocaleString()}</span>
-                  )}
-                </div>
+  const UserTable = ({ users, type }: { users: User[]; type: string }) => {
+    if (users.length === 0) {
+      return (
+        <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
+          No {type === "all" ? "users" : `${type}s`} found
+        </div>
+      )
+    }
+    return (
+      <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+        {users.map((user) => (
+          <div key={user.id} className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-surface/60">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-sm font-semibold text-foreground">
+                {(user.full_name || user.email || "?").charAt(0).toUpperCase()}
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/admin/users/${user.id}`}>View details</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleSetDisabled(user.id, true)}
-                    disabled={updatingUserId === user.id}
-                    className="text-red-600"
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="text-sm font-medium text-foreground truncate hover:text-primary hover:underline"
                   >
-                    Disable User
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleSetDisabled(user.id, false)}
-                    disabled={updatingUserId === user.id}
-                  >
-                    Enable User
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {user.full_name || "No name"}
+                  </Link>
+                  <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary-soft text-primary capitalize">
+                    {user.account_type}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground tabular-nums">
+                  Joined {formatDate(user.created_at)}
+                  {user.account_type === "agency" && user.wallet_balance !== undefined && ` · Wallet ₦${user.wallet_balance.toLocaleString()}`}
+                </p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      ))}
-      {users.length === 0 && <div className="text-center py-8 text-slate-500">No {type}s found</div>}
-    </div>
-  )
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/admin/users/${user.id}`}>View details</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleSetDisabled(user.id, true)}
+                  disabled={updatingUserId === user.id}
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  Disable user
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleSetDisabled(user.id, false)}
+                  disabled={updatingUserId === user.id}
+                >
+                  Enable user
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ))}
+      </div>
+    )
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="flex h-screen bg-surface">
         <AdminSidebar />
-        <div className="lg:pl-64">
-          <div className="p-4 lg:p-6">
-            <div className="text-lg">Loading users...</div>
-          </div>
-        </div>
+        <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading users…</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex h-screen bg-surface">
       <AdminSidebar />
-      <div className="lg:pl-64">
-        <div className="p-4 lg:p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">User Management</h1>
-            <p className="text-slate-600">Manage agencies and freelancers</p>
-          </div>
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Header */}
+          <header className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">User management</h1>
+            <p className="text-sm text-muted-foreground">Manage agencies and freelancers.</p>
+          </header>
 
-          <Card>
-            <CardHeader className="bg-primary/10 border-b">
-              <CardTitle className="text-primary">All Users</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 lg:p-6">
-              <Tabs defaultValue="agencies" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-orange-100">
-                  <TabsTrigger
-                    value="agencies"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
-                  >
-                    Agencies ({agencies.length})
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="freelancers"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white"
-                  >
-                    Freelancers ({freelancers.length})
-                  </TabsTrigger>
-                </TabsList>
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 sm:max-w-lg">
+              <TabsTrigger value="all">All ({allUsers.length})</TabsTrigger>
+              <TabsTrigger value="agencies">Agencies ({agencies.length})</TabsTrigger>
+              <TabsTrigger value="freelancers">Freelancers ({freelancers.length})</TabsTrigger>
+            </TabsList>
 
-                <TabsContent value="agencies" className="mt-6">
-                  <UserTable users={agencies} type="agency" />
-                </TabsContent>
-
-                <TabsContent value="freelancers" className="mt-6">
-                  <UserTable users={freelancers} type="freelancer" />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+            <TabsContent value="all" className="mt-4">
+              <UserTable users={allUsers} type="all" />
+            </TabsContent>
+            <TabsContent value="agencies" className="mt-4">
+              <UserTable users={agencies} type="agency" />
+            </TabsContent>
+            <TabsContent value="freelancers" className="mt-4">
+              <UserTable users={freelancers} type="freelancer" />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

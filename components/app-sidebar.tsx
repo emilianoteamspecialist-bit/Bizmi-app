@@ -63,10 +63,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const loadExtraData = React.useCallback(async (userId: string, role: string) => {
     try {
       if (role === "agency") {
-        const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).single()
+        const { data: imageData } = await supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).maybeSingle()
         if (imageData) setImagePreview(resolveAvatar(imageData))
       } else {
-        const { data: logoData } = await supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).single()
+        const { data: logoData } = await supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).maybeSingle()
         if (logoData) setImagePreview(resolveAvatar(logoData))
       }
 
@@ -83,7 +83,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [user?.id, profile?.account_type, loadExtraData])
 
-  const role = profile?.account_type || "freelancer"
+  // Drive the nav off the section we're rendered in, not just the profile.
+  // AppSidebar lives inside the /agency and /freelancer layouts, so the URL is
+  // the authoritative (and synchronous) signal for which nav to show — relying
+  // on profile.account_type alone made the agency dashboard flash/stick on the
+  // freelancer nav whenever the profile was slow to load or missing account_type.
+  const role = pathname.startsWith("/agency")
+    ? "agency"
+    : pathname.startsWith("/freelancer")
+      ? "freelancer"
+      : profile?.account_type || "freelancer"
 
   const navLinks = role === "agency"
     ? [
@@ -119,7 +128,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold text-foreground">Bizimi</span>
-                  <span className="truncate text-[11px] text-muted-foreground">Freelance marketplace</span>
+                  <span className="truncate text-[11px] text-muted-foreground">{role === "agency" ? "Agency workspace" : "Freelance marketplace"}</span>
                 </div>
               </Link>
             </SidebarMenuButton>

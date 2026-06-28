@@ -95,20 +95,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable} ${instrumentSerif.variable} ${bricolage.variable}`}>
+    <html lang="en" className={`scroll-smooth ${inter.variable} ${sora.variable} ${instrumentSerif.variable} ${bricolage.variable}`}>
       <head>
         {/* Flaticon UICONS — Regular Rounded */}
         <link
           rel="stylesheet"
           href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css"
         />
-
-        {/* ✅ Paystack Inline Script */}
-        <script
-          type="text/javascript"
-          src="https://js.paystack.co/v1/inline.js"
-          defer
-        ></script>
 
         {/* ✅ Meta Pixel Code */}
         <Script id="fb-pixel" strategy="afterInteractive">
@@ -128,6 +121,11 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
+
+        {/* Paystack — loaded via next/script so it isn't reconciled into the
+            React-managed <head>. A raw <script> there crashed React 19 on
+            unmount/Fast Refresh ("Cannot read properties of null (reading 'removeChild')"). */}
+        <Script src="https://js.paystack.co/v1/inline.js" strategy="lazyOnload" />
 
         {/* ✅ NoScript fallback */}
         <noscript>

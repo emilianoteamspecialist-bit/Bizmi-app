@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Loader2, Search, Coins, Users, Calendar, Hash, ArrowUpRight } from "lucide-react"
 import AdminSidebar from "@/components/admin-sidebar"
@@ -61,199 +59,190 @@ export default function AdminCreditsClient({
     }
   }, [searchTerm, creditPurchases])
 
+  const badge = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium"
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "success":
       case "completed":
-        return <Badge className="bg-green-100 text-green-800 border-none font-bold px-3 py-1 text-xs">Success</Badge>
+        return <span className={`${badge} bg-success/10 text-success`}>Success</span>
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-none font-bold px-3 py-1 text-xs">Pending</Badge>
+        return <span className={`${badge} bg-warning/10 text-warning`}>Pending</span>
       case "failed":
-        return <Badge className="bg-red-100 text-red-800 border-none font-bold px-3 py-1 text-xs">Failed</Badge>
+        return <span className={`${badge} bg-destructive/10 text-destructive`}>Failed</span>
       default:
-        return <Badge className="bg-slate-100 text-slate-800 border-none font-bold px-3 py-1 text-xs capitalize">{status}</Badge>
+        return <span className={`${badge} bg-surface-2 text-muted-foreground capitalize`}>{status}</span>
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen bg-surface">
+        <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans selection:bg-orange-100 selection:text-orange-900">
+    <div className="flex h-screen bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-primaryxl font-black text-slate-900 tracking-tight">Credits & Users</h1>
-              <p className="text-slate-500 font-medium mt-1">Manage platform credits and registered freelancers.</p>
-            </div>
-          </div>
+          <header className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Credits &amp; users</h1>
+            <p className="text-sm text-muted-foreground">Manage platform credits and registered freelancers.</p>
+          </header>
 
           {/* Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white group hover:border-primary/50 border transition-all">
-              <CardContent className="p-8 flex items-center justify-between">
-                <div>
-                  <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Total Credits Purchased</p>
-                  <h3 className="text-4xl font-black text-slate-900">{totalCredits.toLocaleString()}</h3>
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">Total credits purchased</p>
+                <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <Coins className="h-4 w-4" />
                 </div>
-                <div className="p-4 bg-primary/10 rounded-2xl">
-                  <Coins className="h-8 w-8 text-primary" />
+              </div>
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{totalCredits.toLocaleString()}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">Total freelancers</p>
+                <div className="h-9 w-9 rounded-lg bg-info/10 text-info flex items-center justify-center">
+                  <Users className="h-4 w-4" />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white group hover:border-blue-500/50 border transition-all">
-              <CardContent className="p-8 flex items-center justify-between">
-                <div>
-                  <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-1">Total Freelancers</p>
-                  <h3 className="text-4xl font-black text-slate-900">{freelancers.length}</h3>
-                </div>
-                <div className="p-4 bg-blue-50 rounded-2xl">
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{freelancers.length}</p>
+            </div>
+          </section>
 
           {/* Credit Purchases Table */}
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white overflow-hidden">
-            <CardHeader className="px-8 pt-8 pb-6 border-b border-slate-100 bg-white">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
-                  <ArrowUpRight className="h-5 w-5 text-primary" /> Recent Transactions
-                </CardTitle>
-                <div className="relative w-full md:w-80">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <ArrowUpRight className="h-5 w-5 text-primary" /> Recent transactions
+                </h2>
+                <div className="relative w-full md:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                   <Input
-                    placeholder="Search transactions..."
+                    placeholder="Search transactions…"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11 rounded-xl bg-slate-50 border-slate-200 focus:bg-white focus:ring-primary focus:border-primary"
+                    className="pl-9"
                   />
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50/50 text-xs uppercase tracking-widest font-black text-slate-500 border-b border-slate-100">
-                    <tr>
-                      <th className="px-8 py-5">Freelancer</th>
-                      <th className="px-8 py-5">Amount</th>
-                      <th className="px-8 py-5">Reference ID</th>
-                      <th className="px-8 py-5">Status</th>
-                      <th className="px-8 py-5">Date</th>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                  <tr>
+                    <th className="px-5 py-3">Freelancer</th>
+                    <th className="px-5 py-3">Amount</th>
+                    <th className="px-5 py-3">Reference ID</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredPurchases.map((purchase) => (
+                    <tr key={purchase.id} className="hover:bg-surface/60 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 rounded-full">
+                            <AvatarFallback className="bg-surface-2 text-foreground text-sm font-semibold">
+                              {purchase.profiles?.full_name?.charAt(0)?.toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-foreground">{purchase.profiles?.full_name || "Unknown"}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center rounded-md bg-surface-2 px-2 py-1 text-sm font-semibold text-foreground tabular-nums">
+                          {purchase.credits_amount?.toLocaleString()} <span className="ml-1 text-[11px] font-medium text-muted-foreground">CR</span>
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 text-muted-foreground font-mono text-xs bg-surface-2 px-2 py-1 rounded-md border border-border w-fit">
+                          <Hash className="h-3 w-3" />
+                          {purchase.paystack_reference}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">{getStatusBadge(purchase.status)}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 text-muted-foreground tabular-nums">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(purchase.created_at).toLocaleDateString()}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredPurchases.map((purchase) => (
-                      <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 rounded-xl border border-slate-200">
-                              <AvatarFallback className="bg-orange-100 text-primary font-bold">
-                                {purchase.profiles?.full_name?.charAt(0) || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-bold text-slate-900">{purchase.profiles?.full_name || "Unknown"}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <span className="font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
-                            {purchase.credits_amount?.toLocaleString()} <span className="text-slate-400 font-bold text-xs ml-1">CR</span>
-                          </span>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2 text-slate-500 font-mono text-xs bg-slate-50 px-2 py-1 rounded border border-slate-200 w-fit">
-                            <Hash className="h-3 w-3" />
-                            {purchase.paystack_reference}
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">{getStatusBadge(purchase.status)}</td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2 text-slate-500 font-medium">
-                            <Calendar className="h-4 w-4 text-slate-400" />
-                            {new Date(purchase.created_at).toLocaleDateString()}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredPurchases.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="px-8 py-12 text-center text-slate-500 font-medium">
-                          {searchTerm ? "No transactions matching your search." : "No transactions found."}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                  {filteredPurchases.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                        {searchTerm ? "No transactions matching your search." : "No transactions found."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           {/* Registered Freelancers Table */}
-          <Card className="border-none shadow-xl shadow-slate-200/50 rounded-[2rem] bg-white overflow-hidden">
-            <CardHeader className="px-8 pt-8 pb-6 border-b border-slate-100 bg-white">
-              <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
-                 <Users className="h-5 w-5 text-blue-500" /> Registered Freelancers
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50/50 text-xs uppercase tracking-widest font-black text-slate-500 border-b border-slate-100">
-                    <tr>
-                      <th className="px-8 py-5">Name</th>
-                      <th className="px-8 py-5">Account Type</th>
-                      <th className="px-8 py-5">Registration Date</th>
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Users className="h-5 w-5 text-info" /> Registered freelancers
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                  <tr>
+                    <th className="px-5 py-3">Name</th>
+                    <th className="px-5 py-3">Account type</th>
+                    <th className="px-5 py-3">Registration date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {freelancers.map((freelancer) => (
+                    <tr key={freelancer.id} className="hover:bg-surface/60 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 rounded-full">
+                            <AvatarFallback className="bg-surface-2 text-foreground text-sm font-semibold">
+                              {freelancer.full_name?.charAt(0)?.toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-foreground">{freelancer.full_name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary-soft text-primary capitalize">
+                          {freelancer.account_type}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 text-muted-foreground tabular-nums">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(freelancer.created_at).toLocaleDateString()}
+                        </div>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {freelancers.map((freelancer) => (
-                      <tr key={freelancer.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 rounded-xl border border-slate-200">
-                              <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">
-                                {freelancer.full_name?.charAt(0) || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-bold text-slate-900">{freelancer.full_name}</span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5">
-                          <Badge className="bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-widest text-[10px] font-black px-2 py-1">
-                            {freelancer.account_type}
-                          </Badge>
-                        </td>
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-2 text-slate-500 font-medium">
-                            <Calendar className="h-4 w-4 text-slate-400" />
-                            {new Date(freelancer.created_at).toLocaleDateString()}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {freelancers.length === 0 && (
-                      <tr>
-                        <td colSpan={3} className="px-8 py-12 text-center text-slate-500 font-medium">
-                          No freelancers registered yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                  {freelancers.length === 0 && (
+                    <tr>
+                      <td colSpan={3} className="px-5 py-12 text-center text-sm text-muted-foreground">
+                        No freelancers registered yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>

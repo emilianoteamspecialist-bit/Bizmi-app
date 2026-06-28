@@ -1,14 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminSidebar } from "@/components/admin-sidebar"
-import { Briefcase, Ban, RotateCcw } from "lucide-react"
+import { Ban, RotateCcw } from "lucide-react"
 
 interface JobRow {
   id: string
@@ -27,7 +25,7 @@ interface JobsModerationClientProps {
 }
 
 const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString() : "—")
-const fmtNaira = (n: any) => `₦ ${Number(n || 0).toLocaleString()}`
+const fmtNaira = (n: any) => `₦${Number(n || 0).toLocaleString()}`
 
 export default function JobsModerationClient({ initialJobs }: JobsModerationClientProps) {
   const [jobs, setJobs] = useState<JobRow[]>(initialJobs)
@@ -78,94 +76,84 @@ export default function JobsModerationClient({ initialJobs }: JobsModerationClie
   const removed = jobs.filter((j) => j.moderation_status === "removed" && matches(j))
 
   const JobTable = ({ rows, removedView }: { rows: JobRow[]; removedView: boolean }) => (
-    <Card>
-      <CardContent className="p-0 overflow-x-auto">
-        {rows.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 text-sm">No jobs.</div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Agency</TableHead>
-                <TableHead>Budget</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Posted</TableHead>
-                {removedView && <TableHead>Reason</TableHead>}
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((j) => (
-                <TableRow key={j.id}>
-                  <TableCell className="font-medium max-w-xs truncate">{j.title}</TableCell>
-                  <TableCell>{j.agency_name}</TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {fmtNaira(j.budget_min)} – {fmtNaira(j.budget_max)}
+    <div className="rounded-xl border border-border bg-card overflow-x-auto">
+      {rows.length === 0 ? (
+        <div className="p-12 text-center text-sm text-muted-foreground">No jobs.</div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Agency</TableHead>
+              <TableHead>Budget</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Posted</TableHead>
+              {removedView && <TableHead>Reason</TableHead>}
+              <TableHead className="text-right">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((j) => (
+              <TableRow key={j.id}>
+                <TableCell className="font-medium text-foreground max-w-xs truncate">{j.title}</TableCell>
+                <TableCell className="text-muted-foreground">{j.agency_name}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+                  {fmtNaira(j.budget_min)} – {fmtNaira(j.budget_max)}
+                </TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface-2 text-muted-foreground capitalize">
+                    {j.status}
+                  </span>
+                </TableCell>
+                <TableCell className="text-muted-foreground tabular-nums">{fmtDate(j.created_at)}</TableCell>
+                {removedView && (
+                  <TableCell className="text-xs text-muted-foreground max-w-[12rem] truncate">
+                    {j.moderation_reason || "—"}
                   </TableCell>
-                  <TableCell className="capitalize">{j.status}</TableCell>
-                  <TableCell>{fmtDate(j.created_at)}</TableCell>
-                  {removedView && (
-                    <TableCell className="text-xs text-slate-500 max-w-[12rem] truncate">
-                      {j.moderation_reason || "—"}
-                    </TableCell>
+                )}
+                <TableCell className="text-right">
+                  {removedView ? (
+                    <Button size="sm" variant="outline" disabled={busyId === j.id} onClick={() => moderate(j, "restore")}>
+                      <RotateCcw className="h-4 w-4 mr-1" /> Restore
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="destructive" disabled={busyId === j.id} onClick={() => moderate(j, "remove")}>
+                      <Ban className="h-4 w-4 mr-1" /> Remove
+                    </Button>
                   )}
-                  <TableCell className="text-right">
-                    {removedView ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busyId === j.id}
-                        onClick={() => moderate(j, "restore")}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1" /> Restore
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={busyId === j.id}
-                        onClick={() => moderate(j, "remove")}
-                      >
-                        <Ban className="h-4 w-4 mr-1" /> Remove
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   )
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex h-screen bg-surface">
       <AdminSidebar />
-      <div className="lg:pl-64">
-        <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                <Briefcase className="h-6 w-6 text-primary" /> Job Moderation
-              </h1>
-              <p className="text-slate-600">Remove fraudulent or policy-violating job postings from the marketplace.</p>
-            </div>
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+            <header className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Job moderation</h1>
+              <p className="text-sm text-muted-foreground">Remove fraudulent or policy-violating job postings from the marketplace.</p>
+            </header>
             <Input
               placeholder="Search title or agency…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="max-w-xs"
+              className="md:max-w-xs"
             />
           </div>
 
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="bg-orange-100">
+            <TabsList className="grid w-full grid-cols-2 sm:max-w-xs">
               <TabsTrigger value="active">Active ({visible.length})</TabsTrigger>
-              <TabsTrigger value="removed">
-                <Badge className="bg-red-100 text-red-800 border-none mr-1">Removed</Badge> ({removed.length})
-              </TabsTrigger>
+              <TabsTrigger value="removed">Removed ({removed.length})</TabsTrigger>
             </TabsList>
             <TabsContent value="active" className="mt-4">
               <JobTable rows={visible} removedView={false} />

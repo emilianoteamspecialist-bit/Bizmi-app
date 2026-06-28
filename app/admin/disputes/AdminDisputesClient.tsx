@@ -1,11 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ShieldAlert, CheckCircle, Clock, MessageSquare, ChevronDown } from "lucide-react"
 
@@ -112,15 +110,16 @@ export default function AdminDisputesClient({
   }
 
   const getStatusBadge = (status: string) => {
+    const base = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
     switch (status) {
       case 'in_platform_review':
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50"><Clock className="w-3 h-3 mr-1"/> In Platform Review</Badge>
+        return <span className={`${base} bg-warning/10 text-warning`}><Clock className="w-3 h-3"/> In platform review</span>
       case 'admin_intervention':
-        return <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50"><ShieldAlert className="w-3 h-3 mr-1"/> Admin Intervention</Badge>
+        return <span className={`${base} bg-destructive/10 text-destructive`}><ShieldAlert className="w-3 h-3"/> Admin intervention</span>
       case 'resolved':
-        return <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50"><CheckCircle className="w-3 h-3 mr-1"/> Resolved</Badge>
+        return <span className={`${base} bg-success/10 text-success`}><CheckCircle className="w-3 h-3"/> Resolved</span>
       default:
-        return <Badge>{status}</Badge>
+        return <span className={`${base} bg-surface-2 text-muted-foreground capitalize`}>{status}</span>
     }
   }
 
@@ -129,7 +128,9 @@ export default function AdminDisputesClient({
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
-          <div className="p-4 lg:p-6 text-lg">Loading disputes...</div>
+          <div className="min-h-svh bg-surface flex items-center justify-center text-sm text-muted-foreground">
+            Loading disputes…
+          </div>
         </SidebarInset>
       </SidebarProvider>
     )
@@ -139,115 +140,111 @@ export default function AdminDisputesClient({
     <SidebarProvider>
       <AdminSidebar />
       <SidebarInset>
-        <div className="p-4 lg:p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl lg:text-primaryxl font-bold text-slate-900">Dispute Resolution</h1>
-            <p className="text-slate-600">Manage and resolve active disputes between freelancers and agencies.</p>
-          </div>
+        <div className="min-h-svh bg-surface">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <header className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dispute resolution</h1>
+              <p className="text-sm text-muted-foreground">Manage and resolve active disputes between freelancers and agencies.</p>
+            </header>
 
-          <div className="space-y-4">
-            {disputes.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center text-slate-500">
-                  <ShieldAlert className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                  No disputes found.
-                </CardContent>
-              </Card>
-            ) : (
-              disputes.map((dispute) => (
-                <Card key={dispute.id} className="overflow-hidden">
-                  <CardHeader className="bg-slate-50 border-b pb-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {dispute.job?.title || 'Unknown Job'}
-                          {getStatusBadge(dispute.status)}
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          Type: <strong>{dispute.dispute_type.replace('_', ' ')}</strong> | Amount: <strong>₦ {dispute.amount_disputed}</strong>
-                        </CardDescription>
-                      </div>
-                      <div className="text-sm text-slate-500 text-right">
-                        <div>Initiator: {dispute.initiator?.full_name}</div>
-                        <div>Respondent: {dispute.respondent?.full_name}</div>
-                        <div className="text-xs mt-1">{new Date(dispute.created_at).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 lg:p-6">
-                    <div className="mb-6">
-                      <h4 className="font-semibold text-sm text-slate-700 mb-2">Dispute Description</h4>
-                      <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border">
-                        {dispute.description}
-                      </p>
-                    </div>
-
-                    {/* Dispute-room conversation — review the evidence before deciding. */}
-                    {(() => {
-                      const msgs = initialMessagesByDispute[dispute.id] || []
-                      const isOpen = expanded.has(dispute.id)
-                      return (
-                        <div className="mb-6">
-                          <button
-                            type="button"
-                            onClick={() => toggleConversation(dispute.id)}
-                            className="flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-primary"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                            Conversation ({msgs.length})
-                            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                          </button>
-                          {isOpen && (
-                            <div className="mt-3 max-h-72 overflow-y-auto space-y-3 bg-slate-50 border rounded-xl p-3">
-                              {msgs.length === 0 ? (
-                                <p className="text-sm text-slate-400">No messages in this dispute.</p>
-                              ) : (
-                                msgs.map((m) => (
-                                  <div key={m.id} className="text-sm">
-                                    <div className="flex items-baseline gap-2">
-                                      <span className="font-semibold text-slate-700">{m.sender?.full_name || "Unknown"}</span>
-                                      <span className="text-xs text-slate-400">{new Date(m.created_at).toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-slate-600 whitespace-pre-wrap">{m.message}</p>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          )}
+            <div className="space-y-4">
+              {disputes.length === 0 ? (
+                <div className="rounded-xl border border-border bg-card p-12 text-center">
+                  <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <ShieldAlert className="h-5 w-5" />
+                  </div>
+                  <p className="mt-4 text-sm text-muted-foreground">No disputes found.</p>
+                </div>
+              ) : (
+                disputes.map((dispute) => (
+                  <div key={dispute.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="bg-surface-2 border-b border-border px-5 py-4">
+                      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:items-start">
+                        <div className="min-w-0">
+                          <h3 className="text-base font-semibold text-foreground flex items-center gap-2 flex-wrap">
+                            {dispute.job?.title || 'Unknown job'}
+                            {getStatusBadge(dispute.status)}
+                          </h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Type <strong className="font-medium text-foreground capitalize">{dispute.dispute_type.replace('_', ' ')}</strong>
+                            {' · '}Amount <strong className="font-medium text-foreground tabular-nums">₦{dispute.amount_disputed.toLocaleString()}</strong>
+                          </p>
                         </div>
-                      )
-                    })()}
+                        <div className="text-sm text-muted-foreground sm:text-right shrink-0">
+                          <div>Initiator: <span className="text-foreground">{dispute.initiator?.full_name}</span></div>
+                          <div>Respondent: <span className="text-foreground">{dispute.respondent?.full_name}</span></div>
+                          <div className="text-xs mt-1 tabular-nums">{new Date(dispute.created_at).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-5 space-y-6">
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground mb-2">Dispute description</h4>
+                        <p className="text-sm text-muted-foreground bg-surface-2 p-3 rounded-xl border border-border whitespace-pre-wrap">
+                          {dispute.description}
+                        </p>
+                      </div>
 
-                    {dispute.status !== 'resolved' ? (
-                      <div className="flex flex-wrap gap-2">
-                        <Button 
-                          onClick={() => handleResolve(dispute.id, 'full_release')}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          Full Release (To Freelancer)
-                        </Button>
-                        <Button 
-                          onClick={() => handleResolve(dispute.id, 'refund')}
-                          variant="destructive"
-                        >
-                          Full Refund (To Agency)
-                        </Button>
-                        <Button 
-                          onClick={() => handleResolve(dispute.id, 'partial_release')}
-                          variant="outline"
-                        >
-                          Partial Release
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-green-700 font-medium">
-                        This dispute has been resolved.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
-            )}
+                      {/* Dispute-room conversation — review the evidence before deciding. */}
+                      {(() => {
+                        const msgs = initialMessagesByDispute[dispute.id] || []
+                        const isOpen = expanded.has(dispute.id)
+                        return (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => toggleConversation(dispute.id)}
+                              className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                              Conversation ({msgs.length})
+                              <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                            </button>
+                            {isOpen && (
+                              <div className="mt-3 max-h-72 overflow-y-auto space-y-3 bg-surface-2 border border-border rounded-xl p-3">
+                                {msgs.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">No messages in this dispute.</p>
+                                ) : (
+                                  msgs.map((m) => (
+                                    <div key={m.id} className="text-sm">
+                                      <div className="flex items-baseline gap-2">
+                                        <span className="font-semibold text-foreground">{m.sender?.full_name || "Unknown"}</span>
+                                        <span className="text-xs text-muted-foreground tabular-nums">{new Date(m.created_at).toLocaleString()}</span>
+                                      </div>
+                                      <p className="text-muted-foreground whitespace-pre-wrap">{m.message}</p>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })()}
+
+                      {dispute.status !== 'resolved' ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            onClick={() => handleResolve(dispute.id, 'full_release')}
+                            className="bg-success text-white hover:bg-success/90"
+                          >
+                            Full release (to freelancer)
+                          </Button>
+                          <Button onClick={() => handleResolve(dispute.id, 'refund')} variant="destructive">
+                            Full refund (to agency)
+                          </Button>
+                          <Button onClick={() => handleResolve(dispute.id, 'partial_release')} variant="outline">
+                            Partial release
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-medium text-success">This dispute has been resolved.</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </SidebarInset>

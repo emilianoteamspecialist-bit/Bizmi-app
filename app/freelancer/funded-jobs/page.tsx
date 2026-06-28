@@ -4,10 +4,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle, Clock, AlertCircle, Eye, Loader2, X, Briefcase, ShieldAlert, FileText } from "lucide-react"
+import { CheckCircle, Clock, AlertCircle, Eye, Loader2, X, Briefcase, ShieldAlert, FileText, Wallet } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -256,36 +253,17 @@ export default function FundedJobsPage() {
     }
   }
 
+  const badgeClass = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "verified":
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Verified
-          </Badge>
-        )
+        return <span className={`${badgeClass} bg-success/10 text-success`}><CheckCircle className="w-3 h-3" /> Verified</span>
       case "pending_verification":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-            <Clock className="w-3 h-3 mr-1" />
-            Pending
-          </Badge>
-        )
+        return <span className={`${badgeClass} bg-warning/10 text-warning`}><Clock className="w-3 h-3" /> Pending</span>
       case "failed":
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-            <X className="w-3 h-3 mr-1" />
-            Failed
-          </Badge>
-        )
+        return <span className={`${badgeClass} bg-destructive/10 text-destructive`}><X className="w-3 h-3" /> Failed</span>
       default:
-        return (
-          <Badge className="bg-slate-100 text-gray-800 hover:bg-slate-100">
-            <AlertCircle className="w-3 h-3 mr-1" />
-            {status}
-          </Badge>
-        )
+        return <span className={`${badgeClass} bg-surface-2 text-muted-foreground`}><AlertCircle className="w-3 h-3" /> {status}</span>
     }
   }
 
@@ -300,10 +278,10 @@ export default function FundedJobsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-surface">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </div>
       </div>
@@ -311,255 +289,132 @@ export default function FundedJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-primaryxl font-bold text-slate-900 mb-2">Funded Jobs</h1>
-          <p className="text-slate-600">Track and verify your funded job payments</p>
-        </div>
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Header */}
+        <header className="space-y-1">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Earnings</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Funded jobs</h1>
+          <p className="text-sm text-muted-foreground">Track and verify the payments agencies have funded for your work.</p>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Eye className="h-8 w-8 text-blue-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Total Jobs</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-                </div>
+        {/* Metric tiles */}
+        <section className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {[
+            { label: "Total jobs", value: stats.total, icon: Eye, tone: "text-muted-foreground", accent: false },
+            { label: "Pending", value: stats.pending, icon: Clock, tone: "text-warning", accent: false },
+            { label: "Verified", value: stats.verified, icon: CheckCircle, tone: "text-success", accent: false },
+            { label: "Failed", value: stats.failed, icon: X, tone: "text-destructive", accent: false },
+            { label: "Available", value: `₦${stats.totalAmount.toLocaleString()}`, icon: Wallet, tone: "text-primary", accent: true },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className={`rounded-xl border bg-card p-4 ${stat.accent ? "border-primary/30" : "border-border"}`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                <stat.icon className={`h-3.5 w-3.5 ${stat.tone}`} />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <Clock className="h-8 w-8 text-yellow-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Pending</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.pending}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Verified</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.verified}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <X className="h-8 w-8 text-red-600" />
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Failed</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.failed}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary font-bold">₦</span>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Total Amount</p>
-                  <p className="text-2xl font-bold text-slate-900">₦ {stats.totalAmount.toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">{stat.value}</p>
+            </div>
+          ))}
+        </section>
 
         {/* Jobs Table */}
-        <Card>
+        <Card className="rounded-xl border border-border bg-card shadow-none">
           <CardHeader>
-            <CardTitle>Funded Jobs</CardTitle>
+            <CardTitle className="text-base font-semibold text-foreground">Funded jobs</CardTitle>
           </CardHeader>
           <CardContent>
             {fundedJobs.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  No funded jobs found. Jobs will appear here when agencies fund them for you specifically.
-                  <br />
-                  <span className="text-sm text-slate-500 mt-2 block">
-                    Make sure you're logged in with the correct freelancer account.
-                  </span>
-                </AlertDescription>
-              </Alert>
+              <div className="py-16 px-6 text-center">
+                <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Briefcase className="h-5 w-5" />
+                </div>
+                <h3 className="mt-4 text-sm font-semibold text-foreground">No funded jobs yet</h3>
+                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                  Jobs appear here once an agency funds them for you. Make sure you&apos;re signed in with the right account.
+                </p>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Agency</TableHead>
-                      <TableHead>Job Title</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Reference ID</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Confirmation</TableHead>
-                      <TableHead>Note</TableHead>
-                      <TableHead>Funded Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fundedJobs.map((job, index) => (
-                      <TableRow key={job.id}>
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell className="font-medium">{job.agency_name}</TableCell>
-                        <TableCell>{job.job_title}</TableCell>
-                        <TableCell>₦ {Number(job.amount).toLocaleString()}</TableCell>
-                        <TableCell className="font-mono text-sm">{job.reference_id}</TableCell>
-                        <TableCell>{getStatusBadge(job.status)}</TableCell>
-                        <TableCell className="text-sm text-slate-600">
-                          {job.status === "failed" && job.failure_reason ? (
-                            <span className="text-red-600">{job.failure_reason}</span>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {job.status === "verified" && !job.job_confirmed && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleConfirmJob(job)}
-                              disabled={confirmingJobs.has(job.id)}
-                              className="bg-primary hover:bg-primary-hover"
-                            >
-                              {confirmingJobs.has(job.id) ? (
-                                <>
-                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                  Confirming...
-                                </>
-                              ) : (
-                                <>
-                                  <Briefcase className="w-3 h-3 mr-1" />
-                                  Biz
-                                </>
-                              )}
-                            </Button>
-                          )}
+              <div className="divide-y divide-border">
+                {fundedJobs.map((job) => (
+                  <div key={job.id} className="py-4 first:pt-0 last:pb-0">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-semibold text-foreground">{job.job_title}</h3>
+                          {getStatusBadge(job.status)}
                           {job.job_confirmed && !job.job_completed && (
-                            <Badge className="bg-orange-100 text-orange-800">
-                              <Briefcase className="w-3 h-3 mr-1" />
-                              Confirmed
-                            </Badge>
+                            <span className={`${badgeClass} bg-primary-soft text-primary`}>
+                              <Briefcase className="w-3 h-3" /> Confirmed
+                            </span>
                           )}
                           {job.job_completed && (
-                            <Badge className="bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Completed
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {job.payout_successful ? (
-                            <span className="text-green-600 font-medium">
-                              Payout request successful! Your account will be credited within 24–48 hours.
+                            <span className={`${badgeClass} bg-success/10 text-success`}>
+                              <CheckCircle className="w-3 h-3" /> Completed
                             </span>
-                          ) : (
-                            "-"
                           )}
-                        </TableCell>
-                        <TableCell>{new Date(job.funded_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          {job.status === "pending_verification" && (
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <span>{job.agency_name}</span>
+                          <span className="font-medium text-foreground tabular-nums">₦{Number(job.amount).toLocaleString()}</span>
+                          <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{new Date(job.funded_at).toLocaleDateString()}</span>
+                          <span className="font-mono text-[11px] truncate max-w-[12rem]">{job.reference_id}</span>
+                        </div>
+                        {job.status === "failed" && job.failure_reason && (
+                          <p className="text-xs text-destructive">{job.failure_reason}</p>
+                        )}
+                        {job.payout_successful && (
+                          <p className="text-xs text-success">Payout request successful — your account will be credited within 24–48 hours.</p>
+                        )}
+                        {job.status === "verified" && job.job_completed && !job.payout_successful && (
+                          <p className="text-xs text-muted-foreground">Withdraw from the job in your Proposals once work is approved.</p>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        {job.status === "pending_verification" && (
+                          <Button size="sm" className="gap-1.5" onClick={() => handleVerifyPayment(job)} disabled={verifyingJobs.has(job.id)}>
+                            {verifyingJobs.has(job.id) ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying…</>
+                            ) : (
+                              <><CheckCircle className="w-3.5 h-3.5" /> Verify</>
+                            )}
+                          </Button>
+                        )}
+                        {job.status === "verified" && !job.job_confirmed && (
+                          <Button size="sm" className="gap-1.5" onClick={() => handleConfirmJob(job)} disabled={confirmingJobs.has(job.id)}>
+                            {confirmingJobs.has(job.id) ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Confirming…</>
+                            ) : (
+                              <><Briefcase className="w-3.5 h-3.5" /> Confirm</>
+                            )}
+                          </Button>
+                        )}
+                        {job.status === "verified" && !job.job_completed && (
+                          <>
+                            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => router.push(`/workspace/${job.job_id}`)}>
+                              <FileText className="w-3.5 h-3.5" /> Workspace
+                            </Button>
                             <Button
                               size="sm"
-                              onClick={() => handleVerifyPayment(job)}
-                              disabled={verifyingJobs.has(job.id)}
-                              className="bg-primary hover:bg-primary-hover"
+                              variant="outline"
+                              className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+                              onClick={() => {
+                                setSelectedJob(job)
+                                setShowDisputeModal(true)
+                              }}
                             >
-                              {verifyingJobs.has(job.id) ? (
-                                <>
-                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                  Verifying...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  Verify
-                                </>
-                              )}
+                              <ShieldAlert className="w-3.5 h-3.5" /> Dispute
                             </Button>
-                          )}
-                          {job.status === "verified" && job.job_completed && !job.payout_successful && (
-                            <div className="flex flex-col gap-1">
-                              <Badge className="bg-green-100 text-green-800 w-fit">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Verified
-                              </Badge>
-                              <span className="text-[11px] text-slate-500">
-                                Withdraw from the job in your Proposals once work is approved.
-                              </span>
-                            </div>
-                          )}
-                          {job.status === "verified" && job.payout_successful && (
-                            <div className="flex gap-2">
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Verified
-                              </Badge>
-                              <Badge className="bg-green-100 text-green-800">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Successful
-                              </Badge>
-                            </div>
-                          )}
-                          {job.status === "verified" && !job.job_completed && (
-                            <div className="flex flex-col gap-2">
-                              <Badge className="bg-green-100 text-green-800 w-fit">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Verified
-                              </Badge>
-                              <Button
-                                size="sm"
-                                onClick={() => router.push(`/workspace/${job.job_id}`)}
-                                className="bg-slate-900 hover:bg-slate-800 text-white"
-                              >
-                                <FileText className="w-3 h-3 mr-1" />
-                                Workspace
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedJob(job);
-                                  setShowDisputeModal(true);
-                                }}
-                                className="text-red-600 border-red-200 hover:bg-red-50"
-                              >
-                                <ShieldAlert className="w-3 h-3 mr-1" />
-                                Dispute
-                              </Button>
-                            </div>
-                          )}
-                          {job.status === "failed" && (
-                            <Badge className="bg-red-100 text-red-800">
-                              <X className="w-3 h-3 mr-1" />
-                              Failed
-                            </Badge>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -572,8 +427,8 @@ export default function FundedJobsPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <ShieldAlert className="text-red-500 h-5 w-5" />
-                    Open a Dispute
+                    <ShieldAlert className="text-destructive h-5 w-5" />
+                    Open a dispute
                   </CardTitle>
                   <Button variant="ghost" size="icon" onClick={() => setShowDisputeModal(false)}>
                     <X className="h-4 w-4" />
@@ -582,9 +437,9 @@ export default function FundedJobsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="bg-red-50 p-3 rounded-lg border border-red-100">
-                    <p className="text-xs text-red-800">
-                      Opening a dispute will flag the job <strong>{selectedJob.job_title}</strong>. 
+                  <div className="bg-destructive/10 p-3 rounded-lg border border-destructive/20">
+                    <p className="text-xs text-destructive">
+                      Opening a dispute will flag the job <strong>{selectedJob.job_title}</strong>.
                       You and the client will have 3-7 days to resolve it in the Dispute Room before an admin steps in.
                     </p>
                   </div>
@@ -624,10 +479,11 @@ export default function FundedJobsPage() {
                       Cancel
                     </Button>
                     <Button
-                      className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                      variant="destructive"
+                      className="flex-1"
                       onClick={handleCreateDispute}
                     >
-                      Open Dispute
+                      Open dispute
                     </Button>
                   </div>
                 </div>

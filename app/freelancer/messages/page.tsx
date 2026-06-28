@@ -409,14 +409,13 @@ export default function FreelancerMessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        
+      <div className="min-h-screen bg-surface">
         <div className="max-w-7xl mx-auto py-8 px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="h-32 bg-gray-300 rounded"></div>
-            <div className="h-20 bg-gray-300 rounded"></div>
-            <div className="h-20 bg-gray-300 rounded"></div>
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-foreground/5 rounded w-1/4 mb-6"></div>
+            <div className="h-32 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
+            <div className="h-20 bg-foreground/5 rounded"></div>
           </div>
         </div>
       </div>
@@ -426,9 +425,8 @@ export default function FreelancerMessagesPage() {
   const selectedParticipant = selectedConversation ? getParticipantProfile(selectedConversation, currentUserId) : null
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      
-      <div className="flex flex-1 overflow-hidden">
+    <div className="h-[calc(100svh-4rem)] bg-surface flex flex-col overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left Sidebar - Conversations List */}
         <Card
           className={`w-full flex-shrink-0 border-r rounded-none flex flex-col overflow-y-auto
@@ -437,10 +435,10 @@ export default function FreelancerMessagesPage() {
         >
           <CardHeader className="border-b">
             <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="h-6 w-6 text-orange-500" />
-              <CardTitle className="text-xl font-bold">Messages</CardTitle>
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg font-semibold text-foreground">Messages</CardTitle>
             </div>
-            <p className="text-sm text-muted-foreground">Chat with your agencies</p>
+            <p className="text-sm text-muted-foreground">Chat with agencies</p>
             <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -468,8 +466,8 @@ export default function FreelancerMessagesPage() {
                   return (
                     <div
                       key={conversation.id}
-                      className={`flex items-center gap-3 p-4 cursor-pointer border-b last:border-b-0 hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                        selectedConversation?.id === conversation.id ? "bg-gray-100 dark:bg-gray-800" : ""
+                      className={`flex items-center gap-3 p-4 cursor-pointer border-b border-border last:border-b-0 transition-colors hover:bg-surface-2 ${
+                        selectedConversation?.id === conversation.id ? "bg-surface-2" : ""
                       }`}
                       onClick={() => {
                         setSelectedConversation(conversation)
@@ -487,7 +485,7 @@ export default function FreelancerMessagesPage() {
                         )}
                         <AvatarFallback
                           className={
-                            participant?.is_fallback ? "bg-orange-500 text-white flex items-center justify-center" : ""
+                            participant?.is_fallback ? "bg-primary text-white flex items-center justify-center" : ""
                           }
                         >
                           {participant?.fallback_char || <User className="h-6 w-6" />}
@@ -516,8 +514,8 @@ export default function FreelancerMessagesPage() {
         </Card>
         {/* Right Panel - Message Thread */}
         <div
-          className={`flex-1 flex flex-col bg-white dark:bg-gray-800
-          ${selectedConversation ? "flex" : "hidden"} sm:flex`}
+          className={`flex-1 min-w-0 min-h-0 flex flex-col bg-card
+          ${selectedConversation && !showConversationList ? "flex" : "hidden"} sm:flex`}
         >
           {/* Chat Header */}
           <CardHeader className="border-b flex-shrink-0 py-3 px-4 sm:py-4 sm:px-6">
@@ -546,7 +544,7 @@ export default function FreelancerMessagesPage() {
                     <AvatarFallback
                       className={
                         selectedParticipant?.is_fallback
-                          ? "bg-orange-500 text-white flex items-center justify-center"
+                          ? "bg-primary text-white flex items-center justify-center"
                           : ""
                       }
                     >
@@ -565,7 +563,7 @@ export default function FreelancerMessagesPage() {
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="animate-blink">
+                    <Button variant="ghost" size="icon">
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </PopoverTrigger>
@@ -590,10 +588,10 @@ export default function FreelancerMessagesPage() {
                     className={`flex ${message.sender_id === currentUserId ? "justify-end" : "justify-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-2 sm:p-3 rounded-lg ${
+                      className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-2 sm:p-3 rounded-2xl ${
                         message.sender_id === currentUserId
-                          ? "bg-orange-500 text-white"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white"
+                          ? "bg-primary text-white"
+                          : "bg-surface-2 text-foreground"
                       }`}
                     >
                       {message.file_url ? (
@@ -640,9 +638,9 @@ export default function FreelancerMessagesPage() {
             </div>
           </ScrollArea>
           {/* Message Input Area (Always visible) */}
-          <div className="p-4 border-t bg-white dark:bg-gray-800 flex-shrink-0">
+          <div className="p-4 border-t border-border bg-card flex-shrink-0">
             {selectedFile && (
-              <div className="mb-3 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center gap-2">
+              <div className="mb-3 p-3 bg-surface-2 rounded-lg flex items-center gap-2">
                 {selectedFile.type.startsWith("image/") ? (
                   <ImageIcon className="h-4 w-4" />
                 ) : (
@@ -664,7 +662,6 @@ export default function FreelancerMessagesPage() {
                   size="sm"
                   onClick={handleSendFile}
                   disabled={uploading}
-                  className="bg-orange-500 hover:bg-orange-600"
                 >
                   {uploading ? "Uploading..." : "Send"}
                 </Button>
@@ -707,7 +704,7 @@ export default function FreelancerMessagesPage() {
               <Button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || !selectedConversation}
-                className="bg-orange-500 hover:bg-orange-600 flex-shrink-0 w-10 h-10 rounded-full p-0"
+                className="flex-shrink-0 w-10 h-10 rounded-full p-0"
               >
                 <Send className="h-5 w-5" />
                 <span className="sr-only">Send message</span>

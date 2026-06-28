@@ -2,10 +2,9 @@
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Coins, Filter, X, Mail, ArrowRight } from "lucide-react"
+import { Coins, Filter, X, Mail, ArrowRight, Wallet } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 import dynamic from "next/dynamic"
@@ -25,6 +24,16 @@ interface BizpalClientProps {
   initialCreditPurchases: CreditPurchase[]
   initialCurrentCredits: number
 }
+
+const payoutSteps = [
+  "An agency funds a job.",
+  "You click Verify to verify the payment.",
+  "You click Confirm to confirm the job.",
+  "You deliver the work successfully.",
+  "The agency clicks Job done on their side.",
+  "The Payout button becomes visible.",
+  "Click Payout, enter your correct bank details, and withdraw.",
+]
 
 export default function BizpalClient({
   initialCreditPurchases,
@@ -142,7 +151,7 @@ export default function BizpalClient({
 
   const handleSubmitQuery = () => {
     window.location.href =
-      "mailto:Bizimisocials12@gmail.com?subject=Bizpal Query&body=Hello, I have a query regarding..."
+      "mailto:contact@bizimii.com?subject=Bizpal Query&body=Hello, I have a query regarding..."
   }
 
   const formatCurrency = (amount: number) => {
@@ -165,16 +174,14 @@ export default function BizpalClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-6xl mx-auto py-8 px-4">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-6"></div>
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
-              <div className="h-32 bg-gray-300 rounded"></div>
-            </div>
-            <div className="space-y-4">
-              <div className="h-64 bg-gray-300 rounded"></div>
-              <div className="h-64 bg-gray-300 rounded"></div>
+      <div className="min-h-screen bg-surface">
+        <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-foreground/5 rounded w-1/4" />
+            <div className="h-32 bg-card border border-border rounded-xl sm:max-w-sm" />
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className="h-64 bg-card border border-border rounded-xl" />
+              <div className="h-64 bg-card border border-border rounded-xl" />
             </div>
           </div>
         </div>
@@ -183,53 +190,59 @@ export default function BizpalClient({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-
-      <div className="max-w-6xl mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-primaryxl font-bold text-slate-900 dark:text-white">Bizpal</h1>
-            <p className="text-slate-600 dark:text-slate-400 mt-2">Manage your payments and credits</p>
+    <div className="min-h-screen bg-surface pb-20">
+      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Wallet</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Bizpal</h1>
+            <p className="text-sm text-muted-foreground">Manage your payments and credits.</p>
           </div>
           <Button
             onClick={() => window.open("https://paystack.shop/pay/m7uebavu00", "_blank")}
-            className="bg-primary hover:bg-primary-hover border-primary text-white"
+            className="h-10 px-4 rounded-lg shrink-0 w-full sm:w-auto"
           >
-            Buy Credits
+            Buy credits
           </Button>
-        </div>
+        </header>
 
         {/* Available Credits Card */}
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Available Credits</p>
-                  <p className="text-2xl font-bold text-primary">{currentCredits.toLocaleString()}</p>
+        {/* Balance banner */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-aubergine via-ink to-ink p-6 sm:p-8 text-white shadow-lg shadow-aubergine/20 mb-6">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/30 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute right-10 -bottom-6 opacity-[0.06]" aria-hidden>
+            <Coins className="h-32 w-32" />
+          </div>
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
+                  <Coins className="h-4 w-4 text-primary" />
                 </div>
-                <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-                  <Coins className="h-6 w-6 text-primary" />
-                </div>
+                <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/60">Available credits</p>
               </div>
+              <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">{currentCredits.toLocaleString()}</p>
+              <p className="mt-1 text-xs text-white/50">≈ ₦{(currentCredits * 50).toLocaleString()} · ₦50 per credit</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:items-end">
               <Button
                 onClick={() => setShowTopItModal(true)}
-                size="sm"
-                className="w-full mt-3 bg-primary hover:bg-primary-hover"
+                className="bg-primary text-white hover:bg-primary-hover sm:px-8"
               >
-                Top It
+                Top up credits
               </Button>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-center">Min: 10 credits (₦500)</p>
-            </CardContent>
-          </Card>
+              <p className="text-[11px] text-white/40">Min: 10 credits (₦500)</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* History + how payout works */}
+        <div className="grid lg:grid-cols-2 gap-6">
           {/* Credits Purchase History */}
-          <Card>
+          <Card className="rounded-xl border border-border bg-card shadow-none">
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <Coins className="h-5 w-5 text-primary" />
                   Credits Purchase History
                 </CardTitle>
@@ -246,7 +259,7 @@ export default function BizpalClient({
 
               {/* Date Filter Section */}
               {showDateFilter && (
-                <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+                <div className="mt-4 p-4 bg-surface-2 rounded-lg border border-border">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <Label htmlFor="fromDate" className="text-sm font-medium">
@@ -285,7 +298,7 @@ export default function BizpalClient({
                     </div>
                   </div>
                   {(fromDate || toDate) && (
-                    <p className="text-xs text-slate-500 mt-2">
+                    <p className="text-xs text-muted-foreground mt-2">
                       Showing {filteredCreditPurchases.length} of {creditPurchases.length} purchases
                     </p>
                   )}
@@ -294,18 +307,20 @@ export default function BizpalClient({
             </CardHeader>
             <CardContent>
               {filteredCreditPurchases.length === 0 ? (
-                <div className="text-center py-8">
-                  <Coins className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
+                <div className="text-center py-12">
+                  <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Coins className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-4 text-sm font-semibold text-foreground">
                     {creditPurchases.length === 0 ? "No credits purchased yet" : "No purchases found"}
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
                     {creditPurchases.length === 0
                       ? "Purchase credits to access premium features and services."
                       : "Try adjusting your date filter to see more results."}
                   </p>
                   {creditPurchases.length === 0 && (
-                    <p className="text-sm text-slate-400 mt-2">Rate: 10 credits = ₦ 500 (₦ 50 per credit)</p>
+                    <p className="mt-2 text-xs text-muted-foreground">Rate: 10 credits = ₦500 (₦50 per credit)</p>
                   )}
                 </div>
               ) : (
@@ -313,41 +328,41 @@ export default function BizpalClient({
                   {filteredCreditPurchases.map((purchase) => (
                     <div
                       key={purchase.id}
-                      className="flex items-center justify-between p-4 border border-slate-200 dark:border-gray-700 rounded-lg"
+                      className="flex items-center justify-between gap-3 p-4 border border-border rounded-lg transition-colors hover:bg-surface/60"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Coins className="h-5 w-5 text-primary" />
                         </div>
-                        <div>
-                          <h4 className="font-medium text-slate-900 dark:text-white">
-                            {purchase.credits_amount > 0 ? "Credits Purchase" : "Credits Used (Job Bid)"}
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-medium text-foreground truncate">
+                            {purchase.credits_amount > 0 ? "Credits purchase" : "Credits used (job bid)"}
                           </h4>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                          <p className="text-xs text-muted-foreground">
                             {Math.abs(purchase.credits_amount).toLocaleString()} credits
                           </p>
-                          <p className="text-xs text-slate-400">{formatDate(purchase.created_at)}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(purchase.created_at)}</p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0">
                         <p
-                          className={`font-semibold ${purchase.credits_amount > 0 ? "text-slate-900 dark:text-white" : "text-red-600"}`}
+                          className={`text-sm font-semibold tabular-nums ${purchase.credits_amount > 0 ? "text-foreground" : "text-destructive"}`}
                         >
                           {purchase.credits_amount > 0
                             ? formatCurrency(purchase.amount)
                             : `${purchase.credits_amount} credits`}
                         </p>
-                        <Badge
-                          className={`${
+                        <span
+                          className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
                             purchase.status === "completed"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-success/10 text-success"
                               : purchase.status === "pending"
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-red-100 text-red-800"
+                                ? "bg-warning/10 text-warning"
+                                : "bg-destructive/10 text-destructive"
                           }`}
                         >
                           {purchase.status === "completed" ? "Completed" : purchase.status}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -357,81 +372,36 @@ export default function BizpalClient({
           </Card>
 
           {/* How Payout Works */}
-          <Card>
+          <Card className="rounded-xl border border-border bg-card shadow-none">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" />
-                How Payout Works
+              <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                <Wallet className="h-5 w-5 text-primary" />
+                How payout works
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      1
-                    </div>
-                    <p className="text-slate-700 dark:text-gray-300">Agency funds a job</p>
-                  </div>
+                <ol className="relative">
+                  {payoutSteps.map((step, i) => (
+                    <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
+                      {i < payoutSteps.length - 1 && (
+                        <span className="absolute left-4 top-8 bottom-0 w-px -translate-x-1/2 bg-border" aria-hidden />
+                      )}
+                      <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary text-xs font-semibold tabular-nums">
+                        {i + 1}
+                      </span>
+                      <p className="pt-1.5 text-sm text-foreground">{step}</p>
+                    </li>
+                  ))}
+                </ol>
 
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      2
-                    </div>
-                    <p className="text-slate-700 dark:text-gray-300">You click on 'verify' button, to verify payment</p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      3
-                    </div>
-                
-                    <p className="text-slate-700 dark:text-gray-300">    You click on the 'Biz' button for confirmation</p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      4
-                    </div>
-                    <p className="text-slate-700 dark:text-gray-300">Upon successful job delivery</p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      5
-                    </div>
-                    <p className="text-slate-700 dark:text-gray-300">Agency clicks on 'job done' on their side</p>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      6
-                    </div>
-                    <p className="text-slate-700 dark:text-gray-300">
-                    'Payout' button becomes visible
-                    </p>
-                  </div>
-
-                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      6
-                    </div>
-                    <p className="text-slate-700 dark:text-gray-300">
-              Click on 'payout' button, fill in your correct bank details and withdraw
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-200 dark:border-gray-700">
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-4">
                     Have questions about failed transactions or need support? Contact us directly.
                   </p>
-                  <Button
-                    onClick={handleSubmitQuery}
-                    className="w-full bg-primary hover:bg-primary-hover text-white flex items-center justify-center gap-2"
-                  >
+                  <Button onClick={handleSubmitQuery} className="w-full gap-2">
                     <Mail className="h-4 w-4" />
-                    Submit Query
+                    Submit query
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
