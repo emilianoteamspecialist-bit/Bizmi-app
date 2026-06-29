@@ -143,7 +143,7 @@ export default function SignUpPage() {
         ...(refCode ? { ref_code: refCode } : {}),
       }
 
-      const redirectUrl = `${window.location.origin}/login?confirmed=true`
+      const redirectUrl = `${window.location.origin}/auth/callback`
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email.trim(),
