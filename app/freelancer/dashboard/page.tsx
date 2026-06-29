@@ -23,6 +23,9 @@ export default async function FreelancerDashboardPage() {
   if (profile?.account_type === "admin") {
     redirect("/admin/dashboard")
   }
+  if (profile?.account_type === "influencer") {
+    redirect("/influencer/dashboard")
+  }
 
   // Transform jobs data to match the expected initial structure in the client
   const transformedJobs = jobsData?.jobs?.map((job: any) => ({

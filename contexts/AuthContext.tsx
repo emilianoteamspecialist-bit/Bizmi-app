@@ -97,10 +97,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    // Clear local UI state first so logout feels instant, then drop the session
+    // locally. `scope: 'local'` skips the global server-side revoke round-trip
+    // (which is slow — and stalls/errors when the refresh token is already
+    // stale), and never let a failure block the redirect that follows.
     clearAvatarCache()
     setUser(null)
     setProfile(null)
+    try {
+      await supabase.auth.signOut({ scope: "local" })
+    } catch {
+      /* session already gone locally — nothing to do */
+    }
   }
 
   return (

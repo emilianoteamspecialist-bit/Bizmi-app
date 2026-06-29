@@ -33,10 +33,11 @@ export async function middleware(req: NextRequest) {
   }
 
   // Protected routes that require authentication
-  const isProtectedRoute = 
-    pathname.startsWith('/dashboard') || 
-    pathname.startsWith('/agency') || 
-    pathname.startsWith('/freelancer') || 
+  const isProtectedRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/agency') ||
+    pathname.startsWith('/freelancer') ||
+    pathname.startsWith('/influencer') ||
     pathname.startsWith('/admin')
 
   // Auth routes that shouldn't be accessed if already logged in
@@ -84,9 +85,10 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*', 
-    '/agency/:path*', 
-    '/freelancer/:path*', 
+    '/dashboard/:path*',
+    '/agency/:path*',
+    '/freelancer/:path*',
+    '/influencer/:path*',
     '/admin/:path*',
     '/login',
     '/signup',

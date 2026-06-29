@@ -54,6 +54,7 @@ export default function LoginPage() {
 
         if (profile.account_type === "admin") router.push("/admin/dashboard")
         else if (profile.account_type === "agency") router.push("/agency/dashboard")
+        else if (profile.account_type === "influencer") router.push("/influencer/dashboard")
         else router.push("/freelancer/dashboard")
       }
     } catch (error) {

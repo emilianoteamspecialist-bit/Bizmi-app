@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { LayoutDashboard, CreditCard, DollarSign, BarChart3, LogOut, Menu, X, ShieldAlert, Users, ScrollText, Briefcase } from "lucide-react"
+import { LayoutDashboard, CreditCard, DollarSign, BarChart3, LogOut, Menu, X, ShieldAlert, Users, ScrollText, Briefcase, Megaphone } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 const navigation = [
@@ -13,6 +13,7 @@ const navigation = [
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Disputes", href: "/admin/disputes", icon: ShieldAlert },
   { name: "Jobs", href: "/admin/jobs", icon: Briefcase },
+  { name: "Influencers", href: "/admin/influencers", icon: Megaphone },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Audit Log", href: "/admin/audit", icon: ScrollText },
 ]

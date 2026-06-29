@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { createServiceRoleClient } from '@/lib/supabase-service';
+import { qualifyReferralOnRelease } from '@/lib/influencer-referrals';
 
 // Approves a freelancer's submission and marks the job ready for payout.
 //
@@ -84,6 +85,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (escrowError) {
       console.warn('Could not update escrow_deposits:', escrowError);
     }
+
+    // 5. Influencer referral: this is the release/qualifying event. Pay the
+    //    influencer of any referred party their commission, once. Fail-soft.
+    const { data: escrowRow } = await service
+      .from('escrow_deposits')
+      .select('freelancer_id, amount_kobo')
+      .eq('job_id', job_id)
+      .maybeSingle();
+    await qualifyReferralOnRelease(service, {
+      job_id,
+      agency_id: job.agency_id,
+      freelancer_id: (escrowRow as any)?.freelancer_id ?? null,
+      amount_kobo: (escrowRow as any)?.amount_kobo ?? null,
+    });
 
     return NextResponse.json({ success: true, message: 'Project approved and funds released.' });
   } catch (error) {
