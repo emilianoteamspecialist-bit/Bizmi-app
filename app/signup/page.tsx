@@ -255,7 +255,7 @@ export default function SignUpPage() {
                     <h2 className="text-xl font-semibold text-foreground">Choose account type</h2>
                     <p className="text-sm text-muted-foreground">How do you want to use Bizimi?</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setAccountType("freelancer")}
@@ -300,7 +300,6 @@ export default function SignUpPage() {
                         </div>
                       )}
                     </button>
-                    
                   </div>
                 </div>
               )}
@@ -354,8 +353,6 @@ export default function SignUpPage() {
                       </div>
                     </div>
                   )}
-
-             
                 </div>
               )}
 
