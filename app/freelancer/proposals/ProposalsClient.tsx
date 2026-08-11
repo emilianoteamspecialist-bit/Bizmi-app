@@ -30,7 +30,7 @@ interface Proposal {
   freelancer_id: string
   proposal_text: string
   timeline: string | null
-  budget: string | null
+  budget: number | null
   attachments: string[] | null
   status: "pending" | "accepted" | "rejected"
   created_at: string

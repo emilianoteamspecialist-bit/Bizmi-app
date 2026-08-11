@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Save, Shield, Bell, Mail, Lock, Eye, EyeOff } from "lucide-react"
+import { Save, Shield, Bell, Mail, Lock, Eye, EyeOff, Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { DeleteAccountDialog } from "@/components/delete-account-dialog"
 
 export default function FreelancerSettings() {
   const { user, loading: authLoading } = useAuth()
@@ -122,17 +123,31 @@ export default function FreelancerSettings() {
     }
   }
 
+  // Confirmation is handled by the DeleteAccountDialog (type-to-confirm), so
+  // this just performs the deletion.
   const handleDeleteAccount = async () => {
-    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-      try {
-        // This would typically involve calling a server function to properly delete the account
-        // For now, we'll just sign out
-        await supabase.auth.signOut()
-        router.push("/")
-      } catch (error) {
+    try {
+      setSaving(true)
+
+      // Account deletion runs server-side with the service role: deleting the
+      // auth user (not just the profile) is the only way to free the email for
+      // re-signup, and the browser client can't touch auth.users.
+      const res = await fetch("/api/account/delete", { method: "POST" })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: "" }))
         console.error("Error deleting account:", error)
         alert("Error deleting account")
+        return
       }
+
+      await supabase.auth.signOut()
+      router.push("/")
+      alert("Account deleted successfully")
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      alert("Error deleting account")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -265,6 +280,26 @@ export default function FreelancerSettings() {
                   <Save className="h-4 w-4 mr-2" />
                   {saving ? "Saving..." : "Update Account"}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-xl border border-red-200 bg-card shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-red-600">
+                  <Trash2 className="h-5 w-5" />
+                  Danger Zone
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-red-600">Delete Account</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Once you delete your account, there is no going back. Please be certain.
+                    </p>
+                    <DeleteAccountDialog onConfirm={handleDeleteAccount} loading={saving} />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

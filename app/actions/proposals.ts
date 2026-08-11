@@ -70,39 +70,83 @@ export async function submitProposal(
 ): Promise<SubmitProposalResult> {
   const supabase = await createClient()
   const user = await getCurrentUser()
-  if (!user) return { success: false, error: "Unauthorized" }
+
+  if (!user) {
+    return { success: false, error: "Unauthorized" }
+  }
+
+  const budget = Number(input.budget)
+
+  if (!Number.isFinite(budget) || budget <= 0) {
+    return {
+      success: false,
+      error: "Please enter a valid budget.",
+      code: "invalid_budget",
+    }
+  }
 
   const { data, error } = await supabase.rpc("place_bid", {
     p_job_id: jobId,
     p_proposal_text: input.proposal_text,
     p_timeline: input.timeline,
-    p_budget: input.budget,
+    p_budget: budget,
     p_credit_cost: creditCost,
     p_attachments: input.attachments ?? null,
   })
 
   if (error) {
     console.error("place_bid RPC error:", error)
-    return { success: false, error: error.message, code: error.code }
+
+    return {
+      success: false,
+      error: error.message,
+      code: error.code,
+    }
   }
 
-  const result = (data ?? {}) as { ok?: boolean; code?: string; balance?: number }
+  const result = (data ?? {}) as {
+    ok?: boolean
+    code?: string
+    balance?: number
+  }
 
   if (result.ok) {
-    // Only email the agency on a genuinely new proposal, not a duplicate submit.
     if (result.code !== "already_submitted") {
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle()
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle()
+
       await notifyAgencyNewProposal(jobId, profile?.full_name)
     }
-    return { success: true, alreadySubmitted: result.code === "already_submitted" }
+
+    return {
+      success: true,
+      alreadySubmitted: result.code === "already_submitted",
+    }
   }
 
   switch (result.code) {
     case "insufficient_credits":
-      return { success: false, error: "Insufficient credits to place this bid.", code: result.code }
+      return {
+        success: false,
+        error: "Insufficient credits to place this bid.",
+        code: result.code,
+      }
+
     case "unauthorized":
-      return { success: false, error: "Unauthorized", code: result.code }
+      return {
+        success: false,
+        error: "Unauthorized",
+        code: result.code,
+      }
+
     default:
-      return { success: false, error: "Could not submit proposal. Please try again.", code: result.code }
+      return {
+        success: false,
+        error: "Could not submit proposal. Please try again.",
+        code: result.code,
+      }
   }
 }

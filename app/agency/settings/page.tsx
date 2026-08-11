@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Save, Shield, Bell, Mail, Lock, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react"
+import { Save, Shield, Bell, Mail, Lock, Eye, EyeOff, AlertTriangle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { DeleteAccountDialog } from "@/components/delete-account-dialog"
 
 export default function AgencySettings() {
   const { user, loading: authLoading, signOut } = useAuth()
@@ -111,35 +112,37 @@ export default function AgencySettings() {
     }
   }
 
+  // Confirmation is handled by the DeleteAccountDialog (type-to-confirm), so
+  // this just performs the deletion.
   const handleDeleteAccount = async () => {
-    if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-      try {
-        setSaving(true)
+    try {
+      setSaving(true)
 
-        if (!user) {
-          alert("No user found")
-          return
-        }
+      if (!user) {
+        alert("No user found")
+        return
+      }
 
-        // Delete user profile and related data
-        const { error: profileError } = await supabase.from("profiles").delete().eq("id", user.id)
-
-        if (profileError) {
-          console.error("Error deleting profile:", profileError)
-          alert("Error deleting account data")
-          return
-        }
-
-        // Sign out and redirect
-        await signOut()
-        router.push("/")
-        alert("Account deleted successfully")
-      } catch (error) {
+      // Account deletion runs server-side with the service role: deleting the
+      // auth user (not just the profile) is the only way to free the email for
+      // re-signup, and the browser client can't touch auth.users.
+      const res = await fetch("/api/account/delete", { method: "POST" })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: "" }))
         console.error("Error deleting account:", error)
         alert("Error deleting account")
-      } finally {
-        setSaving(false)
+        return
       }
+
+      // Sign out and redirect
+      await signOut()
+      router.push("/")
+      alert("Account deleted successfully")
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      alert("Error deleting account")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -412,10 +415,7 @@ export default function AgencySettings() {
                     <p className="text-sm text-muted-foreground mb-4">
                       Once you delete your account, there is no going back. Please be certain.
                     </p>
-                    <Button variant="destructive" onClick={handleDeleteAccount}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete Account
-                    </Button>
+                    <DeleteAccountDialog onConfirm={handleDeleteAccount} loading={saving} />
                   </div>
                 </div>
               </CardContent>
