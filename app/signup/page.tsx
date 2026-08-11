@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 import { trackSignUp } from "@/lib/fbpixel"
 import { ALL_SKILLS } from "@/lib/categories"
 
-type AccountType = "freelancer" | "agency" | "influencer"
+type AccountType = "freelancer" | "agency"
 
 export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -136,9 +136,7 @@ export default function SignUpPage() {
           company_name: formData.companyName.trim(),
           company_size: formData.companySize,
         }),
-        ...(accountType === "influencer" && {
-          social_handle: formData.socialHandle.trim(),
-        }),
+       
         // Referral attribution applied once the user first lands authenticated.
         ...(refCode ? { ref_code: refCode } : {}),
       }
@@ -302,26 +300,7 @@ export default function SignUpPage() {
                         </div>
                       )}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setAccountType("influencer")}
-                      className={`relative p-5 rounded-xl border text-left transition-all ${
-                        accountType === "influencer" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
-                      }`}
-                    >
-                      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${
-                        accountType === "influencer" ? "bg-primary text-white" : "bg-surface-2 text-muted-foreground"
-                      }`}>
-                        <Megaphone className="h-5 w-5" />
-                      </div>
-                      <p className="font-semibold text-foreground">Influencer</p>
-                      <p className="mt-1 text-xs text-muted-foreground">I want to promote and earn.</p>
-                      {accountType === "influencer" && (
-                        <div className="absolute top-3.5 right-3.5 rounded-full bg-primary p-1 text-white">
-                          <CheckCircle className="h-3 w-3" />
-                        </div>
-                      )}
-                    </button>
+                    
                   </div>
                 </div>
               )}
@@ -376,14 +355,7 @@ export default function SignUpPage() {
                     </div>
                   )}
 
-                  {accountType === "influencer" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="socialHandle" className="text-sm font-medium text-foreground">
-                        Social handle <span className="font-normal text-muted-foreground">(optional)</span>
-                      </Label>
-                      <Input id="socialHandle" placeholder="@yourhandle" className="h-11" value={formData.socialHandle} onChange={(e) => handleInputChange("socialHandle", e.target.value)} />
-                    </div>
-                  )}
+             
                 </div>
               )}
 
