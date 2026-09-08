@@ -1,7 +1,18 @@
 // client/src/App.test.tsx
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
+
+vi.mock("@/lib/supabase", () => ({
+  supabase: {
+    auth: { signInWithPassword: vi.fn(), signUp: vi.fn() },
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn() })) })),
+    })),
+  },
+}))
+vi.mock("@/lib/fbpixel", () => ({ trackSignUp: vi.fn() }))
+
 import Landing from "./pages/Landing"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
