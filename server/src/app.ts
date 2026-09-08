@@ -1,5 +1,6 @@
 import express from "express"
 import cors from "cors"
+import meRouter from "./routes/me.js"
 
 export function createApp() {
   const app = express()
@@ -10,6 +11,7 @@ export function createApp() {
     })
   )
   app.use(express.json())
+  app.use("/api/me", meRouter)
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" })
