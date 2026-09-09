@@ -16,8 +16,8 @@ function appWith(user: { id: string }, supabase: any) {
   return app
 }
 
-const notifyAgencyNewProposalMock = vi.spyOn(notificationsModule, "notifyAgencyNewProposal")
-const notifyFreelancerProposalDecisionMock = vi.spyOn(notificationsModule, "notifyFreelancerProposalDecision")
+const notifyAgencyNewProposalMock = vi.spyOn(notificationsModule, "notifyAgencyNewProposal").mockResolvedValue(undefined)
+const notifyFreelancerProposalDecisionMock = vi.spyOn(notificationsModule, "notifyFreelancerProposalDecision").mockResolvedValue(undefined)
 
 beforeEach(() => {
   vi.clearAllMocks()

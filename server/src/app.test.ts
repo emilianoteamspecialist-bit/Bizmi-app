@@ -1,7 +1,42 @@
 // server/src/app.test.ts
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import request from "supertest"
 import { createApp } from "./app.js"
+
+const getUserMock = vi.fn()
+const singleMock = vi.fn()
+
+vi.mock("./lib/supabase.js", () => ({
+  createUserClient: vi.fn(() => ({
+    auth: { getUser: getUserMock },
+    from: vi.fn((table: string) => {
+      if (table === "profiles") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: singleMock,
+            })),
+          })),
+        }
+      }
+      // For jobs table: update chain should error
+      return {
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn() })) })),
+        update: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            eq: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
+        })),
+      }
+    }),
+  })),
+}))
+
+beforeEach(() => {
+  getUserMock.mockReset()
+  singleMock.mockReset()
+  vi.clearAllMocks()
+})
 
 describe("GET /health", () => {
   it("returns status ok", async () => {
@@ -26,5 +61,34 @@ describe("auth gate on Phase 1 routers", () => {
   it("requires auth on /api/proposals", async () => {
     const res = await request(createApp()).get("/api/proposals/mine")
     expect(res.status).toBe(401)
+  })
+})
+
+describe("JSON 404 fallback", () => {
+  it("returns 404 with JSON body for unmatched routes", async () => {
+    const res = await request(createApp()).get("/api/does-not-exist")
+    expect(res.status).toBe(404)
+    expect(res.body).toEqual({ error: "Not found", code: "not_found" })
+  })
+})
+
+describe("error propagation through errorHandler", () => {
+  it("catches thrown errors in mounted routers and returns 500", async () => {
+    getUserMock.mockResolvedValue({
+      data: { user: { id: "user-1", email: "a@b.com" } },
+      error: null,
+    })
+    singleMock.mockResolvedValue({
+      data: { id: "user-1", full_name: "Jane Doe", account_type: "agency" },
+      error: null,
+    })
+
+    const res = await request(createApp())
+      .patch("/api/jobs/some-id/status")
+      .set("Authorization", "Bearer valid-token")
+      .send({ status: "closed" })
+
+    expect(res.status).toBe(500)
+    expect(res.body).toEqual({ error: "Internal server error" })
   })
 })

@@ -18,6 +18,9 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 
   const isAdmin = profile?.role === "admin" || profile?.account_type === "admin"
 
+  if (error) {
+    console.error("Error checking admin status:", error)
+  }
   if (error || !isAdmin) {
     res.status(403).json({ error: "Forbidden" })
     return

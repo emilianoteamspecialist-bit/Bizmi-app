@@ -120,7 +120,7 @@ jobsRouter.post(
   "/:jobId/bookmark",
   asyncHandler(async (req, res) => {
     const { jobId } = req.params
-    const isBookmarked = !!req.body?.isBookmarked
+    const isBookmarked = req.body?.isBookmarked === true
     const supabase = req.supabase!
     const user = req.user!
 

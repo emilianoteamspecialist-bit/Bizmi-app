@@ -6,7 +6,7 @@ import userRouter from "./routes/user.js"
 import jobsRouter from "./routes/jobs.js"
 import proposalsRouter from "./routes/proposals.js"
 import { requireAuth } from "./middleware/auth.js"
-import { errorHandler } from "./lib/http.js"
+import { errorHandler, HttpError } from "./lib/http.js"
 
 export function createApp() {
   const app = express()
@@ -25,6 +25,10 @@ export function createApp() {
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" })
+  })
+
+  app.use((_req, _res, next) => {
+    next(new HttpError(404, "Not found", "not_found"))
   })
 
   app.use(errorHandler)

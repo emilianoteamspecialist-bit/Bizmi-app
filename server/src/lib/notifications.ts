@@ -10,6 +10,8 @@ const APP_URL = (process.env.CLIENT_ORIGIN || "https://bizimii.com").replace(/\/
 
 const naira = (n: number) => `₦${Number(n || 0).toLocaleString()}`
 
+// HTML-escape user-controlled values (freelancer names, job titles) before
+// embedding them in email markup, so they can't inject links or formatting.
 const esc = (s: unknown) =>
   String(s ?? "")
     .replace(/&/g, "&amp;")
