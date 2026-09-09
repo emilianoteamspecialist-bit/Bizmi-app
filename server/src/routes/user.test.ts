@@ -31,14 +31,17 @@ describe("GET /credits", () => {
     expect(res.body).toEqual({ credits: 15 })
   })
 
-  it("looks up purchase_credits for the userId query param, not the caller, when provided", async () => {
-    const eqUserId = vi.fn().mockResolvedValue({ data: [], error: null })
+  it("ignores userId query param and uses caller's ID", async () => {
+    const eqUserId = vi.fn().mockResolvedValue({ data: [{ credits_amount: 10 }], error: null })
     const eqStatus = vi.fn(() => ({ eq: eqUserId }))
     const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: eqStatus })) })) }
 
-    await request(appWith({ id: "user-1" }, supabase)).get("/credits?userId=user-2")
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/credits?userId=user-2")
+    expect(res.status).toBe(200)
 
+    // Verify the query was made for user-1 (the caller), not user-2
     expect(supabase.from).toHaveBeenCalledWith("purchase_credits")
+    expect(eqStatus).toHaveBeenCalledWith("freelancer_id", "user-1")
   })
 })
 

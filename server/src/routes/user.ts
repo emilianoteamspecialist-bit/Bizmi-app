@@ -5,19 +5,12 @@ import { resolveAvatar } from "../lib/avatar.js"
 
 const userRouter = Router()
 
-function targetUserId(req: any): string {
-  return (req.query.userId as string) || req.user!.id
-}
-
 async function fetchCredits(supabase: SupabaseClient, userId: string): Promise<number> {
-  const result = supabase
+  const { data, error } = await supabase
     .from("purchase_credits")
     .select("credits_amount")
     .eq("freelancer_id", userId)
-
-  // Handle both direct promises and chainable objects
-  const awaitable = typeof result?.then === "function" ? result : result?.eq?.("status", "completed")
-  const { data, error } = await awaitable
+    .eq("status", "completed")
 
   if (error) {
     console.error("Error fetching credits:", error)
@@ -38,14 +31,10 @@ async function fetchProfile(supabase: SupabaseClient, userId: string) {
 }
 
 async function fetchBalance(supabase: SupabaseClient, userId: string): Promise<number> {
-  const result = supabase
+  const { data, error } = await supabase
     .from("Funded_jobs101")
     .select("amount, status, payout_successful")
     .eq("freelancer_id", userId)
-
-  // Handle both direct promises (production) and chainable objects (tests)
-  const awaitable = typeof result?.then === "function" ? result : result?.eq?.()
-  const { data, error } = await (awaitable || result)
 
   if (error) {
     console.error("Error fetching balance:", error)
@@ -73,7 +62,7 @@ async function fetchNinVerified(supabase: SupabaseClient, userId: string): Promi
 userRouter.get(
   "/credits",
   asyncHandler(async (req, res) => {
-    const credits = await fetchCredits(req.supabase!, targetUserId(req))
+    const credits = await fetchCredits(req.supabase!, req.user!.id)
     res.json({ credits })
   })
 )
@@ -81,7 +70,7 @@ userRouter.get(
 userRouter.get(
   "/profile",
   asyncHandler(async (req, res) => {
-    const profile = await fetchProfile(req.supabase!, targetUserId(req))
+    const profile = await fetchProfile(req.supabase!, req.user!.id)
     res.json({ profile })
   })
 )
@@ -89,7 +78,7 @@ userRouter.get(
 userRouter.get(
   "/balance",
   asyncHandler(async (req, res) => {
-    const balance = await fetchBalance(req.supabase!, targetUserId(req))
+    const balance = await fetchBalance(req.supabase!, req.user!.id)
     res.json({ balance })
   })
 )
@@ -97,7 +86,7 @@ userRouter.get(
 userRouter.get(
   "/nin-verified",
   asyncHandler(async (req, res) => {
-    const verified = await fetchNinVerified(req.supabase!, targetUserId(req))
+    const verified = await fetchNinVerified(req.supabase!, req.user!.id)
     res.json({ verified })
   })
 )
