@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --surface: 210 40% 98%;
+    --surface-2: 210 40% 96.1%;
+    --paper: 36 33% 97%;
+    --ink: 0 0% 4%;
+    --ink-deep: 220 13% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 20.1 89.1% 48.4%;
+    --primary-soft: 33 100% 96.5%;
+    --primary-border: 32 98% 83.3%;
+    --oxblood: 358 50% 28%;
+    --moss: 145 25% 30%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --info: 221 83% 53%;
+    --aubergine: 263 53% 12%;
+    --gold: 43 96% 56%;
+    --jade: 173 80% 26%;
+    --cream: 32 67% 96%;
+    --border: 220 13% 91%;
+    --rule: 220 13% 85%;
+    --divider: 215 14% 83%;
+    --input: 220 13% 91%;
+    --ring: 24.6 95% 53.1%;
+    --radius-sm: 0.5rem;
+    --radius: 0.75rem;
+    --radius-lg: 1.25rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 2rem;
+  }
+
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-feature-settings: "ss01", "cv11";
+  }
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
