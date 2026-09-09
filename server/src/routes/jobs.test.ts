@@ -112,13 +112,16 @@ describe("GET /agency", () => {
 
 describe("PATCH /:jobId/status", () => {
   it("updates the job status", async () => {
-    const eq = vi.fn().mockResolvedValue({ error: null })
-    const supabase = { from: vi.fn(() => ({ update: vi.fn(() => ({ eq })) })) }
+    const eqAgency = vi.fn().mockResolvedValue({ error: null })
+    const eqId = vi.fn(() => ({ eq: eqAgency }))
+    const supabase = { from: vi.fn(() => ({ update: vi.fn(() => ({ eq: eqId })) })) }
 
     const res = await request(appWith({ id: "agency-1" }, supabase))
       .patch("/job-1/status")
       .send({ status: "closed" })
 
+    expect(eqId).toHaveBeenCalledWith("id", "job-1")
+    expect(eqAgency).toHaveBeenCalledWith("agency_id", "agency-1")
     expect(res.body).toEqual({ success: true })
   })
 })

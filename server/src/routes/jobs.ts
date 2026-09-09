@@ -164,10 +164,12 @@ jobsRouter.patch(
   asyncHandler(async (req, res) => {
     const { jobId } = req.params
     const { status } = req.body ?? {}
+    const user = req.user!
     const { error } = await req.supabase!
       .from("jobs")
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", jobId)
+      .eq("agency_id", user.id)
 
     if (error) throw error
     res.json({ success: true })
