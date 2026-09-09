@@ -45,3 +45,12 @@ describe("route table", () => {
     expect(screen.getByRole("heading", { name: /Start your journey/i })).toBeInTheDocument()
   })
 })
+
+describe("QueryClientProvider", () => {
+  it("renders the app without a 'No QueryClient set' error", () => {
+    // A component using useQuery outside a provider throws synchronously on
+    // render — rendering the full App at "/" and not throwing is proof the
+    // provider is mounted above the router.
+    expect(() => renderAt("/")).not.toThrow()
+  })
+})
