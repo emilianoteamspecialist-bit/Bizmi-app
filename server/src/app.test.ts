@@ -62,6 +62,11 @@ describe("auth gate on Phase 1 routers", () => {
     const res = await request(createApp()).get("/api/proposals/mine")
     expect(res.status).toBe(401)
   })
+
+  it("requires auth on /api/agencies", async () => {
+    const res = await request(createApp()).get("/api/agencies/agency-1/image")
+    expect(res.status).toBe(401)
+  })
 })
 
 describe("JSON 404 fallback", () => {

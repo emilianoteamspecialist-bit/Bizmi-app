@@ -5,6 +5,7 @@ import meRouter from "./routes/me.js"
 import userRouter from "./routes/user.js"
 import jobsRouter from "./routes/jobs.js"
 import proposalsRouter from "./routes/proposals.js"
+import agenciesRouter from "./routes/agencies.js"
 import { requireAuth } from "./middleware/auth.js"
 import { errorHandler, HttpError } from "./lib/http.js"
 
@@ -22,6 +23,7 @@ export function createApp() {
   app.use("/api/user", requireAuth, userRouter)
   app.use("/api/jobs", requireAuth, jobsRouter)
   app.use("/api/proposals", requireAuth, proposalsRouter)
+  app.use("/api/agencies", requireAuth, agenciesRouter)
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" })
