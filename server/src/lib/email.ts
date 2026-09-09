@@ -96,6 +96,9 @@ const LOGO = `
     </tr>
   </table>`
 
+// `heading`, `cta.label` and `cta.url` are escaped here. `body` is raw HTML —
+// callers MUST escape user-controlled values they interpolate (see
+// server/src/lib/notifications.ts).
 export function emailLayout(opts: { heading: string; body: string; cta?: { label: string; url: string } }) {
   const { heading, body, cta } = opts
   const url = cta ? escHtml(cta.url) : ""
