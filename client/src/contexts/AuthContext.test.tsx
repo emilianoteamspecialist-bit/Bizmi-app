@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react"
 import { AuthProvider, useAuth } from "./AuthContext"
 
 const getSessionMock = vi.fn()
-const onAuthStateChangeMock = vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
+const onAuthStateChangeMock = vi.fn((..._args: unknown[]) => ({ data: { subscription: { unsubscribe: vi.fn() } } }))
 const fromMock = vi.fn()
 
 vi.mock("../lib/supabase", () => ({

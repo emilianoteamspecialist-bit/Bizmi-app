@@ -5,7 +5,7 @@ import { Modal } from "@/components/shared/modal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Bookmark, BookmarkX, Calendar, Clock, CreditCard, Eye, MapPin, Send, Users, X } from "lucide-react"
+import { Bookmark, Calendar, CreditCard, Eye, Send, Users, X } from "lucide-react"
 import { useSavedJobsQuery } from "@/lib/queries/jobs"
 import { useSubmitProposalMutation } from "@/lib/queries/proposals"
 import { useAgencyImageQuery } from "@/lib/queries/agencies"
@@ -31,6 +31,17 @@ export default function SavedJobs() {
             <div className="h-8 bg-foreground/5 rounded w-1/4 mb-6"></div>
             <div className="h-32 bg-foreground/5 rounded"></div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (savedJobsQuery.isError) {
+    return (
+      <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <p className="text-sm font-semibold text-foreground">Couldn't load your saved jobs</p>
+          <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
         </div>
       </div>
     )

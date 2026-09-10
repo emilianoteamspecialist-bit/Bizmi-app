@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
@@ -92,5 +92,53 @@ describe("Dashboard", () => {
 
     await waitFor(() => expect(screen.getByText("Build a landing page")).toBeInTheDocument())
     expect(screen.getByText("42")).toBeInTheDocument()
+  })
+
+  it("sends the job's actual bookmark state when the bookmark button is clicked", async () => {
+    const mutate = vi.fn()
+    useToggleBookmarkMutationMock.mockReturnValue({ mutate })
+    useDashboardQueryMock.mockReturnValue({
+      isLoading: false,
+      data: { profile: { full_name: "Jane Doe", skills: ["React"] }, credits: 42, balance: 5000, isVerified: true },
+    })
+    useJobsQueryMock.mockReturnValue({
+      isLoading: false,
+      data: {
+        jobs: [
+          {
+            id: "job-1",
+            title: "Build a landing page",
+            budget_min: 1000,
+            budget_max: 2000,
+            created_at: new Date().toISOString(),
+            has_applied: false,
+            is_bookmarked: true,
+            proposals: 1,
+            skills: ["React"],
+            agency_info: { company_name: "Acme", logo_path: null },
+          },
+        ],
+        totalCount: 1,
+      },
+    })
+
+    renderDashboard()
+
+    const bookmarkButton = await screen.findByRole("button", { name: "Saved" })
+    fireEvent.click(bookmarkButton)
+
+    expect(mutate).toHaveBeenCalledWith(
+      { jobId: "job-1", isBookmarked: true },
+      expect.objectContaining({ onError: expect.any(Function) })
+    )
+  })
+
+  it("shows an error state when a query fails", async () => {
+    useDashboardQueryMock.mockReturnValue({ isLoading: false, isError: true, data: undefined })
+    useJobsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: undefined })
+
+    renderDashboard()
+
+    await waitFor(() => expect(screen.getByText("Couldn't load your dashboard")).toBeInTheDocument())
   })
 })

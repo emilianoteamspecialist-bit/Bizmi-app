@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Navigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Reveal } from "@/components/shared/reveal"
 import { Modal } from "@/components/shared/modal"
@@ -22,7 +22,6 @@ import {
   Send,
   Loader2,
   CheckCircle,
-  ArrowUpRight,
   Bookmark,
   BadgeCheck,
   Briefcase,
@@ -32,7 +31,8 @@ import {
 function transformJob(job: any) {
   return {
     ...job,
-    budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
+    budget: `₦ ${(job.budget_min ?? 0).toLocaleString()} - ₦ ${(job.budget_max ?? 0).toLocaleString()}`,
+    isBookmarked: !!job.is_bookmarked,
     agencyInfo: {
       ...job.agency_info,
       name: job.agency_info?.company_name || job.agency_info?.full_name || "Unknown Agency",
@@ -87,6 +87,21 @@ export default function Dashboard() {
     )
   }
 
+  if (dashboardQuery.isError || jobsQuery.isError) {
+    return (
+      <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <p className="text-sm font-semibold text-foreground">Couldn't load your dashboard</p>
+          <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (profile && profile.account_type !== "freelancer") {
+    return <Navigate to="/" replace />
+  }
+
   const dashboardData = dashboardQuery.data
   const profileData = dashboardData?.profile ?? profile
   const creditBalance = dashboardData?.credits ?? 0
@@ -134,7 +149,10 @@ export default function Dashboard() {
       setSelectedJob(job)
       setShowPlaceBidModal(true)
     } else if (action === "bookmark") {
-      toggleBookmark.mutate({ jobId: job.id, isBookmarked: !!job.isBookmarked })
+      toggleBookmark.mutate(
+        { jobId: job.id, isBookmarked: !!job.isBookmarked },
+        { onError: () => alert("Couldn't update bookmark. Please try again.") }
+      )
     }
   }
 

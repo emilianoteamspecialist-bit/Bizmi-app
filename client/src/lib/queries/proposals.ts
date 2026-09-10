@@ -24,6 +24,7 @@ export function useSubmitProposalMutation() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] })
+      queryClient.invalidateQueries({ queryKey: ["user", "dashboard"] })
     },
   })
 }
