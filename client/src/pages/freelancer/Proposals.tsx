@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -33,12 +34,13 @@ function formatDate(dateString: string) {
 }
 
 export default function Proposals() {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [viewingProposal, setViewingProposal] = useState<Proposal | null>(null)
 
   const query = useMyProposalsQuery(searchTerm)
 
-  if (query.isLoading) {
+  if (query.isLoading && !searchTerm) {
     return (
       <div className="min-h-screen bg-surface pb-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -56,7 +58,7 @@ export default function Proposals() {
     )
   }
 
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return (
       <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
         <div className="text-center space-y-2">
@@ -102,6 +104,11 @@ export default function Proposals() {
             <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
               {searchTerm ? "Try a different search term or clear the search." : "Start applying to jobs to see your proposals here."}
             </p>
+            {!searchTerm && (
+              <Button className="mt-5" onClick={() => navigate("/freelancer/dashboard")}>
+                Browse jobs
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -210,7 +217,14 @@ export default function Proposals() {
               </div>
             ))}
 
-            {query.hasNextPage && (
+            {query.isError && query.data ? (
+              <div className="flex flex-col items-center gap-2 pt-2">
+                <p className="text-sm text-muted-foreground">Couldn't load more proposals.</p>
+                <Button onClick={() => query.fetchNextPage()} variant="outline">
+                  Try again
+                </Button>
+              </div>
+            ) : query.hasNextPage ? (
               <div className="flex justify-center pt-2">
                 <Button onClick={() => query.fetchNextPage()} disabled={query.isFetchingNextPage} variant="outline">
                   {query.isFetchingNextPage ? (
@@ -222,7 +236,7 @@ export default function Proposals() {
                   )}
                 </Button>
               </div>
-            )}
+            ) : null}
           </div>
         )}
       </div>

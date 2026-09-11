@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query"
+import { useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from "@tanstack/react-query"
 import { apiFetch } from "../api"
 
 export type SubmitProposalInput = {
@@ -25,6 +25,7 @@ export function useSubmitProposalMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] })
       queryClient.invalidateQueries({ queryKey: ["user", "dashboard"] })
+      queryClient.invalidateQueries({ queryKey: ["proposals"] })
     },
   })
 }
@@ -70,5 +71,6 @@ export function useMyProposalsQuery(searchTerm: string) {
       if (!lastPage.hasMore) return undefined
       return allPages.reduce((sum, page) => sum + page.proposals.length, 0)
     },
+    placeholderData: keepPreviousData,
   })
 }
