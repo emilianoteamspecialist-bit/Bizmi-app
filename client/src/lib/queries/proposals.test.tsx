@@ -36,3 +36,49 @@ describe("useSubmitProposalMutation", () => {
     })
   })
 })
+
+describe("useMyProposalsQuery", () => {
+  it("fetches the first page from GET /api/proposals/mine with offset 0", async () => {
+    apiFetchMock.mockResolvedValue({
+      proposals: [{ id: "p1", job_title: "Build a site" }],
+      hasMore: false,
+    })
+    const { useMyProposalsQuery } = await import("./proposals")
+
+    const { result } = renderHook(() => useMyProposalsQuery(""), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/proposals/mine?searchTerm=&offset=0&limit=15")
+    expect(result.current.data?.pages[0].proposals).toEqual([{ id: "p1", job_title: "Build a site" }])
+  })
+
+  it("computes the next page's offset from the cumulative proposal count", async () => {
+    apiFetchMock
+      .mockResolvedValueOnce({
+        proposals: Array.from({ length: 15 }, (_, i) => ({ id: `p${i}` })),
+        hasMore: true,
+      })
+      .mockResolvedValueOnce({ proposals: [{ id: "p15" }], hasMore: false })
+
+    const { useMyProposalsQuery } = await import("./proposals")
+    const { result } = renderHook(() => useMyProposalsQuery(""), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.hasNextPage).toBe(true)
+
+    result.current.fetchNextPage()
+
+    await waitFor(() => expect(result.current.data?.pages.length).toBe(2))
+    expect(apiFetchMock).toHaveBeenLastCalledWith("/api/proposals/mine?searchTerm=&offset=15&limit=15")
+  })
+
+  it("URL-encodes the search term", async () => {
+    apiFetchMock.mockResolvedValue({ proposals: [], hasMore: false })
+    const { useMyProposalsQuery } = await import("./proposals")
+
+    const { result } = renderHook(() => useMyProposalsQuery("react & node"), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/proposals/mine?searchTerm=react%20%26%20node&offset=0&limit=15")
+  })
+})
