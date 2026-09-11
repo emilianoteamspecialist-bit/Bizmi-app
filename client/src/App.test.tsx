@@ -26,6 +26,7 @@ import Signup from "./pages/Signup"
 import RequireAuth from "./components/RequireAuth"
 import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
+import Proposals from "./pages/freelancer/Proposals"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -39,6 +40,7 @@ function renderAt(path: string) {
             <Route path="/signup" element={<Signup />} />
             <Route path="/freelancer/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/freelancer/saved-jobs" element={<RequireAuth><SavedJobs /></RequireAuth>} />
+            <Route path="/freelancer/proposals" element={<RequireAuth><Proposals /></RequireAuth>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -75,6 +77,13 @@ describe("QueryClientProvider", () => {
 describe("protected routes", () => {
   it("redirects /freelancer/dashboard to /login when signed out", async () => {
     renderAt("/freelancer/dashboard")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+})
+
+describe("proposals route", () => {
+  it("redirects /freelancer/proposals to /login when signed out", async () => {
+    renderAt("/freelancer/proposals")
     await screen.findByRole("heading", { name: /Continue your work/i })
   })
 })

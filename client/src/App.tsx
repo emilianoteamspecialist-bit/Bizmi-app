@@ -8,6 +8,7 @@ import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
+import Proposals from "./pages/freelancer/Proposals"
 
 export default function App() {
   return (
@@ -31,6 +32,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <SavedJobs />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/freelancer/proposals"
+              element={
+                <RequireAuth>
+                  <Proposals />
                 </RequireAuth>
               }
             />
