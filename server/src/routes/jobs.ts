@@ -225,4 +225,41 @@ jobsRouter.put(
   })
 )
 
+jobsRouter.get(
+  "/:jobId/proposals",
+  asyncHandler(async (req, res) => {
+    const { jobId } = req.params
+    const supabase = req.supabase!
+    const user = req.user!
+
+    const { data: job, error: jobError } = await supabase.from("jobs").select("id, agency_id").eq("id", jobId).maybeSingle()
+
+    if (jobError || !job) {
+      res.json({ proposals: [] })
+      return
+    }
+    if (job.agency_id !== user.id) {
+      res.status(403).json({ error: "Forbidden" })
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("proposals")
+      .select(
+        `id, job_id, freelancer_id, proposal_text, budget, timeline, attachments, status, created_at, updated_at,
+         profiles!proposals_freelancer_id_fkey ( id, full_name, bio, location, phone, website )`
+      )
+      .eq("job_id", jobId)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching job proposals:", error)
+      res.json({ proposals: [] })
+      return
+    }
+
+    res.json({ proposals: data || [] })
+  })
+)
+
 export default jobsRouter

@@ -164,3 +164,74 @@ describe("PUT /:jobId (updateJob)", () => {
     expect(res.body).toEqual({ success: true })
   })
 })
+
+describe("GET /:jobId/proposals", () => {
+  it("returns the job's proposals with embedded freelancer profiles when the caller owns the job", async () => {
+    const jobMaybeSingle = vi.fn().mockResolvedValue({ data: { id: "job-1", agency_id: "agency-1" }, error: null })
+    const proposalsOrder = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "prop-1",
+          job_id: "job-1",
+          freelancer_id: "freelancer-1",
+          proposal_text: "I can do this",
+          budget: 5000,
+          timeline: "2 weeks",
+          attachments: null,
+          status: "pending",
+          created_at: "2026-01-01T00:00:00Z",
+          updated_at: "2026-01-01T00:00:00Z",
+          profiles: { id: "freelancer-1", full_name: "Jane Doe", bio: "A dev", location: "Lagos", phone: null, website: null },
+        },
+      ],
+      error: null,
+    })
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "jobs") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: jobMaybeSingle })) })) }
+        }
+        if (table === "proposals") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ order: proposalsOrder })) })) }
+        }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+
+    const res = await request(appWith({ id: "agency-1" }, supabase)).get("/job-1/proposals")
+
+    expect(res.status).toBe(200)
+    expect(res.body.proposals).toHaveLength(1)
+    expect(res.body.proposals[0].profiles).toEqual({
+      id: "freelancer-1",
+      full_name: "Jane Doe",
+      bio: "A dev",
+      location: "Lagos",
+      phone: null,
+      website: null,
+    })
+  })
+
+  it("returns 403 when the caller does not own the job", async () => {
+    const jobMaybeSingle = vi.fn().mockResolvedValue({ data: { id: "job-1", agency_id: "agency-other" }, error: null })
+    const supabase = {
+      from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: jobMaybeSingle })) })) })),
+    }
+
+    const res = await request(appWith({ id: "agency-1" }, supabase)).get("/job-1/proposals")
+
+    expect(res.status).toBe(403)
+    expect(res.body).toEqual({ error: "Forbidden" })
+  })
+
+  it("returns an empty list when the job doesn't exist", async () => {
+    const jobMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
+    const supabase = {
+      from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: jobMaybeSingle })) })) })),
+    }
+
+    const res = await request(appWith({ id: "agency-1" }, supabase)).get("/job-1/proposals")
+
+    expect(res.body).toEqual({ proposals: [] })
+  })
+})
