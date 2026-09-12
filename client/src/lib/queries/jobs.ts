@@ -53,3 +53,110 @@ export function useToggleBookmarkMutation() {
     },
   })
 }
+
+export type AgencyJob = {
+  id: string
+  title: string
+  description: string
+  budget_min: number | null
+  budget_max: number | null
+  duration: string
+  location: string
+  job_type: string
+  credit_cost: number
+  status: "active" | "paused" | "closed"
+  skills: string[]
+  created_at: string
+  agency_id: string
+  proposals: number
+}
+
+export function useAgencyJobsQuery() {
+  return useQuery({
+    queryKey: ["jobs", "agency"],
+    queryFn: () => apiFetch<{ jobs: AgencyJob[] }>("/api/jobs/agency"),
+  })
+}
+
+export type JobInput = {
+  title: string
+  description: string
+  skills: string[]
+  budget_min: number | null
+  budget_max: number | null
+  duration: string
+  location: string
+  job_type: string
+  credit_cost: number
+}
+
+export function useCreateJobMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: JobInput & { idempotencyKey: string }) =>
+      apiFetch<{ success: boolean; deduped?: boolean; error?: string; code?: string }>("/api/jobs", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs", "agency"] })
+    },
+  })
+}
+
+export function useUpdateJobMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ jobId, ...input }: JobInput & { jobId: string }) =>
+      apiFetch<{ success: boolean; error?: string; code?: string }>(`/api/jobs/${jobId}`, {
+        method: "PUT",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs", "agency"] })
+    },
+  })
+}
+
+export function useUpdateJobStatusMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ jobId, status }: { jobId: string; status: string }) =>
+      apiFetch<{ success: boolean }>(`/api/jobs/${jobId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs", "agency"] })
+    },
+  })
+}
+
+export type JobProposal = {
+  id: string
+  job_id: string
+  freelancer_id: string
+  proposal_text: string
+  budget: number | string | null
+  timeline: string | null
+  attachments: string[] | null
+  status: "pending" | "accepted" | "rejected"
+  created_at: string
+  updated_at: string
+  profiles: {
+    id: string
+    full_name: string | null
+    bio: string | null
+    location: string | null
+    phone: string | null
+    website: string | null
+  } | null
+}
+
+export function useJobProposalsQuery(jobId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["jobs", jobId, "proposals"],
+    queryFn: () => apiFetch<{ proposals: JobProposal[] }>(`/api/jobs/${jobId}/proposals`),
+    enabled: enabled && !!jobId,
+  })
+}

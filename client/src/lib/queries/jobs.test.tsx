@@ -55,3 +55,81 @@ describe("useToggleBookmarkMutation", () => {
     })
   })
 })
+
+describe("useAgencyJobsQuery", () => {
+  it("calls GET /api/jobs/agency", async () => {
+    apiFetchMock.mockResolvedValue({ jobs: [{ id: "job-1", proposals: 2 }] })
+    const { useAgencyJobsQuery } = await import("./jobs")
+
+    const { result } = renderHook(() => useAgencyJobsQuery(), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/jobs/agency")
+  })
+})
+
+describe("useCreateJobMutation", () => {
+  it("POSTs to /api/jobs with the job payload and idempotencyKey", async () => {
+    apiFetchMock.mockResolvedValue({ success: true })
+    const { useCreateJobMutation } = await import("./jobs")
+
+    const { result } = renderHook(() => useCreateJobMutation(), { wrapper })
+    result.current.mutate({ title: "Build a site", idempotencyKey: "key-1" } as any)
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/jobs", {
+      method: "POST",
+      body: JSON.stringify({ title: "Build a site", idempotencyKey: "key-1" }),
+    })
+  })
+})
+
+describe("useUpdateJobMutation", () => {
+  it("PUTs to /api/jobs/:jobId with the job payload", async () => {
+    apiFetchMock.mockResolvedValue({ success: true })
+    const { useUpdateJobMutation } = await import("./jobs")
+
+    const { result } = renderHook(() => useUpdateJobMutation(), { wrapper })
+    result.current.mutate({ jobId: "job-1", title: "Updated title" } as any)
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/jobs/job-1", {
+      method: "PUT",
+      body: JSON.stringify({ title: "Updated title" }),
+    })
+  })
+})
+
+describe("useUpdateJobStatusMutation", () => {
+  it("PATCHes to /api/jobs/:jobId/status with the new status", async () => {
+    apiFetchMock.mockResolvedValue({ success: true })
+    const { useUpdateJobStatusMutation } = await import("./jobs")
+
+    const { result } = renderHook(() => useUpdateJobStatusMutation(), { wrapper })
+    result.current.mutate({ jobId: "job-1", status: "paused" })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/jobs/job-1/status", {
+      method: "PATCH",
+      body: JSON.stringify({ status: "paused" }),
+    })
+  })
+})
+
+describe("useJobProposalsQuery", () => {
+  it("calls GET /api/jobs/:jobId/proposals when enabled", async () => {
+    apiFetchMock.mockResolvedValue({ proposals: [] })
+    const { useJobProposalsQuery } = await import("./jobs")
+
+    const { result } = renderHook(() => useJobProposalsQuery("job-1", true), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/jobs/job-1/proposals")
+  })
+
+  it("does not fetch when disabled", async () => {
+    const { useJobProposalsQuery } = await import("./jobs")
+    renderHook(() => useJobProposalsQuery(undefined, false), { wrapper })
+    expect(apiFetchMock).not.toHaveBeenCalled()
+  })
+})
