@@ -27,3 +27,25 @@ describe("useDashboardQuery", () => {
     expect(result.current.data?.credits).toBe(10)
   })
 })
+
+describe("useFreelancerLogosQuery", () => {
+  it("POSTs to /api/user/freelancer-logos with the given ids when there are any", async () => {
+    apiFetchMock.mockResolvedValue({ logos: { "freelancer-1": "https://example.com/a.png" } })
+    const { useFreelancerLogosQuery } = await import("./user")
+
+    const { result } = renderHook(() => useFreelancerLogosQuery(["freelancer-1"]), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/user/freelancer-logos", {
+      method: "POST",
+      body: JSON.stringify({ freelancerIds: ["freelancer-1"] }),
+    })
+    expect(result.current.data?.logos).toEqual({ "freelancer-1": "https://example.com/a.png" })
+  })
+
+  it("does not fetch when the id list is empty", async () => {
+    const { useFreelancerLogosQuery } = await import("./user")
+    renderHook(() => useFreelancerLogosQuery([]), { wrapper })
+    expect(apiFetchMock).not.toHaveBeenCalled()
+  })
+})

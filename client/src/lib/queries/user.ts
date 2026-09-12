@@ -14,3 +14,15 @@ export function useDashboardQuery() {
     queryFn: () => apiFetch<DashboardData>("/api/user/dashboard"),
   })
 }
+
+export function useFreelancerLogosQuery(freelancerIds: string[]) {
+  return useQuery({
+    queryKey: ["user", "freelancer-logos", freelancerIds],
+    queryFn: () =>
+      apiFetch<{ logos: Record<string, string> }>("/api/user/freelancer-logos", {
+        method: "POST",
+        body: JSON.stringify({ freelancerIds }),
+      }),
+    enabled: freelancerIds.length > 0,
+  })
+}

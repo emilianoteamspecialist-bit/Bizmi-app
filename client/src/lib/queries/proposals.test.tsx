@@ -82,3 +82,19 @@ describe("useMyProposalsQuery", () => {
     expect(apiFetchMock).toHaveBeenCalledWith("/api/proposals/mine?searchTerm=react%20%26%20node&offset=0&limit=15")
   })
 })
+
+describe("useRespondToProposalMutation", () => {
+  it("POSTs to /api/proposals/:proposalId/respond with the action, and invalidates the job's proposals", async () => {
+    apiFetchMock.mockResolvedValue({ success: true })
+    const { useRespondToProposalMutation } = await import("./proposals")
+
+    const { result } = renderHook(() => useRespondToProposalMutation(), { wrapper })
+    result.current.mutate({ proposalId: "prop-1", jobId: "job-1", action: "accept" })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/proposals/prop-1/respond", {
+      method: "POST",
+      body: JSON.stringify({ action: "accept" }),
+    })
+  })
+})

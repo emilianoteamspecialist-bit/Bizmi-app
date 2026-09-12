@@ -74,3 +74,18 @@ export function useMyProposalsQuery(searchTerm: string) {
     placeholderData: keepPreviousData,
   })
 }
+
+export function useRespondToProposalMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ proposalId, action }: { proposalId: string; jobId: string; action: "accept" | "reject" }) =>
+      apiFetch<{ success: boolean; error?: string }>(`/api/proposals/${proposalId}/respond`, {
+        method: "POST",
+        body: JSON.stringify({ action }),
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["jobs", variables.jobId, "proposals"] })
+      queryClient.invalidateQueries({ queryKey: ["jobs", "agency"] })
+    },
+  })
+}
