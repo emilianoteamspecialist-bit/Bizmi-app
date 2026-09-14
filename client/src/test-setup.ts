@@ -32,6 +32,5 @@ if (!("IntersectionObserver" in globalThis)) {
       return []
     }
   }
-  // @ts-expect-error jsdom test environment stub, not a spec-accurate implementation
   globalThis.IntersectionObserver = MockIntersectionObserver
 }

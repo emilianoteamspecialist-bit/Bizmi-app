@@ -57,7 +57,7 @@ export default function AgencyDashboard() {
     )
   }
 
-  if (agencyJobsQuery.isError) {
+  if (agencyJobsQuery.isError && !agencyJobsQuery.data) {
     return (
       <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
         <div className="text-center space-y-2">

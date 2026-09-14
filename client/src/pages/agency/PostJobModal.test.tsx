@@ -69,6 +69,7 @@ describe("PostJobModal", () => {
     expect(nextButton).not.toBeDisabled()
   })
 
+  // Radix's default popper positioning can take over a minute in jsdom on Windows.
   it("calls createJob mutation with the assembled input and idempotencyKey on final submit", async () => {
     const mutate = vi.fn()
     useCreateJobMutationMock.mockReturnValue({ mutate, isPending: false })
@@ -124,5 +125,5 @@ describe("PostJobModal", () => {
         idempotencyKey: expect.any(String),
       })
     )
-  })
+  }, 120_000)
 })

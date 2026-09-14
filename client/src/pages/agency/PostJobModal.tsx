@@ -215,7 +215,7 @@ export default function PostJobModal({
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
-                    <SelectContent position="item-aligned">
+                    <SelectContent>
                       <SelectItem value="Remote">Remote</SelectItem>
                       <SelectItem value="Hybrid">Hybrid</SelectItem>
                       <SelectItem value="On-site">On-site</SelectItem>

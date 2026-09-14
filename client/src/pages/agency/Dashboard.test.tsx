@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
@@ -11,22 +11,23 @@ const useUpdateJobStatusMutationMock = vi.fn()
 vi.mock("../../lib/queries/jobs", () => ({
   useAgencyJobsQuery: () => useAgencyJobsQueryMock(),
   useUpdateJobStatusMutation: () => useUpdateJobStatusMutationMock(),
+  useCreateJobMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateJobMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
-vi.mock("./PostJobModal", () => ({ default: () => null }))
 vi.mock("./ProposalsModal", () => ({ default: () => null }))
 
 import AgencyDashboard from "./Dashboard"
 
 function renderDashboard() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <AgencyDashboard />
-      </MemoryRouter>
-    </QueryClientProvider>
-  )
+  return render(<AgencyDashboard />, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={client}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </QueryClientProvider>
+    ),
+  })
 }
 
 beforeEach(() => {
@@ -84,5 +85,22 @@ describe("AgencyDashboard", () => {
     renderDashboard()
     await waitFor(() => expect(screen.getByText("Couldn't load your hiring desk")).toBeInTheDocument())
     expect(screen.queryByText("No jobs yet")).not.toBeInTheDocument()
+  })
+
+  it("preserves an open job draft when a background refetch fails with cached data", () => {
+    const query = { isLoading: false, isError: false, data: { jobs: [] } }
+    useAgencyJobsQueryMock.mockImplementation(() => query)
+    const { rerender } = renderDashboard()
+    fireEvent.click(screen.getAllByRole("button", { name: /post a job/i })[0])
+    fireEvent.change(screen.getByPlaceholderText(/full-stack developer/i), {
+      target: { value: "My unfinished brief" },
+    })
+
+    query.isError = true
+    const view = screen.getByPlaceholderText(/full-stack developer/i)
+    rerender(<AgencyDashboard />)
+    expect(screen.queryByText("Couldn't load your hiring desk")).not.toBeInTheDocument()
+    expect(view).toBeInTheDocument()
+    expect(view).toHaveValue("My unfinished brief")
   })
 })
