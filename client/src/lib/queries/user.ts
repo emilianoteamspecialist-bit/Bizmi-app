@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiFetch } from "../api"
 
 export type DashboardData = {
@@ -24,5 +24,30 @@ export function useFreelancerLogosQuery(freelancerIds: string[]) {
         body: JSON.stringify({ freelancerIds }),
       }),
     enabled: freelancerIds.length > 0,
+  })
+}
+
+export function useUpdateProfileMutation() {
+  return useMutation({
+    mutationFn: (input: Record<string, unknown>) =>
+      apiFetch<{ success: boolean; error?: string }>("/api/user/profile", {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+  })
+}
+
+export function useUploadAvatarMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { data: string; fileName: string; mimeType: string }) =>
+      apiFetch<{ success: boolean; avatar?: string; error?: string }>("/api/user/avatar", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agencies"] })
+      queryClient.invalidateQueries({ queryKey: ["user", "freelancer-logos"] })
+    },
   })
 }
