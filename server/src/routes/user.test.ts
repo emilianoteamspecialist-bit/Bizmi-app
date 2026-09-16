@@ -56,6 +56,49 @@ describe("GET /profile", () => {
   })
 })
 
+describe("PATCH /profile", () => {
+  it("writes only whitelisted fields, scoped to the caller's own id", async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: null })
+    const updateMock = vi.fn(() => ({ eq: eqMock }))
+    const supabase = { from: vi.fn(() => ({ update: updateMock })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .patch("/profile")
+      .send({
+        full_name: "Jane Doe",
+        bio: "A bio",
+        hourly_rate: 5000,
+        skills: ["React", "Node"],
+        role: "admin", // not whitelisted — must be dropped
+        id: "someone-else", // not whitelisted — must be dropped
+      })
+
+    expect(res.body).toEqual({ success: true })
+    expect(supabase.from).toHaveBeenCalledWith("profiles")
+    const writtenFields = updateMock.mock.calls[0][0]
+    expect(writtenFields).toMatchObject({
+      full_name: "Jane Doe",
+      bio: "A bio",
+      hourly_rate: 5000,
+      skills: ["React", "Node"],
+    })
+    expect(writtenFields).not.toHaveProperty("role")
+    expect(writtenFields).not.toHaveProperty("id")
+    expect(eqMock).toHaveBeenCalledWith("id", "user-1")
+  })
+
+  it("returns success: false with the DB error message when the update fails", async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: { message: "constraint violation" } })
+    const supabase = { from: vi.fn(() => ({ update: vi.fn(() => ({ eq: eqMock })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .patch("/profile")
+      .send({ full_name: "Jane Doe" })
+
+    expect(res.body).toEqual({ success: false, error: "constraint violation" })
+  })
+})
+
 describe("GET /balance", () => {
   it("sums verified, unpaid Funded_jobs101 rows", async () => {
     const supabase = {

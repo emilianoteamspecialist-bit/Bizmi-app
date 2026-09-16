@@ -59,6 +59,19 @@ async function fetchNinVerified(supabase: SupabaseClient, userId: string): Promi
   return !!data
 }
 
+const PROFILE_FIELDS = [
+  "full_name",
+  "bio",
+  "location",
+  "phone",
+  "website",
+  "hourly_rate",
+  "skills",
+  "experience_level",
+  "company_name",
+  "company_size",
+] as const
+
 userRouter.get(
   "/credits",
   asyncHandler(async (req, res) => {
@@ -72,6 +85,27 @@ userRouter.get(
   asyncHandler(async (req, res) => {
     const profile = await fetchProfile(req.supabase!, req.user!.id)
     res.json({ profile })
+  })
+)
+
+userRouter.patch(
+  "/profile",
+  asyncHandler(async (req, res) => {
+    const body = req.body ?? {}
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    for (const field of PROFILE_FIELDS) {
+      if (field in body) update[field] = body[field]
+    }
+
+    const { error } = await req.supabase!.from("profiles").update(update).eq("id", req.user!.id)
+
+    if (error) {
+      console.error("updateProfile error:", error)
+      res.json({ success: false, error: error.message })
+      return
+    }
+
+    res.json({ success: true })
   })
 )
 
