@@ -1,7 +1,7 @@
 import { Router } from "express"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { asyncHandler } from "../lib/http.js"
-import { resolveAvatar } from "../lib/avatar.js"
+import { resolveAvatar, getAvatarUrl } from "../lib/avatar.js"
 
 const userRouter = Router()
 
@@ -106,6 +106,57 @@ userRouter.patch(
     }
 
     res.json({ success: true })
+  })
+)
+
+userRouter.post(
+  "/avatar",
+  asyncHandler(async (req, res) => {
+    const { data, fileName, mimeType } = req.body ?? {}
+    if (typeof data !== "string" || typeof fileName !== "string" || typeof mimeType !== "string") {
+      res.status(400).json({ error: "data, fileName, and mimeType are required" })
+      return
+    }
+
+    const supabase = req.supabase!
+    const userId = req.user!.id
+    const profile = await fetchProfile(supabase, userId)
+    const isAgency = profile?.account_type === "agency"
+
+    const ext = fileName.split(".").pop()?.toLowerCase() || "png"
+    const path = `${userId}/avatar.${ext}`
+    const buffer = Buffer.from(data, "base64")
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, buffer, { contentType: mimeType, upsert: true })
+
+    if (uploadError) {
+      console.error("avatar upload error:", uploadError)
+      res.json({ success: false, error: uploadError.message })
+      return
+    }
+
+    const table = isAgency ? "agency_image" : "freelancer_logos"
+    const idColumn = isAgency ? "agency_id" : "freelancer_id"
+    const pathColumn = isAgency ? "image_path" : "logo_path"
+
+    await supabase.from(table).delete().eq(idColumn, userId)
+    const { error: insertError } = await supabase.from(table).insert({
+      [idColumn]: userId,
+      [pathColumn]: path,
+      file_name: fileName,
+      file_size: buffer.length,
+      mime_type: mimeType,
+    })
+
+    if (insertError) {
+      console.error("avatar record insert error:", insertError)
+      res.json({ success: false, error: insertError.message })
+      return
+    }
+
+    res.json({ success: true, avatar: getAvatarUrl(path) })
   })
 )
 

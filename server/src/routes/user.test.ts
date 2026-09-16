@@ -99,6 +99,89 @@ describe("PATCH /profile", () => {
   })
 })
 
+describe("POST /avatar", () => {
+  it("uploads to storage and upserts freelancer_logos for a freelancer caller", async () => {
+    process.env.SUPABASE_URL = "https://example.supabase.co"
+    const uploadMock = vi.fn().mockResolvedValue({ error: null })
+    const deleteEq = vi.fn().mockResolvedValue({ error: null })
+    const insertMock = vi.fn().mockResolvedValue({ error: null })
+
+    const supabase = {
+      storage: { from: vi.fn(() => ({ upload: uploadMock })) },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { account_type: "freelancer" }, error: null }) })) })) }
+        }
+        if (table === "freelancer_logos") {
+          return { delete: vi.fn(() => ({ eq: deleteEq })), insert: insertMock }
+        }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .post("/avatar")
+      .send({ data: Buffer.from("hello").toString("base64"), fileName: "photo.png", mimeType: "image/png" })
+
+    expect(supabase.storage.from).toHaveBeenCalledWith("avatars")
+    expect(uploadMock).toHaveBeenCalledWith(
+      "user-1/avatar.png",
+      Buffer.from("hello"),
+      { contentType: "image/png", upsert: true }
+    )
+    expect(deleteEq).toHaveBeenCalledWith("freelancer_id", "user-1")
+    expect(insertMock).toHaveBeenCalledWith({
+      freelancer_id: "user-1",
+      logo_path: "user-1/avatar.png",
+      file_name: "photo.png",
+      file_size: 5,
+      mime_type: "image/png",
+    })
+    expect(res.body).toEqual({
+      success: true,
+      avatar: "https://example.supabase.co/storage/v1/object/public/avatars/user-1/avatar.png",
+    })
+  })
+
+  it("upserts agency_image instead when the caller's account_type is agency", async () => {
+    process.env.SUPABASE_URL = "https://example.supabase.co"
+    const uploadMock = vi.fn().mockResolvedValue({ error: null })
+    const insertMock = vi.fn().mockResolvedValue({ error: null })
+
+    const supabase = {
+      storage: { from: vi.fn(() => ({ upload: uploadMock })) },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { account_type: "agency" }, error: null }) })) })) }
+        }
+        if (table === "agency_image") {
+          return { delete: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) })), insert: insertMock }
+        }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+
+    await request(appWith({ id: "agency-1" }, supabase))
+      .post("/avatar")
+      .send({ data: Buffer.from("hi").toString("base64"), fileName: "logo.jpg", mimeType: "image/jpeg" })
+
+    expect(insertMock).toHaveBeenCalledWith({
+      agency_id: "agency-1",
+      image_path: "agency-1/avatar.jpg",
+      file_name: "logo.jpg",
+      file_size: 2,
+      mime_type: "image/jpeg",
+    })
+  })
+
+  it("returns 400 when data, fileName, or mimeType is missing", async () => {
+    const supabase = { from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/avatar").send({ fileName: "a.png" })
+    expect(res.status).toBe(400)
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+})
+
 describe("GET /balance", () => {
   it("sums verified, unpaid Funded_jobs101 rows", async () => {
     const supabase = {

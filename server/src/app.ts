@@ -17,7 +17,7 @@ export function createApp() {
       origin: process.env.CLIENT_ORIGIN ?? "http://localhost:5173",
     })
   )
-  app.use(express.json())
+  app.use(express.json({ limit: "8mb" }))
 
   app.use("/api/me", meRouter)
   app.use("/api/user", requireAuth, userRouter)
