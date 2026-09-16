@@ -59,6 +59,13 @@ async function fetchNinVerified(supabase: SupabaseClient, userId: string): Promi
   return !!data
 }
 
+const ALLOWED_AVATAR_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+}
+
 const PROFILE_FIELDS = [
   "full_name",
   "bio",
@@ -118,12 +125,17 @@ userRouter.post(
       return
     }
 
+    const ext = ALLOWED_AVATAR_TYPES[mimeType]
+    if (!ext) {
+      res.status(400).json({ error: "unsupported image type" })
+      return
+    }
+
     const supabase = req.supabase!
     const userId = req.user!.id
     const profile = await fetchProfile(supabase, userId)
     const isAgency = profile?.account_type === "agency"
 
-    const ext = fileName.split(".").pop()?.toLowerCase() || "png"
     const path = `${userId}/avatar.${ext}`
     const buffer = Buffer.from(data, "base64")
 

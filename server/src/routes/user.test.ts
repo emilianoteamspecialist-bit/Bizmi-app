@@ -180,6 +180,16 @@ describe("POST /avatar", () => {
     expect(res.status).toBe(400)
     expect(supabase.from).not.toHaveBeenCalled()
   })
+
+  it("returns 400 for an unsupported mimeType", async () => {
+    const supabase = { storage: { from: vi.fn() }, from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .post("/avatar")
+      .send({ data: Buffer.from("hi").toString("base64"), fileName: "evil.svg", mimeType: "image/svg+xml" })
+    expect(res.status).toBe(400)
+    expect(supabase.storage.from).not.toHaveBeenCalled()
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
 })
 
 describe("GET /balance", () => {
