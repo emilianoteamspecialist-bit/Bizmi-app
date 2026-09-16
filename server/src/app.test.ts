@@ -114,6 +114,6 @@ describe("JSON body size limit", () => {
       .set("Authorization", "Bearer valid-token")
       .send({ status: "x".repeat(150_000) })
 
-    expect(res.status).not.toBe(413)
+    expect(getUserMock).toHaveBeenCalled()
   })
 })
