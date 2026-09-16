@@ -10,6 +10,7 @@ import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
 import AgencyDashboard from "./pages/agency/Dashboard"
+import Marketplace from "./pages/freelancer/Marketplace"
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route path="/freelancer/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
             <Route
               path="/freelancer/saved-jobs"
               element={

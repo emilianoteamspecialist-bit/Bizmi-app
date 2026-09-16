@@ -28,6 +28,7 @@ import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
 import AgencyDashboard from "./pages/agency/Dashboard"
+import Marketplace from "./pages/freelancer/Marketplace"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -43,6 +44,7 @@ function renderAt(path: string) {
             <Route path="/freelancer/saved-jobs" element={<RequireAuth><SavedJobs /></RequireAuth>} />
             <Route path="/freelancer/proposals" element={<RequireAuth><Proposals /></RequireAuth>} />
             <Route path="/agency/dashboard" element={<RequireAuth><AgencyDashboard /></RequireAuth>} />
+            <Route path="/freelancer/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>

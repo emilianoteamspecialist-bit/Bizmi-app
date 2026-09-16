@@ -8,10 +8,11 @@ export type DashboardData = {
   isVerified: boolean
 }
 
-export function useDashboardQuery() {
+export function useDashboardQuery(enabled = true) {
   return useQuery({
     queryKey: ["user", "dashboard"],
     queryFn: () => apiFetch<DashboardData>("/api/user/dashboard"),
+    enabled,
   })
 }
 
