@@ -9,6 +9,7 @@ import Signup from "./pages/Signup"
 import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
+import FreelancerProfile from "./pages/freelancer/Profile"
 import AgencyDashboard from "./pages/agency/Dashboard"
 
 export default function App() {
@@ -41,6 +42,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <Proposals />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/freelancer/profile"
+              element={
+                <RequireAuth>
+                  <FreelancerProfile />
                 </RequireAuth>
               }
             />
