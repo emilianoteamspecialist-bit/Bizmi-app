@@ -13,7 +13,18 @@ import { fileToBase64 } from "@/lib/file"
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
-function toFormData(profile: any) {
+type FreelancerProfileFormData = {
+  full_name: string
+  bio: string
+  location: string
+  phone: string
+  website: string
+  hourly_rate: string
+  skills: string
+  experience_level: string
+}
+
+function toFormData(profile: any): FreelancerProfileFormData {
   return {
     full_name: profile?.full_name || "",
     bio: profile?.bio || "",
