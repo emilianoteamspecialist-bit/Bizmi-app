@@ -49,3 +49,36 @@ describe("useFreelancerLogosQuery", () => {
     expect(apiFetchMock).not.toHaveBeenCalled()
   })
 })
+
+describe("useUpdateProfileMutation", () => {
+  it("PATCHes /api/user/profile with the given input", async () => {
+    apiFetchMock.mockResolvedValue({ success: true })
+    const { useUpdateProfileMutation } = await import("./user")
+
+    const { result } = renderHook(() => useUpdateProfileMutation(), { wrapper })
+    result.current.mutate({ full_name: "Jane Doe" })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/user/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ full_name: "Jane Doe" }),
+    })
+  })
+})
+
+describe("useUploadAvatarMutation", () => {
+  it("POSTs /api/user/avatar with the given payload", async () => {
+    apiFetchMock.mockResolvedValue({ success: true, avatar: "https://example.com/a.png" })
+    const { useUploadAvatarMutation } = await import("./user")
+
+    const { result } = renderHook(() => useUploadAvatarMutation(), { wrapper })
+    result.current.mutate({ data: "aGVsbG8=", fileName: "a.png", mimeType: "image/png" })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/user/avatar", {
+      method: "POST",
+      body: JSON.stringify({ data: "aGVsbG8=", fileName: "a.png", mimeType: "image/png" }),
+    })
+    expect(result.current.data?.avatar).toBe("https://example.com/a.png")
+  })
+})

@@ -9,8 +9,10 @@ import Signup from "./pages/Signup"
 import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
+import FreelancerProfile from "./pages/freelancer/Profile"
 import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
+import AgencyProfile from "./pages/agency/Profile"
 
 export default function App() {
   return (
@@ -47,10 +49,26 @@ export default function App() {
               }
             />
             <Route
+              path="/freelancer/profile"
+              element={
+                <RequireAuth>
+                  <FreelancerProfile />
+                </RequireAuth>
+              }
+            />
+            <Route
               path="/agency/dashboard"
               element={
                 <RequireAuth>
                   <AgencyDashboard />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agency/profile"
+              element={
+                <RequireAuth>
+                  <AgencyProfile />
                 </RequireAuth>
               }
             />

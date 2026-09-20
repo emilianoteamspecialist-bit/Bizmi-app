@@ -56,6 +56,142 @@ describe("GET /profile", () => {
   })
 })
 
+describe("PATCH /profile", () => {
+  it("writes only whitelisted fields, scoped to the caller's own id", async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: null })
+    const updateMock = vi.fn(() => ({ eq: eqMock }))
+    const supabase = { from: vi.fn(() => ({ update: updateMock })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .patch("/profile")
+      .send({
+        full_name: "Jane Doe",
+        bio: "A bio",
+        hourly_rate: 5000,
+        skills: ["React", "Node"],
+        role: "admin", // not whitelisted — must be dropped
+        id: "someone-else", // not whitelisted — must be dropped
+      })
+
+    expect(res.body).toEqual({ success: true })
+    expect(supabase.from).toHaveBeenCalledWith("profiles")
+    const writtenFields = updateMock.mock.calls[0][0]
+    expect(writtenFields).toMatchObject({
+      full_name: "Jane Doe",
+      bio: "A bio",
+      hourly_rate: 5000,
+      skills: ["React", "Node"],
+    })
+    expect(writtenFields).not.toHaveProperty("role")
+    expect(writtenFields).not.toHaveProperty("id")
+    expect(eqMock).toHaveBeenCalledWith("id", "user-1")
+  })
+
+  it("returns success: false with the DB error message when the update fails", async () => {
+    const eqMock = vi.fn().mockResolvedValue({ error: { message: "constraint violation" } })
+    const supabase = { from: vi.fn(() => ({ update: vi.fn(() => ({ eq: eqMock })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .patch("/profile")
+      .send({ full_name: "Jane Doe" })
+
+    expect(res.body).toEqual({ success: false, error: "constraint violation" })
+  })
+})
+
+describe("POST /avatar", () => {
+  it("uploads to storage and upserts freelancer_logos for a freelancer caller", async () => {
+    process.env.SUPABASE_URL = "https://example.supabase.co"
+    const uploadMock = vi.fn().mockResolvedValue({ error: null })
+    const deleteEq = vi.fn().mockResolvedValue({ error: null })
+    const insertMock = vi.fn().mockResolvedValue({ error: null })
+
+    const supabase = {
+      storage: { from: vi.fn(() => ({ upload: uploadMock })) },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { account_type: "freelancer" }, error: null }) })) })) }
+        }
+        if (table === "freelancer_logos") {
+          return { delete: vi.fn(() => ({ eq: deleteEq })), insert: insertMock }
+        }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .post("/avatar")
+      .send({ data: Buffer.from("hello").toString("base64"), fileName: "photo.png", mimeType: "image/png" })
+
+    expect(supabase.storage.from).toHaveBeenCalledWith("avatars")
+    expect(uploadMock).toHaveBeenCalledWith(
+      "user-1/avatar.png",
+      Buffer.from("hello"),
+      { contentType: "image/png", upsert: true }
+    )
+    expect(deleteEq).toHaveBeenCalledWith("freelancer_id", "user-1")
+    expect(insertMock).toHaveBeenCalledWith({
+      freelancer_id: "user-1",
+      logo_path: "user-1/avatar.png",
+      file_name: "photo.png",
+      file_size: 5,
+      mime_type: "image/png",
+    })
+    expect(res.body).toEqual({
+      success: true,
+      avatar: "https://example.supabase.co/storage/v1/object/public/avatars/user-1/avatar.png",
+    })
+  })
+
+  it("upserts agency_image instead when the caller's account_type is agency", async () => {
+    process.env.SUPABASE_URL = "https://example.supabase.co"
+    const uploadMock = vi.fn().mockResolvedValue({ error: null })
+    const insertMock = vi.fn().mockResolvedValue({ error: null })
+
+    const supabase = {
+      storage: { from: vi.fn(() => ({ upload: uploadMock })) },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { account_type: "agency" }, error: null }) })) })) }
+        }
+        if (table === "agency_image") {
+          return { delete: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) })), insert: insertMock }
+        }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+
+    await request(appWith({ id: "agency-1" }, supabase))
+      .post("/avatar")
+      .send({ data: Buffer.from("hi").toString("base64"), fileName: "logo.jpg", mimeType: "image/jpeg" })
+
+    expect(insertMock).toHaveBeenCalledWith({
+      agency_id: "agency-1",
+      image_path: "agency-1/avatar.jpg",
+      file_name: "logo.jpg",
+      file_size: 2,
+      mime_type: "image/jpeg",
+    })
+  })
+
+  it("returns 400 when data, fileName, or mimeType is missing", async () => {
+    const supabase = { from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/avatar").send({ fileName: "a.png" })
+    expect(res.status).toBe(400)
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it("returns 400 for an unsupported mimeType", async () => {
+    const supabase = { storage: { from: vi.fn() }, from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .post("/avatar")
+      .send({ data: Buffer.from("hi").toString("base64"), fileName: "evil.svg", mimeType: "image/svg+xml" })
+    expect(res.status).toBe(400)
+    expect(supabase.storage.from).not.toHaveBeenCalled()
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+})
+
 describe("GET /balance", () => {
   it("sums verified, unpaid Funded_jobs101 rows", async () => {
     const supabase = {

@@ -97,3 +97,23 @@ describe("error propagation through errorHandler", () => {
     expect(res.body).toEqual({ error: "Internal server error" })
   })
 })
+
+describe("JSON body size limit", () => {
+  it("accepts a JSON body larger than Express's 100kb default (raised for avatar uploads)", async () => {
+    getUserMock.mockResolvedValue({
+      data: { user: { id: "user-1", email: "a@b.com" } },
+      error: null,
+    })
+    singleMock.mockResolvedValue({
+      data: { id: "user-1", full_name: "Jane Doe", account_type: "agency" },
+      error: null,
+    })
+
+    const res = await request(createApp())
+      .patch("/api/jobs/some-id/status")
+      .set("Authorization", "Bearer valid-token")
+      .send({ status: "x".repeat(150_000) })
+
+    expect(getUserMock).toHaveBeenCalled()
+  })
+})
