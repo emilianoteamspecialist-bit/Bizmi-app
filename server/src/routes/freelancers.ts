@@ -56,7 +56,7 @@ freelancersRouter.get(
     ])
 
     const logoMap: Record<string, string> = {}
-    logosResult.data?.forEach((l: { freelancer_id: string }) => {
+    logosResult.data?.forEach((l) => {
       logoMap[l.freelancer_id] = resolveAvatar(l)
     })
 

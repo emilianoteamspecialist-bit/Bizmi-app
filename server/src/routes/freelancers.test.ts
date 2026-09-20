@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest"
 import request from "supertest"
 import express from "express"
-import freelancersRouter from "./freelancers"
+import freelancersRouter from "./freelancers.js"
 
 function appWith(supabase: any) {
   const app = express()
