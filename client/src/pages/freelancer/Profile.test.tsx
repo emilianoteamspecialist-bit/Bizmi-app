@@ -83,6 +83,35 @@ describe("FreelancerProfile", () => {
     await waitFor(() => expect(refreshProfile).toHaveBeenCalled())
   })
 
+  it("re-syncs the read-only view when the profile arrives after this page has already mounted", async () => {
+    useAuthMock.mockReturnValue({
+      user: { id: "freelancer-1" },
+      profile: null,
+      refreshProfile: vi.fn(),
+    })
+    const { rerender } = renderProfile()
+    expect(screen.getByText("Your name")).toBeInTheDocument()
+
+    useAuthMock.mockReturnValue({
+      user: { id: "freelancer-1" },
+      profile: { full_name: "Jane Doe", bio: "A bio", account_type: "freelancer", skills: ["React"] },
+      refreshProfile: vi.fn(),
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    rerender(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/freelancer/profile"]}>
+          <Routes>
+            <Route path="/" element={<div>home</div>} />
+            <Route path="/freelancer/profile" element={<FreelancerProfile />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument())
+  })
+
   it("uploads a selected avatar image", async () => {
     uploadAvatarMutate.mockImplementation(() => {})
     renderProfile()

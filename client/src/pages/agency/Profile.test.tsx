@@ -86,6 +86,35 @@ describe("AgencyProfile", () => {
     await waitFor(() => expect(refreshProfile).toHaveBeenCalled())
   })
 
+  it("re-syncs the read-only view when the profile arrives after this page has already mounted", async () => {
+    useAuthMock.mockReturnValue({
+      user: { id: "agency-1" },
+      profile: null,
+      refreshProfile: vi.fn(),
+    })
+    const { rerender } = renderProfile()
+    expect(screen.getByText("New agency")).toBeInTheDocument()
+
+    useAuthMock.mockReturnValue({
+      user: { id: "agency-1" },
+      profile: { company_name: "Acme Co", full_name: "Point Contact", bio: "We build things", account_type: "agency" },
+      refreshProfile: vi.fn(),
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    rerender(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/agency/profile"]}>
+          <Routes>
+            <Route path="/" element={<div>home</div>} />
+            <Route path="/agency/profile" element={<AgencyProfile />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => expect(screen.getByText("Acme Co")).toBeInTheDocument())
+  })
+
   it("uploads a selected logo image", async () => {
     uploadAvatarMutate.mockImplementation(() => {})
     renderProfile()

@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react"
+import { useEffect, useState, type ChangeEvent } from "react"
 import { Navigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,6 +46,16 @@ export default function FreelancerProfile() {
   const [isEditing, setIsEditing] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [formData, setFormData] = useState(toFormData(profile))
+
+  // AuthContext can resolve `profile` after this page has already mounted
+  // (e.g. a transient fetch failure at login followed by a successful
+  // background token-refresh) — without this, formData stays frozen at
+  // whatever `profile` was on first render, and the page shows a
+  // permanently blank/stale profile until the user manually clicks "Edit".
+  useEffect(() => {
+    if (!isEditing) setFormData(toFormData(profile))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile])
 
   if (profile && profile.account_type !== "freelancer") {
     return <Navigate to="/" replace />
