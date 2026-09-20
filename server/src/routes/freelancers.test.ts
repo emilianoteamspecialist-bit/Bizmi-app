@@ -15,15 +15,23 @@ function appWith(supabase: any) {
   return app
 }
 
-function makeSupabase(profilesData: any[], relatedData: Record<string, any[]> = {}) {
+function makeSupabase(profilesData: any[], relatedData: Record<string, any[]> = {}, orSpy?: (filter: string) => void) {
   return {
     from: vi.fn((table: string) => {
       if (table === "profiles") {
+        const result = { data: profilesData, error: null }
+        const thenable = {
+          then: (resolve: any) => resolve(result),
+          or: (filter: string) => {
+            orSpy?.(filter)
+            return { then: (resolve: any) => resolve(result) }
+          },
+        }
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               order: vi.fn(() => ({
-                range: vi.fn(() => Promise.resolve({ data: profilesData, error: null })),
+                range: vi.fn(() => thenable),
               })),
             })),
           })),
@@ -90,5 +98,14 @@ describe("GET /freelancers", () => {
     const res = await request(appWith(supabase)).get("/").query({ limit: "20", offset: "0" })
     expect(res.body.hasMore).toBe(true)
     expect(res.body.freelancers).toHaveLength(20)
+  })
+
+  it("strips PostgREST filter-DSL metacharacters from the search term before querying", async () => {
+    const orSpy = vi.fn()
+    const supabase = makeSupabase([], {}, orSpy)
+
+    await request(appWith(supabase)).get("/").query({ search: "a,b(c)d.e:f\\g*h" })
+
+    expect(orSpy).toHaveBeenCalledWith("full_name.ilike.%a b c d e f g h%,bio.ilike.%a b c d e f g h%")
   })
 })

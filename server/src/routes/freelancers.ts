@@ -9,7 +9,12 @@ freelancersRouter.get(
   asyncHandler(async (req, res) => {
     const limit = Number(req.query.limit ?? 20)
     const offset = Number(req.query.offset ?? 0)
-    const search = typeof req.query.search === "string" ? req.query.search : ""
+    const rawSearch = typeof req.query.search === "string" ? req.query.search : ""
+    // Strip PostgREST filter-DSL metacharacters before interpolating into
+    // .or() below — otherwise a search term containing "," "(" ")" "." ":"
+    // or "\" can inject additional filter clauses (PostgREST/Supabase
+    // filter injection).
+    const search = rawSearch.replace(/[,()\\:*.]/g, " ").trim().slice(0, 100)
 
     const supabase = req.supabase!
 
