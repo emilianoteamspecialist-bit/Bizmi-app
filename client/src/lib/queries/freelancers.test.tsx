@@ -51,7 +51,7 @@ describe("useFindFreelancersQuery", () => {
     const { result } = renderHook(() => useFindFreelancersQuery("", true), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-    await result.current.fetchNextPage()
+    result.current.fetchNextPage()
     await waitFor(() => expect(result.current.data?.pages).toHaveLength(2))
 
     expect(apiFetchMock).toHaveBeenLastCalledWith("/api/freelancers?search=&offset=20&limit=20")
