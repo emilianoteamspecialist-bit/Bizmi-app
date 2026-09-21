@@ -20,7 +20,7 @@ export function useCreditsHistoryQuery() {
 export function useVerifyCreditsMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: { reference: string; credits_amount: number; amount: number }) =>
+    mutationFn: (input: { reference: string; amount: number }) =>
       apiFetch<{ success: boolean; credits_added?: number; purchase?: CreditPurchase; error?: string }>(
         "/api/user/credits/verify",
         {

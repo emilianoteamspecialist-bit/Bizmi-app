@@ -40,12 +40,12 @@ describe("useVerifyCreditsMutation", () => {
     const { result } = renderHook(() => useVerifyCreditsMutation(), {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
     })
-    result.current.mutate({ reference: "ref-1", credits_amount: 10, amount: 500 })
+    result.current.mutate({ reference: "ref-1", amount: 500 })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(apiFetchMock).toHaveBeenCalledWith("/api/user/credits/verify", {
       method: "POST",
-      body: JSON.stringify({ reference: "ref-1", credits_amount: 10, amount: 500 }),
+      body: JSON.stringify({ reference: "ref-1", amount: 500 }),
     })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["user", "dashboard"] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["user", "credits", "history"] })

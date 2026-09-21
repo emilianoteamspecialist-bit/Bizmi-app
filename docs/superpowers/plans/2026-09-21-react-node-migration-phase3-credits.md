@@ -14,6 +14,7 @@
 
 - **No inline Paystack JS widget.** The original app loads `https://js.paystack.co/v1/inline.js` globally in `app/layout.tsx` and references a "Paystack inline widget" in its own migration-inventory notes, but `PaystackPop.setup(...)` is never actually invoked anywhere in the current codebase — that script tag is dead weight from an earlier implementation. The real, current "buy credits" flow is: (1) a plain button that opens a fixed external Paystack Shop checkout link (`https://paystack.shop/pay/m7uebavu00`) in a new tab, where the user pays on Paystack's own hosted page, then (2) a "Top up credits" modal where the user manually pastes the amount paid and the payment reference from their receipt, which the server verifies against Paystack's API. This plan ports exactly that flow — no inline widget script, no `PaystackPop` integration.
 - **Server-side `req.user!.id` replaces the client-supplied `user_id`.** The original's `/api/verify-transaction` route takes `user_id` from the request body and trusts it outright — any caller could pass an arbitrary `user_id` and credit someone else's account (or their own account under a different id if one existed). This is brand-new server code being written now, with no fidelity obligation to preserve that flaw (unlike a faithful port of pre-existing, already-shipped behavior) — the new route uses `req.user!.id` from the authenticated JWT exclusively; the client never sends a user id at all.
+- **`credits_amount` is computed server-side from the Paystack-verified kobo amount, never accepted from the client.** The original's `/api/verify-transaction` route (and this plan's own first draft) took `credits_amount` from the request body and inserted it verbatim after only checking that the paid *amount* matched — but `amount` and `credits_amount` are separate fields, so a client could pay ₦500 (passing the amount check) while claiming `credits_amount: 999999`. The server computes `credits_amount = Math.floor(transaction.amount / 5000)` (₦50 per credit, in kobo) from Paystack's own verified transaction data — the request body only needs `reference` and `amount` (the latter still needed to compute `expectedAmountKobo` for the existing amount-match check). The client-side `TopUpCreditsModal` still computes and *displays* a credits total from the amount typed in, purely as a UI preview — that value is cosmetic only and is never sent to the server.
 - **Rely on the existing DB-level `UNIQUE NOT NULL` constraint on `purchase_credits.paystack_reference`** (already present in the schema, see `scripts/create-credits-system-tables-v2.sql`) as the sole source of truth for duplicate-reference rejection. The original does a separate client-side pre-check query before calling verify (race-prone, and redundant with the DB constraint) — this plan drops that pre-check and instead has the server catch the resulting Postgres unique-violation (error code `23505`) and return a clean `400 { success: false, error: "This reference has already been used" }` instead of a generic 500.
 - **The Paystack secret key (`PAYSTACK_SECRET_KEY`) is server-only** — used exclusively inside the new `POST /credits/verify` route via `process.env.PAYSTACK_SECRET_KEY`, never referenced anywhere in `client/`. Add the var (empty) to `server/.env.example`.
 - **The "How payout works" panel is informational text only** — a static numbered list describing the (separate, Phase-4-gated) escrow/payout flow, plus a "Submit query" `mailto:` link. It contains no escrow API calls, no `Funded_jobs101` queries, and no `/api/escrow/*`/`/api/paystack/*` calls of any kind — porting this static copy is not building escrow functionality, and nothing here should be added beyond the literal text and the mailto link.
@@ -34,7 +35,7 @@
 
 **Interfaces:**
 - Produces: `GET /api/user/credits/history` — response `{ purchases: CreditPurchase[] }` where `CreditPurchase = { id, amount, credits_amount, status, created_at, paystack_reference }`.
-- Produces: `POST /api/user/credits/verify` — request body `{ reference: string, credits_amount: number, amount: number }`; response `{ success: true, credits_added: number, purchase: CreditPurchase } | { success: false, error: string }` or a `400`/`500` status with `{ success: false, error: string }`.
+- Produces: `POST /api/user/credits/verify` — request body `{ reference: string, amount: number }`; response `{ success: true, credits_added: number, purchase: CreditPurchase } | { success: false, error: string }` or a `400`/`500` status with `{ success: false, error: string }`. **`credits_amount` is never accepted from the client** — the server derives it from the Paystack-verified kobo amount (see Global Constraints).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -75,13 +76,13 @@ describe("GET /credits/history", () => {
 })
 
 describe("POST /credits/verify", () => {
-  const validVerifyBody = { reference: "ref-123", credits_amount: 10, amount: 500 }
+  const validVerifyBody = { reference: "ref-123", amount: 500 }
 
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it("returns 400 when reference, credits_amount, or amount is missing or the wrong type", async () => {
+  it("returns 400 when reference or amount is missing or the wrong type", async () => {
     const supabase = { from: vi.fn() }
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send({ reference: "ref-123" })
     expect(res.status).toBe(400)
@@ -205,18 +206,21 @@ userRouter.get(
 userRouter.post(
   "/credits/verify",
   asyncHandler(async (req, res) => {
-    const { reference, credits_amount, amount } = req.body ?? {}
-    if (typeof reference !== "string" || !reference.trim() || typeof credits_amount !== "number" || typeof amount !== "number") {
-      res.status(400).json({ success: false, error: "reference, credits_amount, and amount are required" })
+    const { reference, amount } = req.body ?? {}
+    if (typeof reference !== "string" || !reference.trim() || typeof amount !== "number") {
+      res.status(400).json({ success: false, error: "reference and amount are required" })
       return
     }
 
     const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
     })
-    const verifyData = await verifyRes.json()
+    const verifyData = (await verifyRes.json()) as {
+      status: boolean
+      data?: { status: string; amount: number; currency: string }
+    }
 
-    if (!verifyRes.ok || verifyData.status === false) {
+    if (!verifyRes.ok || verifyData.status === false || !verifyData.data) {
       res.status(400).json({ success: false, error: "Transaction verification failed" })
       return
     }
@@ -237,6 +241,12 @@ userRouter.post(
       res.status(400).json({ success: false, error: "Invalid transaction currency" })
       return
     }
+
+    // Derive credits from the Paystack-verified kobo amount server-side --
+    // never trust a client-supplied credits_amount, which could claim any
+    // value regardless of what was actually paid.
+    const CREDITS_RATE_KOBO = 5000 // ₦50 per credit
+    const credits_amount = Math.floor(transaction.amount / CREDITS_RATE_KOBO)
 
     const { data, error } = await req.supabase!
       .from("purchase_credits")
@@ -348,12 +358,12 @@ describe("useVerifyCreditsMutation", () => {
     const { result } = renderHook(() => useVerifyCreditsMutation(), {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
     })
-    result.current.mutate({ reference: "ref-1", credits_amount: 10, amount: 500 })
+    result.current.mutate({ reference: "ref-1", amount: 500 })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(apiFetchMock).toHaveBeenCalledWith("/api/user/credits/verify", {
       method: "POST",
-      body: JSON.stringify({ reference: "ref-1", credits_amount: 10, amount: 500 }),
+      body: JSON.stringify({ reference: "ref-1", amount: 500 }),
     })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["user", "dashboard"] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["user", "credits", "history"] })
@@ -392,7 +402,7 @@ export function useCreditsHistoryQuery() {
 export function useVerifyCreditsMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: { reference: string; credits_amount: number; amount: number }) =>
+    mutationFn: (input: { reference: string; amount: number }) =>
       apiFetch<{ success: boolean; credits_added?: number; purchase?: CreditPurchase; error?: string }>(
         "/api/user/credits/verify",
         {
@@ -483,7 +493,7 @@ describe("TopUpCreditsModal", () => {
     expect(screen.getByText("20 credits")).toBeInTheDocument()
   })
 
-  it("calls the verify mutation with the amount, reference, and calculated credits", async () => {
+  it("calls the verify mutation with the amount and reference (not a client-computed credits total)", async () => {
     const user = userEvent.setup()
     renderModal()
 
@@ -492,7 +502,7 @@ describe("TopUpCreditsModal", () => {
     await user.click(screen.getByRole("button", { name: /verify payment/i }))
 
     expect(verifyMutate).toHaveBeenCalledWith(
-      { reference: "ref-abc", credits_amount: 20, amount: 1000 },
+      { reference: "ref-abc", amount: 1000 },
       expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) })
     )
   })
@@ -583,7 +593,7 @@ export default function TopUpCreditsModal({
     }
 
     verify.mutate(
-      { reference: reference.trim(), credits_amount: totalCredits, amount },
+      { reference: reference.trim(), amount },
       {
         onSuccess: (result) => {
           if (!result.success) {
