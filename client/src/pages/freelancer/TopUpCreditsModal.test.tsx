@@ -60,7 +60,11 @@ describe("TopUpCreditsModal", () => {
   })
 
   it("shows the server's error message when verification fails", async () => {
-    verifyMutate.mockImplementation((_input, { onSuccess }) => onSuccess({ success: false, error: "This reference has already been used" }))
+    // The real server never returns a 2xx body with success:false -- every
+    // failure (bad reference, amount mismatch, already-used reference) comes
+    // back as a non-2xx status, which apiFetch turns into a thrown Error
+    // carrying the server's message, triggering the mutation's onError.
+    verifyMutate.mockImplementation((_input, { onError }) => onError(new Error("This reference has already been used")))
     const user = userEvent.setup()
     renderModal()
 
@@ -69,6 +73,18 @@ describe("TopUpCreditsModal", () => {
     await user.click(screen.getByRole("button", { name: /verify payment/i }))
 
     await waitFor(() => expect(screen.getByText("This reference has already been used")).toBeInTheDocument())
+  })
+
+  it("falls back to a generic error message when the thrown error has no message", async () => {
+    verifyMutate.mockImplementation((_input, { onError }) => onError(new Error()))
+    const user = userEvent.setup()
+    renderModal()
+
+    await user.type(screen.getByLabelText(/amount paid/i), "1000")
+    await user.type(screen.getByLabelText(/payment reference/i), "ref-abc")
+    await user.click(screen.getByRole("button", { name: /verify payment/i }))
+
+    await waitFor(() => expect(screen.getByText("Failed to verify payment")).toBeInTheDocument())
   })
 
   it("calls onSuccess and onClose after a successful verification", async () => {

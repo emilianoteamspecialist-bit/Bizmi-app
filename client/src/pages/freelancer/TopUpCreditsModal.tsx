@@ -58,7 +58,7 @@ export default function TopUpCreditsModal({
           onSuccess()
           handleClose()
         },
-        onError: () => setError("Failed to verify payment"),
+        onError: (err) => setError(err instanceof Error && err.message ? err.message : "Failed to verify payment"),
       }
     )
   }
