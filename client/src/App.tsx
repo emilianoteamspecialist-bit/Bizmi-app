@@ -13,6 +13,7 @@ import FreelancerProfile from "./pages/freelancer/Profile"
 import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
 import AgencyProfile from "./pages/agency/Profile"
+import FindFreelancers from "./pages/agency/FindFreelancers"
 
 export default function App() {
   return (
@@ -69,6 +70,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AgencyProfile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agency/find-freelancers"
+              element={
+                <RequireAuth>
+                  <FindFreelancers />
                 </RequireAuth>
               }
             />

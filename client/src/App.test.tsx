@@ -29,6 +29,7 @@ import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
 import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
+import FindFreelancers from "./pages/agency/FindFreelancers"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -45,6 +46,7 @@ function renderAt(path: string) {
             <Route path="/freelancer/proposals" element={<RequireAuth><Proposals /></RequireAuth>} />
             <Route path="/agency/dashboard" element={<RequireAuth><AgencyDashboard /></RequireAuth>} />
             <Route path="/freelancer/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
+            <Route path="/agency/find-freelancers" element={<RequireAuth><FindFreelancers /></RequireAuth>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -95,6 +97,13 @@ describe("proposals route", () => {
 describe("agency dashboard route", () => {
   it("redirects /agency/dashboard to /login when signed out", async () => {
     renderAt("/agency/dashboard")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+})
+
+describe("find freelancers route", () => {
+  it("redirects /agency/find-freelancers to /login when signed out", async () => {
+    renderAt("/agency/find-freelancers")
     await screen.findByRole("heading", { name: /Continue your work/i })
   })
 })
