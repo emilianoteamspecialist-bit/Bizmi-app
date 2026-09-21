@@ -79,13 +79,13 @@ describe("GET /credits/history", () => {
 })
 
 describe("POST /credits/verify", () => {
-  const validVerifyBody = { reference: "ref-123", credits_amount: 10, amount: 500 }
+  const validVerifyBody = { reference: "ref-123", amount: 500 }
 
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it("returns 400 when reference, credits_amount, or amount is missing or the wrong type", async () => {
+  it("returns 400 when reference or amount is missing or the wrong type", async () => {
     const supabase = { from: vi.fn() }
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send({ reference: "ref-123" })
     expect(res.status).toBe(400)
@@ -121,6 +121,29 @@ describe("POST /credits/verify", () => {
     })
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ success: true, credits_added: 10, purchase: insertedRow })
+  })
+
+  it("ignores a client-supplied credits_amount and derives it from the verified Paystack kobo amount instead", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 50000, currency: "NGN" } }),
+      })
+    )
+    const insertedRow = { id: "p-1", amount: 500, credits_amount: 10, status: "completed", created_at: "2026-01-01T00:00:00Z", paystack_reference: "ref-123" }
+    const singleMock = vi.fn().mockResolvedValue({ data: insertedRow, error: null })
+    const insertMock = vi.fn(() => ({ select: vi.fn(() => ({ single: singleMock })) }))
+    const supabase = { from: vi.fn(() => ({ insert: insertMock })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase))
+      .post("/credits/verify")
+      .send({ reference: "ref-123", amount: 500, credits_amount: 999999 })
+
+    // 50000 kobo verified by Paystack / 5000 kobo per credit = 10 credits,
+    // regardless of the 999999 the client tried to claim.
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ credits_amount: 10 }))
+    expect(res.body.credits_added).toBe(10)
   })
 
   it("returns 400 when Paystack reports the transaction as not successful", async () => {

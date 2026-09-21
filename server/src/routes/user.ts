@@ -109,18 +109,21 @@ userRouter.get(
 userRouter.post(
   "/credits/verify",
   asyncHandler(async (req, res) => {
-    const { reference, credits_amount, amount } = req.body ?? {}
-    if (typeof reference !== "string" || !reference.trim() || typeof credits_amount !== "number" || typeof amount !== "number") {
-      res.status(400).json({ success: false, error: "reference, credits_amount, and amount are required" })
+    const { reference, amount } = req.body ?? {}
+    if (typeof reference !== "string" || !reference.trim() || typeof amount !== "number") {
+      res.status(400).json({ success: false, error: "reference and amount are required" })
       return
     }
 
     const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
     })
-    const verifyData = await verifyRes.json()
+    const verifyData = (await verifyRes.json()) as {
+      status: boolean
+      data?: { status: string; amount: number; currency: string }
+    }
 
-    if (!verifyRes.ok || verifyData.status === false) {
+    if (!verifyRes.ok || verifyData.status === false || !verifyData.data) {
       res.status(400).json({ success: false, error: "Transaction verification failed" })
       return
     }
@@ -141,6 +144,12 @@ userRouter.post(
       res.status(400).json({ success: false, error: "Invalid transaction currency" })
       return
     }
+
+    // Derive credits from the Paystack-verified kobo amount server-side --
+    // never trust a client-supplied credits_amount, which could claim any
+    // value regardless of what was actually paid.
+    const CREDITS_RATE_KOBO = 5000 // ₦50 per credit
+    const credits_amount = Math.floor(transaction.amount / CREDITS_RATE_KOBO)
 
     const { data, error } = await req.supabase!
       .from("purchase_credits")
