@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, afterEach } from "vitest"
 import express from "express"
 import request from "supertest"
 import userRouter from "./user.js"
@@ -42,6 +42,135 @@ describe("GET /credits", () => {
     // Verify the query was made for user-1 (the caller), not user-2
     expect(supabase.from).toHaveBeenCalledWith("purchase_credits")
     expect(eqStatus).toHaveBeenCalledWith("freelancer_id", "user-1")
+  })
+})
+
+describe("GET /credits/history", () => {
+  it("returns the caller's purchase history, newest first", async () => {
+    const orderMock = vi.fn().mockResolvedValue({
+      data: [
+        { id: "p-2", amount: 1000, credits_amount: 20, status: "completed", created_at: "2026-02-01T00:00:00Z", paystack_reference: "ref-2" },
+        { id: "p-1", amount: 500, credits_amount: 10, status: "completed", created_at: "2026-01-01T00:00:00Z", paystack_reference: "ref-1" },
+      ],
+      error: null,
+    })
+    const eqMock = vi.fn(() => ({ order: orderMock }))
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: eqMock })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/credits/history")
+
+    expect(res.status).toBe(200)
+    expect(supabase.from).toHaveBeenCalledWith("purchase_credits")
+    expect(eqMock).toHaveBeenCalledWith("freelancer_id", "user-1")
+    expect(orderMock).toHaveBeenCalledWith("created_at", { ascending: false })
+    expect(res.body.purchases).toHaveLength(2)
+    expect(res.body.purchases[0].id).toBe("p-2")
+  })
+
+  it("returns an empty list on a query error", async () => {
+    const orderMock = vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } })
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ order: orderMock })) })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/credits/history")
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ purchases: [] })
+  })
+})
+
+describe("POST /credits/verify", () => {
+  const validVerifyBody = { reference: "ref-123", credits_amount: 10, amount: 500 }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("returns 400 when reference, credits_amount, or amount is missing or the wrong type", async () => {
+    const supabase = { from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send({ reference: "ref-123" })
+    expect(res.status).toBe(400)
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it("verifies with Paystack, inserts a completed purchase scoped to the caller, and returns success", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 50000, currency: "NGN" } }),
+      })
+    )
+    const insertedRow = { id: "p-1", amount: 500, credits_amount: 10, status: "completed", created_at: "2026-01-01T00:00:00Z", paystack_reference: "ref-123" }
+    const singleMock = vi.fn().mockResolvedValue({ data: insertedRow, error: null })
+    const selectMock = vi.fn(() => ({ single: singleMock }))
+    const insertMock = vi.fn(() => ({ select: selectMock }))
+    const supabase = { from: vi.fn(() => ({ insert: insertMock })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://api.paystack.co/transaction/verify/ref-123",
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: expect.stringContaining("Bearer") }) })
+    )
+    expect(insertMock).toHaveBeenCalledWith({
+      freelancer_id: "user-1",
+      amount: 500,
+      credits_amount: 10,
+      paystack_reference: "ref-123",
+      status: "completed",
+    })
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, credits_added: 10, purchase: insertedRow })
+  })
+
+  it("returns 400 when Paystack reports the transaction as not successful", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: true, data: { status: "failed", amount: 50000, currency: "NGN" } }),
+      })
+    )
+    const supabase = { from: vi.fn() }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body.success).toBe(false)
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it("returns 400 when the paid amount doesn't match Paystack's recorded amount", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 10000, currency: "NGN" } }),
+      })
+    )
+    const supabase = { from: vi.fn() }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body.success).toBe(false)
+  })
+
+  it("returns 400 with a clear message when the reference was already used", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 50000, currency: "NGN" } }),
+      })
+    )
+    const singleMock = vi.fn().mockResolvedValue({ data: null, error: { code: "23505", message: "duplicate key" } })
+    const supabase = { from: vi.fn(() => ({ insert: vi.fn(() => ({ select: vi.fn(() => ({ single: singleMock })) })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ success: false, error: "This reference has already been used" })
   })
 })
 

@@ -88,6 +88,87 @@ userRouter.get(
 )
 
 userRouter.get(
+  "/credits/history",
+  asyncHandler(async (req, res) => {
+    const { data, error } = await req.supabase!
+      .from("purchase_credits")
+      .select("id, amount, credits_amount, status, created_at, paystack_reference")
+      .eq("freelancer_id", req.user!.id)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching credit purchase history:", error)
+      res.json({ purchases: [] })
+      return
+    }
+
+    res.json({ purchases: data || [] })
+  })
+)
+
+userRouter.post(
+  "/credits/verify",
+  asyncHandler(async (req, res) => {
+    const { reference, credits_amount, amount } = req.body ?? {}
+    if (typeof reference !== "string" || !reference.trim() || typeof credits_amount !== "number" || typeof amount !== "number") {
+      res.status(400).json({ success: false, error: "reference, credits_amount, and amount are required" })
+      return
+    }
+
+    const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+    })
+    const verifyData = await verifyRes.json()
+
+    if (!verifyRes.ok || verifyData.status === false) {
+      res.status(400).json({ success: false, error: "Transaction verification failed" })
+      return
+    }
+
+    const transaction = verifyData.data
+    if (transaction.status !== "success") {
+      res.status(400).json({ success: false, error: "Transaction not successful" })
+      return
+    }
+
+    const expectedAmountKobo = Math.round(amount * 100)
+    if (transaction.amount !== expectedAmountKobo) {
+      res.status(400).json({ success: false, error: "Transaction amount does not match" })
+      return
+    }
+
+    if (transaction.currency !== "NGN") {
+      res.status(400).json({ success: false, error: "Invalid transaction currency" })
+      return
+    }
+
+    const { data, error } = await req.supabase!
+      .from("purchase_credits")
+      .insert({
+        freelancer_id: req.user!.id,
+        amount,
+        credits_amount,
+        paystack_reference: reference,
+        status: "completed",
+      })
+      .select()
+      .single()
+
+    if (error) {
+      if (error.code === "23505") {
+        res.status(400).json({ success: false, error: "This reference has already been used" })
+        return
+      }
+      console.error("purchase_credits insert error:", error)
+      res.status(500).json({ success: false, error: "Failed to save purchase record" })
+      return
+    }
+
+    res.json({ success: true, credits_added: credits_amount, purchase: data })
+  })
+)
+
+userRouter.get(
   "/profile",
   asyncHandler(async (req, res) => {
     const profile = await fetchProfile(req.supabase!, req.user!.id)
