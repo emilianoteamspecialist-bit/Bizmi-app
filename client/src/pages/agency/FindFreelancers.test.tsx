@@ -66,6 +66,20 @@ describe("FindFreelancers", () => {
     expect(screen.queryByText("No freelancers found")).not.toBeInTheDocument()
   })
 
+  it("keeps showing already-loaded results instead of the error screen when a background refetch/load-more fails", () => {
+    useFindFreelancersQueryMock.mockReturnValue({
+      isLoading: false,
+      isError: true,
+      data: { pages: [{ freelancers: [oneFreelancer], hasMore: true }] },
+      fetchNextPage: vi.fn(),
+      hasNextPage: true,
+      isFetchingNextPage: false,
+    })
+    renderPage()
+    expect(screen.getByText("Jane Doe")).toBeInTheDocument()
+    expect(screen.queryByText("Couldn't load freelancers")).not.toBeInTheDocument()
+  })
+
   it("shows the empty state when there are no results", () => {
     useFindFreelancersQueryMock.mockReturnValue({
       isLoading: false,

@@ -51,7 +51,7 @@ export default function FindFreelancers() {
     )
   }
 
-  if (query.isError) {
+  if (query.isError && !query.data) {
     return (
       <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
         <div className="text-center space-y-2">
