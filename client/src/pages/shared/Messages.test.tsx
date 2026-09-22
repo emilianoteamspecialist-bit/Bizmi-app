@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -61,7 +61,11 @@ describe("Messages", () => {
     useConversationsQueryMock.mockReturnValue({ isLoading: false, data: { conversations: [oneConversation] } })
     renderPage()
 
-    expect(screen.getByText("Jane Doe")).toBeInTheDocument()
+    // "Jane Doe" legitimately renders twice once auto-selected: once in the
+    // list row, once in the detail header. Scope to the list pane, since
+    // that's what this assertion cares about.
+    const list = screen.getByTestId("conversation-list")
+    expect(within(list).getByText("Jane Doe")).toBeInTheDocument()
     await waitFor(() => expect(markReadMutate).toHaveBeenCalledWith("conv-1"))
   })
 
@@ -91,14 +95,17 @@ describe("Messages", () => {
     const user = userEvent.setup()
     renderPage()
 
-    expect(screen.getByText("Jane Doe")).toBeInTheDocument()
-    expect(screen.getByText("Acme Co")).toBeInTheDocument()
+    // Scope to the list pane: the auto-selected conversation's name also
+    // renders in the detail header, independent of the search filter.
+    const list = screen.getByTestId("conversation-list")
+    expect(within(list).getByText("Jane Doe")).toBeInTheDocument()
+    expect(within(list).getByText("Acme Co")).toBeInTheDocument()
 
     await user.type(screen.getByPlaceholderText(/search conversations/i), "Acme")
 
     await waitFor(() => {
-      expect(screen.queryByText("Jane Doe")).not.toBeInTheDocument()
-      expect(screen.getByText("Acme Co")).toBeInTheDocument()
+      expect(within(list).queryByText("Jane Doe")).not.toBeInTheDocument()
+      expect(within(list).getByText("Acme Co")).toBeInTheDocument()
     })
   })
 })

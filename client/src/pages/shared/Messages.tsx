@@ -27,43 +27,6 @@ const ALLOWED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]
 
-// The conversation list and the message pane are both always mounted (only
-// their Tailwind visibility classes differ) so that a wide viewport can show
-// both panes at once. On narrow viewports only one pane is meant to be
-// visible at a time via CSS. `matchMedia` lets us mirror that same "only one
-// name visible at a time" rule in JS for the header's participant name,
-// which otherwise would render twice (list row + header) whenever both
-// panes are technically in the DOM simultaneously.
-function useIsDesktopViewport() {
-  const query = "(min-width: 640px)"
-  const getMatches = () => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false
-    try {
-      return window.matchMedia(query).matches
-    } catch {
-      return false
-    }
-  }
-
-  const [isDesktop, setIsDesktop] = useState(getMatches)
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return
-    let mql: MediaQueryList
-    try {
-      mql = window.matchMedia(query)
-    } catch {
-      return
-    }
-    const handler = () => setIsDesktop(mql.matches)
-    handler()
-    mql.addEventListener("change", handler)
-    return () => mql.removeEventListener("change", handler)
-  }, [])
-
-  return isDesktop
-}
-
 export default function Messages() {
   const { user } = useAuth()
   const currentUserId = user?.id ?? null
@@ -76,8 +39,6 @@ export default function Messages() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const didAutoSelect = useRef(false)
-
-  const isDesktop = useIsDesktopViewport()
 
   const conversationsQuery = useConversationsQuery()
   const messagesQuery = useConversationMessagesQuery(selectedConversationId)
@@ -110,12 +71,6 @@ export default function Messages() {
   )
 
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId) ?? null
-  // Only surface the participant's name in the header once it can't collide
-  // with the same name already shown in the (always-mounted) list row: on a
-  // desktop-width viewport both panes are visible together by design, and on
-  // narrow viewports the detail pane only becomes the active view once the
-  // user has explicitly opened it (showConversationList false).
-  const showDetailHeaderName = isDesktop || (Boolean(selectedConversation) && !showConversationList)
 
   const handleSelect = (conversation: ConversationSummary) => {
     setSelectedConversationId(conversation.id)
@@ -173,6 +128,7 @@ export default function Messages() {
     <div className="h-[calc(100svh-4rem)] bg-surface flex flex-col overflow-hidden">
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <Card
+          data-testid="conversation-list"
           className={`w-full flex-shrink-0 border-r rounded-none flex flex-col overflow-y-auto ${
             selectedConversation && !showConversationList ? "hidden sm:flex" : "flex"
           } sm:w-80 md:w-96 lg:w-[400px]`}
@@ -239,9 +195,7 @@ export default function Messages() {
                       {selectedConversation.participant.full_name.charAt(0) || <User className="h-5 w-5" />}
                     </AvatarFallback>
                   </Avatar>
-                  <CardTitle className="text-lg font-semibold">
-                    {showDetailHeaderName ? selectedConversation.participant.full_name : "Conversation"}
-                  </CardTitle>
+                  <CardTitle className="text-lg font-semibold">{selectedConversation.participant.full_name}</CardTitle>
                 </div>
                 <Popover>
                   <PopoverTrigger asChild>
