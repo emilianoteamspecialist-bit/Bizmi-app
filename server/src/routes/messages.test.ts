@@ -81,3 +81,50 @@ describe("GET /conversations", () => {
     expect(res.body).toEqual({ conversations: [] })
   })
 })
+
+describe("GET /:conversationId", () => {
+  it("returns the conversation's messages, oldest first", async () => {
+    const orderMock = vi.fn().mockResolvedValue({
+      data: [
+        { id: "m-1", conversation_id: "conv-1", sender_id: "user-1", receiver_id: "user-2", message_text: "hi", file_url: null, file_name: null, file_type: null, file_size: null, is_read: true, created_at: "2026-01-01T00:00:00Z" },
+      ],
+      error: null,
+    })
+    const eqMock = vi.fn(() => ({ order: orderMock }))
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: eqMock })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/conv-1")
+
+    expect(res.status).toBe(200)
+    expect(supabase.from).toHaveBeenCalledWith("messages")
+    expect(eqMock).toHaveBeenCalledWith("conversation_id", "conv-1")
+    expect(orderMock).toHaveBeenCalledWith("created_at", { ascending: true })
+    expect(res.body.messages).toHaveLength(1)
+  })
+
+  it("returns an empty list on a query error", async () => {
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: null, error: { message: "boom" } })) })) })) })) }
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/conv-1")
+    expect(res.body).toEqual({ messages: [] })
+  })
+})
+
+describe("PATCH /:conversationId/read", () => {
+  it("marks the caller's unread received messages in the conversation as read", async () => {
+    const eqReadMock = vi.fn().mockResolvedValue({ error: null })
+    const eqReceiverMock = vi.fn(() => ({ eq: eqReadMock }))
+    const eqConvMock = vi.fn(() => ({ eq: eqReceiverMock }))
+    const updateMock = vi.fn(() => ({ eq: eqConvMock }))
+    const supabase = { from: vi.fn(() => ({ update: updateMock })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).patch("/conv-1/read")
+
+    expect(res.status).toBe(200)
+    expect(supabase.from).toHaveBeenCalledWith("messages")
+    expect(updateMock).toHaveBeenCalledWith({ is_read: true })
+    expect(eqConvMock).toHaveBeenCalledWith("conversation_id", "conv-1")
+    expect(eqReceiverMock).toHaveBeenCalledWith("receiver_id", "user-1")
+    expect(eqReadMock).toHaveBeenCalledWith("is_read", false)
+    expect(res.body).toEqual({ success: true })
+  })
+})

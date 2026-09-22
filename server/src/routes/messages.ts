@@ -58,4 +58,47 @@ messagesRouter.get(
   })
 )
 
+messagesRouter.get(
+  "/:conversationId",
+  asyncHandler(async (req, res) => {
+    const { conversationId } = req.params
+
+    const { data, error } = await req.supabase!
+      .from("messages")
+      .select("id, conversation_id, sender_id, receiver_id, message_text, file_url, file_name, file_type, file_size, is_read, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+
+    if (error) {
+      console.error("Error fetching messages:", error)
+      res.json({ messages: [] })
+      return
+    }
+
+    res.json({ messages: data || [] })
+  })
+)
+
+messagesRouter.patch(
+  "/:conversationId/read",
+  asyncHandler(async (req, res) => {
+    const { conversationId } = req.params
+
+    const { error } = await req.supabase!
+      .from("messages")
+      .update({ is_read: true })
+      .eq("conversation_id", conversationId)
+      .eq("receiver_id", req.user!.id)
+      .eq("is_read", false)
+
+    if (error) {
+      console.error("Error marking messages read:", error)
+      res.status(500).json({ success: false, error: error.message })
+      return
+    }
+
+    res.json({ success: true })
+  })
+)
+
 export default messagesRouter
