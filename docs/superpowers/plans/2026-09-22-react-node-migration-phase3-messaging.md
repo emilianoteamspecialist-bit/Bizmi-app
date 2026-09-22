@@ -585,13 +585,9 @@ Expected: FAIL — neither route exists yet.
 
 - [ ] **Step 3: Implement the routes**
 
-Add to `server/src/routes/messages.ts`. First, add this import line at the top, alongside the existing `asyncHandler`/`resolveAvatar` imports:
+Add to `server/src/routes/messages.ts`. **Note:** `import type { SupabaseClient } from "@supabase/supabase-js"` and the `otherParticipantId()` helper already exist in this file — they were added ahead of schedule as a Task 3 fix (commit `9f52f4b`) for a background-security-review IDOR finding on the GET route (it had no participant-membership check). Do NOT redefine either; just call the existing `otherParticipantId()`.
 
-```ts
-import type { SupabaseClient } from "@supabase/supabase-js"
-```
-
-Add two helpers and the two routes (after the `PATCH /:conversationId/read` block):
+Add one helper and the two routes (after the `PATCH /:conversationId/read` block):
 
 ```ts
 const ALLOWED_MESSAGE_FILE_TYPES: Record<string, string> = {
@@ -607,18 +603,6 @@ function messageFileUrl(path: string): string {
   const base = process.env.SUPABASE_URL || ""
   if (!base) return ""
   return `${base}/storage/v1/object/public/message-files/${path}`
-}
-
-async function otherParticipantId(supabase: SupabaseClient, conversationId: string, userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from("conversations")
-    .select("participant1_id, participant2_id")
-    .eq("id", conversationId)
-    .single()
-
-  if (!data) return null
-  if (data.participant1_id !== userId && data.participant2_id !== userId) return null
-  return data.participant1_id === userId ? data.participant2_id : data.participant1_id
 }
 
 messagesRouter.post(

@@ -31,6 +31,7 @@ import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
 import FindFreelancers from "./pages/agency/FindFreelancers"
 import Bizpal from "./pages/freelancer/Bizpal"
+import Messages from "./pages/shared/Messages"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -49,6 +50,8 @@ function renderAt(path: string) {
             <Route path="/freelancer/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
             <Route path="/agency/find-freelancers" element={<RequireAuth><FindFreelancers /></RequireAuth>} />
             <Route path="/freelancer/bizpal" element={<RequireAuth><Bizpal /></RequireAuth>} />
+            <Route path="/freelancer/messages" element={<RequireAuth><Messages /></RequireAuth>} />
+            <Route path="/agency/messages" element={<RequireAuth><Messages /></RequireAuth>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -113,6 +116,18 @@ describe("find freelancers route", () => {
 describe("bizpal route", () => {
   it("redirects /freelancer/bizpal to /login when signed out", async () => {
     renderAt("/freelancer/bizpal")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+})
+
+describe("messages routes", () => {
+  it("redirects /freelancer/messages to /login when signed out", async () => {
+    renderAt("/freelancer/messages")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+
+  it("redirects /agency/messages to /login when signed out", async () => {
+    renderAt("/agency/messages")
     await screen.findByRole("heading", { name: /Continue your work/i })
   })
 })
