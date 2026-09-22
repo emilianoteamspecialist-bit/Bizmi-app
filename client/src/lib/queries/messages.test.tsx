@@ -135,4 +135,37 @@ describe("useRealtimeMessages", () => {
     unmount()
     expect(supabaseMock.removeChannel).toHaveBeenCalledWith(channelMock)
   })
+
+  it("appends a new message to the cache and dedupes by id when the same INSERT is delivered twice", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const existing = { id: "m-1", conversation_id: "conv-1", sender_id: "user-2", receiver_id: "user-1", message_text: "hi", file_url: null, file_name: null, file_type: null, file_size: null, is_read: true, created_at: "2026-01-01T00:00:00Z" }
+    client.setQueryData(["messages", "conv-1"], { messages: [existing] })
+
+    const { useRealtimeMessages } = await import("./messages")
+    renderHook(() => useRealtimeMessages("conv-1"), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    })
+
+    const insertHandler = channelMock.on.mock.calls[0][2]
+    const incoming = { id: "m-2", conversation_id: "conv-1", sender_id: "user-1", receiver_id: "user-2", message_text: "hey", file_url: null, file_name: null, file_type: null, file_size: null, is_read: false, created_at: "2026-01-02T00:00:00Z" }
+
+    insertHandler({ new: incoming })
+    expect(client.getQueryData(["messages", "conv-1"])).toEqual({ messages: [existing, incoming] })
+
+    insertHandler({ new: incoming })
+    expect(client.getQueryData(["messages", "conv-1"])).toEqual({ messages: [existing, incoming] })
+  })
+
+  it("does nothing when there is no existing cache entry for the conversation", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const { useRealtimeMessages } = await import("./messages")
+    renderHook(() => useRealtimeMessages("conv-1"), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    })
+
+    const insertHandler = channelMock.on.mock.calls[0][2]
+    insertHandler({ new: { id: "m-1", conversation_id: "conv-1", sender_id: "user-1", receiver_id: "user-2", message_text: "hi", file_url: null, file_name: null, file_type: null, file_size: null, is_read: false, created_at: "2026-01-01T00:00:00Z" } })
+
+    expect(client.getQueryData(["messages", "conv-1"])).toBeUndefined()
+  })
 })
