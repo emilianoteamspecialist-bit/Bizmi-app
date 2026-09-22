@@ -82,6 +82,10 @@ describe("GET /conversations", () => {
   })
 })
 
+function conversationsFrom(participant1Id: string, participant2Id: string) {
+  return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(() => Promise.resolve({ data: { participant1_id: participant1Id, participant2_id: participant2Id }, error: null })) })) })) }
+}
+
 describe("GET /:conversationId", () => {
   it("returns the conversation's messages, oldest first", async () => {
     const orderMock = vi.fn().mockResolvedValue({
@@ -91,7 +95,12 @@ describe("GET /:conversationId", () => {
       error: null,
     })
     const eqMock = vi.fn(() => ({ order: orderMock }))
-    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: eqMock })) })) }
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "conversations") return conversationsFrom("user-1", "user-2")
+        return { select: vi.fn(() => ({ eq: eqMock })) }
+      }),
+    }
 
     const res = await request(appWith({ id: "user-1" }, supabase)).get("/conv-1")
 
@@ -103,8 +112,43 @@ describe("GET /:conversationId", () => {
   })
 
   it("returns an empty list on a query error", async () => {
-    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: null, error: { message: "boom" } })) })) })) })) }
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "conversations") return conversationsFrom("user-1", "user-2")
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: null, error: { message: "boom" } })) })) })) }
+      }),
+    }
     const res = await request(appWith({ id: "user-1" }, supabase)).get("/conv-1")
+    expect(res.body).toEqual({ messages: [] })
+  })
+
+  it("returns 404 without querying messages when the caller is not a participant of the conversation", async () => {
+    const messagesSelect = vi.fn()
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "conversations") return conversationsFrom("user-2", "user-3")
+        return { select: messagesSelect }
+      }),
+    }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/conv-1")
+
+    expect(res.status).toBe(404)
+    expect(res.body).toEqual({ messages: [] })
+    expect(messagesSelect).not.toHaveBeenCalled()
+  })
+
+  it("returns 404 when the conversation doesn't exist", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "conversations") return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: vi.fn(() => Promise.resolve({ data: null, error: null })) })) })) }
+        return { select: vi.fn() }
+      }),
+    }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/conv-999")
+
+    expect(res.status).toBe(404)
     expect(res.body).toEqual({ messages: [] })
   })
 })

@@ -1,8 +1,25 @@
 import { Router } from "express"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { asyncHandler } from "../lib/http.js"
 import { resolveAvatar } from "../lib/avatar.js"
 
 const messagesRouter = Router()
+
+// Confirms userId is a participant of conversationId and returns the OTHER participant's id, or null
+// if the conversation doesn't exist or userId isn't a member of it. Used both as a membership guard
+// (Task 3's GET route) and to server-derive receiver_id (Task 4's send-message routes) -- never trust
+// a client-supplied receiver_id or conversationId membership.
+async function otherParticipantId(supabase: SupabaseClient, conversationId: string, userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("conversations")
+    .select("participant1_id, participant2_id")
+    .eq("id", conversationId)
+    .single()
+
+  if (!data) return null
+  if (data.participant1_id !== userId && data.participant2_id !== userId) return null
+  return data.participant1_id === userId ? data.participant2_id : data.participant1_id
+}
 
 messagesRouter.get(
   "/conversations",
@@ -62,8 +79,15 @@ messagesRouter.get(
   "/:conversationId",
   asyncHandler(async (req, res) => {
     const { conversationId } = req.params
+    const supabase = req.supabase!
 
-    const { data, error } = await req.supabase!
+    const member = await otherParticipantId(supabase, conversationId, req.user!.id)
+    if (!member) {
+      res.status(404).json({ messages: [] })
+      return
+    }
+
+    const { data, error } = await supabase
       .from("messages")
       .select("id, conversation_id, sender_id, receiver_id, message_text, file_url, file_name, file_type, file_size, is_read, created_at")
       .eq("conversation_id", conversationId)
