@@ -125,4 +125,119 @@ messagesRouter.patch(
   })
 )
 
+const ALLOWED_MESSAGE_FILE_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "application/pdf": "pdf",
+  "application/msword": "doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+}
+
+function messageFileUrl(path: string): string {
+  const base = process.env.SUPABASE_URL || ""
+  if (!base) return ""
+  return `${base}/storage/v1/object/public/message-files/${path}`
+}
+
+messagesRouter.post(
+  "/:conversationId",
+  asyncHandler(async (req, res) => {
+    const { conversationId } = req.params
+    const { message_text } = req.body ?? {}
+    if (typeof message_text !== "string" || !message_text.trim()) {
+      res.status(400).json({ success: false, error: "message_text is required" })
+      return
+    }
+
+    const supabase = req.supabase!
+    const userId = req.user!.id
+    const receiverId = await otherParticipantId(supabase, conversationId, userId)
+    if (!receiverId) {
+      res.status(404).json({ success: false, error: "Conversation not found" })
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({ conversation_id: conversationId, sender_id: userId, receiver_id: receiverId, message_text, is_read: false })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error sending message:", error)
+      res.status(500).json({ success: false, error: error.message })
+      return
+    }
+
+    await supabase.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversationId)
+
+    res.json({ success: true, message: data })
+  })
+)
+
+messagesRouter.post(
+  "/:conversationId/file",
+  asyncHandler(async (req, res) => {
+    const { conversationId } = req.params
+    const { data, fileName, mimeType } = req.body ?? {}
+    if (typeof data !== "string" || typeof fileName !== "string" || typeof mimeType !== "string") {
+      res.status(400).json({ error: "data, fileName, and mimeType are required" })
+      return
+    }
+
+    const ext = ALLOWED_MESSAGE_FILE_TYPES[mimeType]
+    if (!ext) {
+      res.status(400).json({ error: "unsupported file type" })
+      return
+    }
+
+    const supabase = req.supabase!
+    const userId = req.user!.id
+    const receiverId = await otherParticipantId(supabase, conversationId, userId)
+    if (!receiverId) {
+      res.status(404).json({ success: false, error: "Conversation not found" })
+      return
+    }
+
+    const buffer = Buffer.from(data, "base64")
+    const path = `messages/${crypto.randomUUID()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage.from("message-files").upload(path, buffer, { contentType: mimeType })
+    if (uploadError) {
+      console.error("Error uploading message file:", uploadError)
+      res.status(500).json({ success: false, error: uploadError.message })
+      return
+    }
+
+    const fileUrl = messageFileUrl(path)
+
+    const { data: message, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        sender_id: userId,
+        receiver_id: receiverId,
+        message_text: `File: ${fileName}`,
+        file_url: fileUrl,
+        file_name: fileName,
+        file_type: mimeType,
+        file_size: buffer.length,
+        is_read: false,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error("Error saving file message:", error)
+      res.status(500).json({ success: false, error: error.message })
+      return
+    }
+
+    await supabase.from("conversations").update({ last_message_at: new Date().toISOString() }).eq("id", conversationId)
+
+    res.json({ success: true, message })
+  })
+)
+
 export default messagesRouter
