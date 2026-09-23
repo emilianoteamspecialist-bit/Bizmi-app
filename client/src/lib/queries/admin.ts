@@ -80,3 +80,79 @@ export function useAdminAuditQuery() {
     queryFn: () => apiFetch<{ logs: AdminAuditEntry[] }>("/api/admin/audit"),
   })
 }
+
+export type AdminCreditPurchase = {
+  id: string
+  credits_amount: number
+  paystack_reference: string
+  status: string
+  created_at: string
+  freelancer_name: string
+}
+
+export type AdminFreelancerRow = {
+  id: string
+  full_name: string
+  created_at: string
+  account_type: string
+}
+
+export function useAdminCreditsQuery() {
+  return useQuery({
+    queryKey: ["admin", "credits"],
+    queryFn: () => apiFetch<{ purchases: AdminCreditPurchase[]; freelancers: AdminFreelancerRow[]; totalCredits: number }>("/api/admin/credits"),
+  })
+}
+
+export type AdminInfluencerRow = {
+  id: string
+  name: string
+  email: string | null
+  referralCode: string
+  socialHandle: string | null
+  referred: number
+  qualified: number
+  earnedNaira: number
+  unpaidNaira: number
+}
+
+export function useAdminInfluencersQuery() {
+  return useQuery({
+    queryKey: ["admin", "influencers"],
+    queryFn: () =>
+      apiFetch<{
+        influencers: AdminInfluencerRow[]
+        summary: { totalUsers: number; referred: number; organic: number }
+        commissionPct: number
+        platformFeePct: number
+      }>("/api/admin/influencers"),
+  })
+}
+
+export function useRecordInfluencerPayoutMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ influencerId, note }: { influencerId: string; note?: string }) =>
+      apiFetch<{ success: boolean; amount_kobo: number }>(`/api/admin/influencers/${influencerId}/payout`, {
+        method: "POST",
+        body: JSON.stringify({ note }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "influencers"] })
+    },
+  })
+}
+
+export function useUpdateInfluencerSettingsMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { influencer_commission_pct?: number; platform_fee_pct?: number }) =>
+      apiFetch<{ success: boolean; updated: Record<string, number> }>("/api/admin/settings", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "influencers"] })
+    },
+  })
+}

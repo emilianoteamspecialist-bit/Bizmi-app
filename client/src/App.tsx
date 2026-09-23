@@ -21,6 +21,8 @@ import AdminDashboard from "./pages/admin/Dashboard"
 import AdminUsers from "./pages/admin/Users"
 import AdminJobs from "./pages/admin/Jobs"
 import AdminAuditLog from "./pages/admin/AuditLog"
+import AdminCredits from "./pages/admin/Credits"
+import AdminInfluencers from "./pages/admin/Influencers"
 
 export default function App() {
   return (
@@ -142,6 +144,22 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AdminAuditLog />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/credits"
+              element={
+                <RequireAuth>
+                  <AdminCredits />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/influencers"
+              element={
+                <RequireAuth>
+                  <AdminInfluencers />
                 </RequireAuth>
               }
             />
