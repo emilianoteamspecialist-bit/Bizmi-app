@@ -33,6 +33,8 @@ import FindFreelancers from "./pages/agency/FindFreelancers"
 import Bizpal from "./pages/freelancer/Bizpal"
 import Messages from "./pages/shared/Messages"
 import AdminLogin from "./pages/admin/Login"
+import AdminDashboard from "./pages/admin/Dashboard"
+import AdminUsers from "./pages/admin/Users"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -54,6 +56,8 @@ function renderAt(path: string) {
             <Route path="/freelancer/messages" element={<RequireAuth><Messages /></RequireAuth>} />
             <Route path="/agency/messages" element={<RequireAuth><Messages /></RequireAuth>} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
+            <Route path="/admin/users" element={<RequireAuth><AdminUsers /></RequireAuth>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -138,5 +142,17 @@ describe("admin login route", () => {
   it("renders the admin login page at /admin/login without requiring auth", async () => {
     renderAt("/admin/login")
     await screen.findByText(/admin portal/i)
+  })
+})
+
+describe("admin dashboard and users routes", () => {
+  it("redirects /admin/dashboard to /login when signed out", async () => {
+    renderAt("/admin/dashboard")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+
+  it("redirects /admin/users to /login when signed out", async () => {
+    renderAt("/admin/users")
+    await screen.findByRole("heading", { name: /Continue your work/i })
   })
 })

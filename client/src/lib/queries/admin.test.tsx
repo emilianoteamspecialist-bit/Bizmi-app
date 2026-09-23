@@ -23,3 +23,24 @@ describe("useAdminUsersQuery", () => {
     expect(result.current.data?.users[0].full_name).toBe("Agency A")
   })
 })
+
+describe("useDisableUserMutation", () => {
+  it("POSTs /api/admin/users/:id/disable and invalidates the admin users list", async () => {
+    apiFetchMock.mockResolvedValue({ success: true, disabled: true })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries")
+    const { useDisableUserMutation } = await import("./admin")
+
+    const { result } = renderHook(() => useDisableUserMutation(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    })
+    result.current.mutate({ userId: "u-2", disabled: true })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/admin/users/u-2/disable", {
+      method: "POST",
+      body: JSON.stringify({ disabled: true }),
+    })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["admin", "users"] })
+  })
+})
