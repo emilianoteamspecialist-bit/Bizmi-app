@@ -19,6 +19,8 @@ import Messages from "./pages/shared/Messages"
 import AdminLogin from "./pages/admin/Login"
 import AdminDashboard from "./pages/admin/Dashboard"
 import AdminUsers from "./pages/admin/Users"
+import AdminJobs from "./pages/admin/Jobs"
+import AdminAuditLog from "./pages/admin/AuditLog"
 
 export default function App() {
   return (
@@ -124,6 +126,22 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AdminUsers />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/jobs"
+              element={
+                <RequireAuth>
+                  <AdminJobs />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/audit"
+              element={
+                <RequireAuth>
+                  <AdminAuditLog />
                 </RequireAuth>
               }
             />

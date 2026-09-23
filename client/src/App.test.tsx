@@ -35,6 +35,8 @@ import Messages from "./pages/shared/Messages"
 import AdminLogin from "./pages/admin/Login"
 import AdminDashboard from "./pages/admin/Dashboard"
 import AdminUsers from "./pages/admin/Users"
+import AdminJobs from "./pages/admin/Jobs"
+import AdminAuditLog from "./pages/admin/AuditLog"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -58,6 +60,8 @@ function renderAt(path: string) {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<RequireAuth><AdminDashboard /></RequireAuth>} />
             <Route path="/admin/users" element={<RequireAuth><AdminUsers /></RequireAuth>} />
+            <Route path="/admin/jobs" element={<RequireAuth><AdminJobs /></RequireAuth>} />
+            <Route path="/admin/audit" element={<RequireAuth><AdminAuditLog /></RequireAuth>} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -153,6 +157,18 @@ describe("admin dashboard and users routes", () => {
 
   it("redirects /admin/users to /login when signed out", async () => {
     renderAt("/admin/users")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+})
+
+describe("admin jobs and audit routes", () => {
+  it("redirects /admin/jobs to /login when signed out", async () => {
+    renderAt("/admin/jobs")
+    await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+
+  it("redirects /admin/audit to /login when signed out", async () => {
+    renderAt("/admin/audit")
     await screen.findByRole("heading", { name: /Continue your work/i })
   })
 })
