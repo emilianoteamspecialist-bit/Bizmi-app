@@ -32,6 +32,7 @@ import Marketplace from "./pages/freelancer/Marketplace"
 import FindFreelancers from "./pages/agency/FindFreelancers"
 import Bizpal from "./pages/freelancer/Bizpal"
 import Messages from "./pages/shared/Messages"
+import AdminLogin from "./pages/admin/Login"
 
 function renderAt(path: string) {
   const queryClient = new QueryClient()
@@ -52,6 +53,7 @@ function renderAt(path: string) {
             <Route path="/freelancer/bizpal" element={<RequireAuth><Bizpal /></RequireAuth>} />
             <Route path="/freelancer/messages" element={<RequireAuth><Messages /></RequireAuth>} />
             <Route path="/agency/messages" element={<RequireAuth><Messages /></RequireAuth>} />
+            <Route path="/admin/login" element={<AdminLogin />} />
           </Routes>
         </MemoryRouter>
       </AuthProvider>
@@ -129,5 +131,12 @@ describe("messages routes", () => {
   it("redirects /agency/messages to /login when signed out", async () => {
     renderAt("/agency/messages")
     await screen.findByRole("heading", { name: /Continue your work/i })
+  })
+})
+
+describe("admin login route", () => {
+  it("renders the admin login page at /admin/login without requiring auth", async () => {
+    renderAt("/admin/login")
+    await screen.findByText(/admin portal/i)
   })
 })
