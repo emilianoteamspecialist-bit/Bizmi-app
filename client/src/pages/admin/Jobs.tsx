@@ -1,0 +1,130 @@
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import AdminSidebar from "@/components/AdminSidebar"
+import { Ban, RotateCcw } from "lucide-react"
+import { useAdminJobsQuery, useModerateJobMutation, type AdminJobRow } from "@/lib/queries/admin"
+
+const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString() : "—")
+const fmtNaira = (n: number | null) => `₦${Number(n || 0).toLocaleString()}`
+
+export default function AdminJobs() {
+  const jobsQuery = useAdminJobsQuery()
+  const moderate = useModerateJobMutation()
+  const [search, setSearch] = useState("")
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  const jobs = jobsQuery.data?.jobs ?? []
+
+  const handleModerate = (job: AdminJobRow, action: "remove" | "restore") => {
+    let reason: string | null = null
+    if (action === "remove") {
+      reason = prompt("Reason for removing this job (optional):") || null
+    } else if (!confirm("Restore this job to the marketplace?")) {
+      return
+    }
+    setBusyId(job.id)
+    moderate.mutate({ jobId: job.id, action, reason }, { onSettled: () => setBusyId(null) })
+  }
+
+  const matches = (j: AdminJobRow) =>
+    !search.trim() || j.title.toLowerCase().includes(search.toLowerCase()) || j.agency_name.toLowerCase().includes(search.toLowerCase())
+
+  const visible = jobs.filter((j) => j.moderation_status !== "removed" && matches(j))
+  const removed = jobs.filter((j) => j.moderation_status === "removed" && matches(j))
+
+  function JobTable({ rows, removedView }: { rows: AdminJobRow[]; removedView: boolean }) {
+    return (
+      <div className="rounded-xl border border-border bg-card overflow-x-auto">
+        {rows.length === 0 ? (
+          <div className="p-12 text-center text-sm text-muted-foreground">No jobs.</div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Agency</TableHead>
+                <TableHead>Budget</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Posted</TableHead>
+                {removedView && <TableHead>Reason</TableHead>}
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((j) => (
+                <TableRow key={j.id}>
+                  <TableCell className="font-medium text-foreground max-w-xs truncate">{j.title}</TableCell>
+                  <TableCell className="text-muted-foreground">{j.agency_name}</TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground tabular-nums">
+                    {fmtNaira(j.budget_min)} – {fmtNaira(j.budget_max)}
+                  </TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-surface-2 text-muted-foreground capitalize">{j.status}</span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground tabular-nums">{fmtDate(j.created_at)}</TableCell>
+                  {removedView && (
+                    <TableCell className="text-xs text-muted-foreground max-w-[12rem] truncate">{j.moderation_reason || "—"}</TableCell>
+                  )}
+                  <TableCell className="text-right">
+                    {removedView ? (
+                      <Button size="sm" variant="outline" disabled={busyId === j.id} onClick={() => handleModerate(j, "restore")}>
+                        <RotateCcw className="h-4 w-4 mr-1" /> Restore
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="destructive" disabled={busyId === j.id} onClick={() => handleModerate(j, "remove")}>
+                        <Ban className="h-4 w-4 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    )
+  }
+
+  if (jobsQuery.isLoading) {
+    return (
+      <div className="flex h-screen bg-surface">
+        <AdminSidebar />
+        <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading jobs…</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-screen bg-surface">
+      <AdminSidebar />
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+            <header className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Job moderation</h1>
+              <p className="text-sm text-muted-foreground">Remove fraudulent or policy-violating job postings from the marketplace.</p>
+            </header>
+            <Input placeholder="Search title or agency…" value={search} onChange={(e) => setSearch(e.target.value)} className="md:max-w-xs" />
+          </div>
+
+          <Tabs defaultValue="active" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:max-w-xs">
+              <TabsTrigger value="active">Active ({visible.length})</TabsTrigger>
+              <TabsTrigger value="removed">Removed ({removed.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="active" className="mt-4">
+              <JobTable rows={visible} removedView={false} />
+            </TabsContent>
+            <TabsContent value="removed" className="mt-4">
+              <JobTable rows={removed} removedView />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  )
+}

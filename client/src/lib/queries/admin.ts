@@ -30,3 +30,53 @@ export function useDisableUserMutation() {
     },
   })
 }
+
+export type AdminJobRow = {
+  id: string
+  title: string
+  status: string
+  moderation_status: string
+  moderation_reason: string | null
+  agency_name: string
+  created_at: string
+  budget_min: number | null
+  budget_max: number | null
+}
+
+export function useAdminJobsQuery() {
+  return useQuery({
+    queryKey: ["admin", "jobs"],
+    queryFn: () => apiFetch<{ jobs: AdminJobRow[] }>("/api/admin/jobs"),
+  })
+}
+
+export function useModerateJobMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ jobId, action, reason }: { jobId: string; action: "remove" | "restore"; reason?: string | null }) =>
+      apiFetch<{ success: boolean; moderation_status: string }>(`/api/admin/jobs/${jobId}/moderate`, {
+        method: "POST",
+        body: JSON.stringify({ action, reason }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] })
+    },
+  })
+}
+
+export type AdminAuditEntry = {
+  id: string
+  action: string
+  target_type: string | null
+  target_id: string | null
+  details: Record<string, unknown> | null
+  created_at: string
+  admin: { full_name: string | null; email: string | null } | null
+}
+
+export function useAdminAuditQuery() {
+  return useQuery({
+    queryKey: ["admin", "audit"],
+    queryFn: () => apiFetch<{ logs: AdminAuditEntry[] }>("/api/admin/audit"),
+  })
+}
