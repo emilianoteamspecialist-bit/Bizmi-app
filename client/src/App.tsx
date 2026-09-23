@@ -17,6 +17,8 @@ import FindFreelancers from "./pages/agency/FindFreelancers"
 import Bizpal from "./pages/freelancer/Bizpal"
 import Messages from "./pages/shared/Messages"
 import AdminLogin from "./pages/admin/Login"
+import AdminDashboard from "./pages/admin/Dashboard"
+import AdminUsers from "./pages/admin/Users"
 
 export default function App() {
   return (
@@ -109,6 +111,22 @@ export default function App() {
               }
             />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <RequireAuth>
+                  <AdminDashboard />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireAuth>
+                  <AdminUsers />
+                </RequireAuth>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
