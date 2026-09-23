@@ -57,7 +57,7 @@ export default function AdminCredits() {
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs font-medium text-muted-foreground">Total credits purchased</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{totalCredits.toLocaleString()}</p>
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums" data-testid="total-credits-value">{totalCredits.toLocaleString()}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs font-medium text-muted-foreground">Total freelancers</p>
@@ -65,7 +65,7 @@ export default function AdminCredits() {
             </div>
           </section>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-xl border border-border bg-card overflow-hidden" data-testid="transactions-table">
             <div className="px-5 py-4 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-foreground">Recent transactions</h2>
               <Input placeholder="Search transactions…" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="md:max-w-xs" />
@@ -99,7 +99,9 @@ export default function AdminCredits() {
                             <span className="font-medium text-foreground">{p.freelancer_name}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-4 tabular-nums">{`${p.credits_amount.toLocaleString()} CR`}</td>
+                        <td className="px-5 py-4 tabular-nums">
+                          {p.credits_amount.toLocaleString()} <span className="text-[11px] text-muted-foreground">CR</span>
+                        </td>
                         <td className="px-5 py-4 font-mono text-xs text-muted-foreground">{p.paystack_reference}</td>
                         <td className="px-5 py-4">{getStatusBadge(p.status)}</td>
                         <td className="px-5 py-4 text-muted-foreground tabular-nums">{new Date(p.created_at).toLocaleDateString()}</td>
@@ -137,7 +139,7 @@ export default function AdminCredits() {
                             <Avatar className="h-9 w-9 rounded-full">
                               <AvatarFallback className="bg-surface-2 text-foreground text-sm font-semibold">{f.full_name?.charAt(0).toUpperCase() || "?"}</AvatarFallback>
                             </Avatar>
-                            <span className="font-medium text-foreground">{f.full_name ? `${f.full_name} (${f.id})` : f.id}</span>
+                            <span className="font-medium text-foreground">{f.full_name}</span>
                           </div>
                         </td>
                         <td className="px-5 py-4 capitalize">{f.account_type}</td>

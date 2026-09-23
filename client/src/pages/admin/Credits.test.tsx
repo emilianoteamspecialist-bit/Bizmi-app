@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 
@@ -31,16 +31,25 @@ describe("AdminCredits", () => {
 
   it("shows the total credits purchased and lists transactions", () => {
     renderPage()
-    expect(screen.getByText("20")).toBeInTheDocument()
-    expect(screen.getByText("Jane F")).toBeInTheDocument()
-    expect(screen.getByText("ref-1")).toBeInTheDocument()
+    // "20" and "Jane F" each legitimately appear twice on the page (the
+    // total-credits stat tile vs. the transaction row's amount, and the
+    // transaction row's freelancer name vs. the unfiltered freelancers
+    // table below). Scope each assertion to the element it's actually
+    // about instead of asserting page-wide.
+    expect(within(screen.getByTestId("total-credits-value")).getByText("20")).toBeInTheDocument()
+    const transactions = screen.getByTestId("transactions-table")
+    expect(within(transactions).getByText("Jane F")).toBeInTheDocument()
+    expect(within(transactions).getByText("ref-1")).toBeInTheDocument()
   })
 
   it("filters transactions by search term", async () => {
     const user = userEvent.setup()
     renderPage()
+    const transactions = screen.getByTestId("transactions-table")
     await user.type(screen.getByPlaceholderText(/search transactions/i), "nonexistent")
-    expect(screen.queryByText("Jane F")).not.toBeInTheDocument()
+    // Scoped to the transactions table: the freelancers table below is
+    // intentionally unfiltered by this search box and still shows "Jane F".
+    expect(within(transactions).queryByText("Jane F")).not.toBeInTheDocument()
   })
 
   it("lists registered freelancers", () => {
