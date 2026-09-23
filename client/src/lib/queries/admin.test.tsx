@@ -91,3 +91,65 @@ describe("useAdminAuditQuery", () => {
     expect(result.current.data?.logs[0].action).toBe("user.disable")
   })
 })
+
+describe("useAdminCreditsQuery", () => {
+  it("GETs /api/admin/credits", async () => {
+    apiFetchMock.mockResolvedValue({ purchases: [{ id: "p-1", credits_amount: 20, paystack_reference: "ref-1", status: "completed", created_at: "2026-01-01T00:00:00Z", freelancer_name: "Jane F" }], freelancers: [], totalCredits: 20 })
+    const { useAdminCreditsQuery } = await import("./admin")
+
+    const { result } = renderHook(() => useAdminCreditsQuery(), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/admin/credits")
+    expect(result.current.data?.totalCredits).toBe(20)
+  })
+})
+
+describe("useAdminInfluencersQuery", () => {
+  it("GETs /api/admin/influencers", async () => {
+    apiFetchMock.mockResolvedValue({ influencers: [{ id: "inf-1", name: "Influencer One", email: "one@x.com", referralCode: "ABC123", socialHandle: null, referred: 5, qualified: 2, earnedNaira: 2000, unpaidNaira: 500 }], summary: { totalUsers: 100, referred: 30, organic: 70 }, commissionPct: 10, platformFeePct: 15 })
+    const { useAdminInfluencersQuery } = await import("./admin")
+
+    const { result } = renderHook(() => useAdminInfluencersQuery(), { wrapper })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/admin/influencers")
+    expect(result.current.data?.influencers[0].name).toBe("Influencer One")
+  })
+})
+
+describe("useRecordInfluencerPayoutMutation", () => {
+  it("POSTs /api/admin/influencers/:id/payout and invalidates the influencers list", async () => {
+    apiFetchMock.mockResolvedValue({ success: true, amount_kobo: 50000 })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries")
+    const { useRecordInfluencerPayoutMutation } = await import("./admin")
+
+    const { result } = renderHook(() => useRecordInfluencerPayoutMutation(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    })
+    result.current.mutate({ influencerId: "inf-1", note: "manual" })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/admin/influencers/inf-1/payout", { method: "POST", body: JSON.stringify({ note: "manual" }) })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["admin", "influencers"] })
+  })
+})
+
+describe("useUpdateInfluencerSettingsMutation", () => {
+  it("POSTs /api/admin/settings and invalidates the influencers list", async () => {
+    apiFetchMock.mockResolvedValue({ success: true, updated: { influencer_commission_pct: 12 } })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries")
+    const { useUpdateInfluencerSettingsMutation } = await import("./admin")
+
+    const { result } = renderHook(() => useUpdateInfluencerSettingsMutation(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    })
+    result.current.mutate({ influencer_commission_pct: 12, platform_fee_pct: 18 })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(apiFetchMock).toHaveBeenCalledWith("/api/admin/settings", { method: "POST", body: JSON.stringify({ influencer_commission_pct: 12, platform_fee_pct: 18 }) })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["admin", "influencers"] })
+  })
+})
