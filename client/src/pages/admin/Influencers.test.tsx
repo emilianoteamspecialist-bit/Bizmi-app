@@ -67,4 +67,24 @@ describe("AdminInfluencers", () => {
     await user.click(screen.getByRole("button", { name: /save settings/i }))
     expect(updateSettingsMutate).toHaveBeenCalledWith({ influencer_commission_pct: 10, platform_fee_pct: 15 })
   })
+
+  it("pre-fills the settings form with the real commission/fee values, not the component's own fallback defaults", async () => {
+    // Regression test: a `useState` initializer in the page component itself
+    // would capture the loading-state's fallback defaults (10/15) on first
+    // render and never re-sync once real data arrives. The real values here
+    // (12/20) are deliberately different from those fallbacks so this test
+    // would fail if that bug reappeared.
+    const user = userEvent.setup()
+    useAdminInfluencersQueryMock.mockReturnValue({
+      isLoading: false,
+      data: { influencers: [influencer], summary: { totalUsers: 100, referred: 30, organic: 70 }, commissionPct: 12, platformFeePct: 20 },
+    })
+    renderPage()
+
+    expect(screen.getByLabelText(/influencer commission/i)).toHaveValue(12)
+    expect(screen.getByLabelText(/platform fee/i)).toHaveValue(20)
+
+    await user.click(screen.getByRole("button", { name: /save settings/i }))
+    expect(updateSettingsMutate).toHaveBeenCalledWith({ influencer_commission_pct: 12, platform_fee_pct: 20 })
+  })
 })

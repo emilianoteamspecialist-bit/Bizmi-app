@@ -7,6 +7,46 @@ import { useAdminInfluencersQuery, useRecordInfluencerPayoutMutation, useUpdateI
 
 const naira = (n: number) => `₦${Number(n || 0).toLocaleString()}`
 
+// Owns its own local state, seeded from the real query values. Extracted so it
+// only ever mounts once `data` has actually loaded -- a `useState` initializer
+// in the parent would capture the loading-state's fallback defaults on the
+// component's first render (before the isLoading gate below returns), and
+// never re-sync when the real data arrives on the next render.
+function SettingsForm({
+  commissionPct,
+  platformFeePct,
+  onSave,
+  isSaving,
+}: {
+  commissionPct: number
+  platformFeePct: number
+  onSave: (commission: number, fee: number) => void
+  isSaving: boolean
+}) {
+  const [commission, setCommission] = useState(String(commissionPct))
+  const [fee, setFee] = useState(String(platformFeePct))
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-6">
+      <h2 className="text-base font-semibold text-foreground">Program settings</h2>
+      <p className="mt-1 text-sm text-muted-foreground">Commission is this % of Bizimi&apos;s platform fee. Changes apply to future qualifying events only.</p>
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-end gap-3">
+        <div className="space-y-1">
+          <label htmlFor="influencer-commission-pct" className="text-xs font-medium text-muted-foreground">Influencer commission %</label>
+          <Input id="influencer-commission-pct" type="number" min={0} max={100} value={commission} onChange={(e) => setCommission(e.target.value)} className="sm:w-44" />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="platform-fee-pct" className="text-xs font-medium text-muted-foreground">Platform fee %</label>
+          <Input id="platform-fee-pct" type="number" min={0} max={100} value={fee} onChange={(e) => setFee(e.target.value)} className="sm:w-44" />
+        </div>
+        <Button onClick={() => onSave(Number(commission), Number(fee))} disabled={isSaving} className="sm:ml-1">
+          {isSaving ? "Saving…" : "Save settings"}
+        </Button>
+      </div>
+    </section>
+  )
+}
+
 export default function AdminInfluencers() {
   const influencersQuery = useAdminInfluencersQuery()
   const recordPayout = useRecordInfluencerPayoutMutation()
@@ -16,8 +56,6 @@ export default function AdminInfluencers() {
   const influencers = data?.influencers ?? []
   const summary = data?.summary ?? { totalUsers: 0, referred: 0, organic: 0 }
 
-  const [commission, setCommission] = useState(String(data?.commissionPct ?? 10))
-  const [fee, setFee] = useState(String(data?.platformFeePct ?? 15))
   const [payingId, setPayingId] = useState<string | null>(null)
 
   const referralRate = summary.totalUsers > 0 ? Math.round((summary.referred / summary.totalUsers) * 100) : 0
@@ -29,8 +67,8 @@ export default function AdminInfluencers() {
     { label: "Referral rate", value: `${referralRate}%`, icon: Percent },
   ]
 
-  const handleSaveSettings = () => {
-    updateSettings.mutate({ influencer_commission_pct: Number(commission), platform_fee_pct: Number(fee) })
+  const handleSaveSettings = (commission: number, fee: number) => {
+    updateSettings.mutate({ influencer_commission_pct: commission, platform_fee_pct: fee })
   }
 
   const handleRecordPayout = (inf: AdminInfluencerRow) => {
@@ -71,23 +109,12 @@ export default function AdminInfluencers() {
             ))}
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-base font-semibold text-foreground">Program settings</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Commission is this % of Bizimi&apos;s platform fee. Changes apply to future qualifying events only.</p>
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-end gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Influencer commission %</label>
-                <Input type="number" min={0} max={100} value={commission} onChange={(e) => setCommission(e.target.value)} className="sm:w-44" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Platform fee %</label>
-                <Input type="number" min={0} max={100} value={fee} onChange={(e) => setFee(e.target.value)} className="sm:w-44" />
-              </div>
-              <Button onClick={handleSaveSettings} disabled={updateSettings.isPending} className="sm:ml-1">
-                {updateSettings.isPending ? "Saving…" : "Save settings"}
-              </Button>
-            </div>
-          </section>
+          <SettingsForm
+            commissionPct={data?.commissionPct ?? 10}
+            platformFeePct={data?.platformFeePct ?? 15}
+            onSave={handleSaveSettings}
+            isSaving={updateSettings.isPending}
+          />
 
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
