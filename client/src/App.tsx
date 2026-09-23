@@ -16,6 +16,7 @@ import AgencyProfile from "./pages/agency/Profile"
 import FindFreelancers from "./pages/agency/FindFreelancers"
 import Bizpal from "./pages/freelancer/Bizpal"
 import Messages from "./pages/shared/Messages"
+import AdminLogin from "./pages/admin/Login"
 
 export default function App() {
   return (
@@ -107,6 +108,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
