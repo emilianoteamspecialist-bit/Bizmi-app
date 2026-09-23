@@ -3,16 +3,58 @@ import request from "supertest"
 import express from "express"
 import adminRouter from "./admin.js"
 
-const { maybeSingleMock, updateUserByIdMock, auditInsertMock, jobLookupMock, jobUpdateEqMock, auditSelectLimitMock, fakeService } = vi.hoisted(() => {
+const {
+  maybeSingleMock,
+  updateUserByIdMock,
+  auditInsertMock,
+  jobLookupMock,
+  jobUpdateEqMock,
+  auditSelectLimitMock,
+  influencerProfilesOrderMock,
+  namesInMock,
+  totalUsersCountMock,
+  referredUsersCountMock,
+  settingsInMock,
+  influencerLookupMock,
+  qualifiedRefsMock,
+  balanceUpdateMock,
+  referralsUpdateInMock,
+  appSettingsUpsertMock,
+  fakeService,
+} = vi.hoisted(() => {
   const maybeSingleMock = vi.fn()
   const updateUserByIdMock = vi.fn()
   const auditInsertMock = vi.fn().mockResolvedValue({ error: null })
   const jobLookupMock = vi.fn()
   const jobUpdateEqMock = vi.fn().mockResolvedValue({ error: null })
   const auditSelectLimitMock = vi.fn()
+  const influencerProfilesOrderMock = vi.fn()
+  const namesInMock = vi.fn()
+  const totalUsersCountMock = vi.fn()
+  const referredUsersCountMock = vi.fn()
+  const settingsInMock = vi.fn()
+  const influencerLookupMock = vi.fn()
+  const qualifiedRefsMock = vi.fn()
+  const balanceUpdateMock = vi.fn()
+  const referralsUpdateInMock = vi.fn().mockResolvedValue({ error: null })
+  const appSettingsUpsertMock = vi.fn()
+
   const fakeService = {
     from: vi.fn((table: string) => {
-      if (table === "profiles") return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: maybeSingleMock })) })) }
+      if (table === "profiles") {
+        return {
+          // Three distinct call shapes route to three distinct mocks, distinguished
+          // by the exact arguments the real code passes:
+          //   .select("role, account_type").eq(...).maybeSingle()      -- disable route (Phase 5b)
+          //   .select("id, full_name, email").in([...])                -- GET /influencers name lookup
+          //   .select("*", { count: "exact", head: true })              -- GET /influencers total-users count
+          select: vi.fn((cols: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.count) return totalUsersCountMock()
+            if (cols === "id, full_name, email") return { in: namesInMock }
+            return { eq: vi.fn(() => ({ maybeSingle: maybeSingleMock })) }
+          }),
+        }
+      }
       if (table === "admin_audit_log") {
         return {
           insert: auditInsertMock,
@@ -25,11 +67,67 @@ const { maybeSingleMock, updateUserByIdMock, auditInsertMock, jobLookupMock, job
           update: vi.fn(() => ({ eq: jobUpdateEqMock })),
         }
       }
+      if (table === "influencer_profiles") {
+        return {
+          // .select(...).order(...)              -- GET /influencers list
+          // .select(...).eq(...).maybeSingle()    -- POST /influencers/:id/payout lookup
+          select: vi.fn(() => ({
+            order: influencerProfilesOrderMock,
+            eq: vi.fn(() => ({ maybeSingle: influencerLookupMock })),
+          })),
+          // .update(...).eq(...).eq(...).select(...).maybeSingle() -- the guarded balance-zeroing update
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                select: vi.fn(() => ({ maybeSingle: balanceUpdateMock })),
+              })),
+            })),
+          })),
+        }
+      }
+      if (table === "referrals") {
+        return {
+          // .select("*", { count, head })         -- GET /influencers referred-users count
+          // .select("id").eq(...).eq(...)         -- POST /influencers/:id/payout qualified-referrals lookup
+          select: vi.fn((_cols: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.count) return referredUsersCountMock()
+            return { eq: vi.fn(() => ({ eq: qualifiedRefsMock })) }
+          }),
+          update: vi.fn(() => ({ in: referralsUpdateInMock })),
+        }
+      }
+      if (table === "influencer_payouts") {
+        return { insert: vi.fn().mockResolvedValue({ error: null }) }
+      }
+      if (table === "app_settings") {
+        return {
+          select: vi.fn(() => ({ in: settingsInMock })),
+          upsert: appSettingsUpsertMock,
+        }
+      }
       throw new Error(`unexpected table ${table}`)
     }),
     auth: { admin: { updateUserById: updateUserByIdMock } },
   }
-  return { maybeSingleMock, updateUserByIdMock, auditInsertMock, jobLookupMock, jobUpdateEqMock, auditSelectLimitMock, fakeService }
+  return {
+    maybeSingleMock,
+    updateUserByIdMock,
+    auditInsertMock,
+    jobLookupMock,
+    jobUpdateEqMock,
+    auditSelectLimitMock,
+    influencerProfilesOrderMock,
+    namesInMock,
+    totalUsersCountMock,
+    referredUsersCountMock,
+    settingsInMock,
+    influencerLookupMock,
+    qualifiedRefsMock,
+    balanceUpdateMock,
+    referralsUpdateInMock,
+    appSettingsUpsertMock,
+    fakeService,
+  }
 })
 
 vi.mock("../lib/supabase.js", () => ({ createServiceClient: () => fakeService }))
@@ -258,5 +356,139 @@ describe("GET /audit", () => {
     auditSelectLimitMock.mockResolvedValue({ data: null, error: { message: "boom" } })
     const res = await request(appWith({})).get("/audit")
     expect(res.body).toEqual({ logs: [] })
+  })
+})
+
+describe("GET /credits", () => {
+  it("lists credit purchases with freelancer names, freelancers, and a computed total", async () => {
+    const purchasesOrderMock = vi.fn().mockResolvedValue({
+      data: [
+        { id: "p-1", credits_amount: 20, paystack_reference: "ref-1", status: "completed", created_at: "2026-01-02T00:00:00Z", profiles: { full_name: "Jane F" } },
+        { id: "p-2", credits_amount: 10, paystack_reference: "ref-2", status: "completed", created_at: "2026-01-01T00:00:00Z", profiles: { full_name: "Sam F" } },
+      ],
+      error: null,
+    })
+    const freelancersOrderMock = vi.fn().mockResolvedValue({
+      data: [{ id: "f-1", full_name: "Jane F", created_at: "2026-01-01T00:00:00Z", account_type: "freelancer" }],
+      error: null,
+    })
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "purchase_credits") return { select: vi.fn(() => ({ order: purchasesOrderMock })) }
+        if (table === "profiles") return { select: vi.fn(() => ({ eq: vi.fn(() => ({ order: freelancersOrderMock })) })) }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+
+    const res = await request(appWith(supabase)).get("/credits")
+
+    expect(res.status).toBe(200)
+    expect(res.body.purchases).toHaveLength(2)
+    expect(res.body.purchases[0]).toEqual(expect.objectContaining({ id: "p-1", freelancer_name: "Jane F", credits_amount: 20 }))
+    expect(res.body.freelancers).toHaveLength(1)
+    expect(res.body.totalCredits).toBe(30)
+  })
+
+  it("returns empty lists and zero total on a query error", async () => {
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ order: vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } }), eq: vi.fn(() => ({ order: vi.fn().mockResolvedValue({ data: null, error: { message: "boom" } })})) })) })) }
+    const res = await request(appWith(supabase)).get("/credits")
+    expect(res.body).toEqual({ purchases: [], freelancers: [], totalCredits: 0 })
+  })
+})
+
+describe("GET /influencers", () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("lists influencers with resolved names and program settings, via the service-role client", async () => {
+    influencerProfilesOrderMock.mockResolvedValue({
+      data: [{ user_id: "inf-1", referral_code: "ABC123", display_name: "Influencer One", social_handle: "@one", total_referrals: 5, total_qualified: 2, total_earned_kobo: 200000, balance_unpaid_kobo: 50000 }],
+      error: null,
+    })
+    namesInMock.mockResolvedValue({ data: [{ id: "inf-1", full_name: "Influencer One", email: "one@x.com" }], error: null })
+    totalUsersCountMock.mockResolvedValue({ count: 100 })
+    referredUsersCountMock.mockResolvedValue({ count: 30 })
+    settingsInMock.mockResolvedValue({ data: [{ key: "influencer_commission_pct", value: 10 }, { key: "platform_fee_pct", value: 15 }], error: null })
+
+    const res = await request(appWith({})).get("/influencers")
+
+    expect(res.status).toBe(200)
+    expect(res.body.influencers).toHaveLength(1)
+    expect(res.body.influencers[0]).toEqual(
+      expect.objectContaining({ id: "inf-1", name: "Influencer One", referralCode: "ABC123", earnedNaira: 2000, unpaidNaira: 500 })
+    )
+    expect(res.body.summary).toEqual({ totalUsers: 100, referred: 30, organic: 70 })
+    expect(res.body.commissionPct).toBe(10)
+    expect(res.body.platformFeePct).toBe(15)
+  })
+})
+
+describe("POST /influencers/:id/payout", () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("zeroes the balance, records the payout, marks qualified referrals paid, and logs the action", async () => {
+    influencerLookupMock.mockResolvedValue({ data: { user_id: "inf-1", balance_unpaid_kobo: 50000 }, error: null })
+    qualifiedRefsMock.mockResolvedValue({ data: [{ id: "r-1" }, { id: "r-2" }], error: null })
+    balanceUpdateMock.mockResolvedValue({ data: { user_id: "inf-1" }, error: null })
+    auditInsertMock.mockResolvedValue({ error: null })
+
+    const res = await request(appWith({})).post("/influencers/inf-1/payout").send({ note: "manual payout" })
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true, amount_kobo: 50000 })
+    expect(referralsUpdateInMock).toHaveBeenCalledWith("id", ["r-1", "r-2"])
+    expect(auditInsertMock).toHaveBeenCalledWith(expect.objectContaining({ admin_id: "admin-1", action: "influencer.payout", target_id: "inf-1" }))
+  })
+
+  it("returns 404 when the influencer doesn't exist", async () => {
+    influencerLookupMock.mockResolvedValue({ data: null, error: null })
+    const res = await request(appWith({})).post("/influencers/inf-404/payout").send({})
+    expect(res.status).toBe(404)
+  })
+
+  it("returns 409 when there is nothing to pay out", async () => {
+    influencerLookupMock.mockResolvedValue({ data: { user_id: "inf-1", balance_unpaid_kobo: 0 }, error: null })
+    const res = await request(appWith({})).post("/influencers/inf-1/payout").send({})
+    expect(res.status).toBe(409)
+  })
+
+  it("returns 409 when the balance changed concurrently (the guarded update matches zero rows)", async () => {
+    influencerLookupMock.mockResolvedValue({ data: { user_id: "inf-1", balance_unpaid_kobo: 50000 }, error: null })
+    balanceUpdateMock.mockResolvedValue({ data: null, error: null })
+    const res = await request(appWith({})).post("/influencers/inf-1/payout").send({})
+    expect(res.status).toBe(409)
+  })
+})
+
+describe("POST /settings", () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("upserts allowed keys and logs the change", async () => {
+    appSettingsUpsertMock.mockResolvedValue({ error: null })
+    const res = await request(appWith({})).post("/settings").send({ influencer_commission_pct: 12, platform_fee_pct: 18 })
+
+    expect(res.status).toBe(200)
+    expect(appSettingsUpsertMock).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ key: "influencer_commission_pct", value: 12 }), expect.objectContaining({ key: "platform_fee_pct", value: 18 })]),
+      { onConflict: "key" }
+    )
+    expect(res.body).toEqual({ success: true, updated: { influencer_commission_pct: 12, platform_fee_pct: 18 } })
+  })
+
+  it("returns 400 for an out-of-range value", async () => {
+    const res = await request(appWith({})).post("/settings").send({ platform_fee_pct: 150 })
+    expect(res.status).toBe(400)
+    expect(appSettingsUpsertMock).not.toHaveBeenCalled()
+  })
+
+  it("returns 400 when no valid keys are provided", async () => {
+    const res = await request(appWith({})).post("/settings").send({ unrelated_key: 5 })
+    expect(res.status).toBe(400)
+  })
+
+  it("ignores keys not in the allowlist", async () => {
+    appSettingsUpsertMock.mockResolvedValue({ error: null })
+    const res = await request(appWith({})).post("/settings").send({ influencer_commission_pct: 12, admin_password: "hunter2" })
+    expect(res.body.updated).toEqual({ influencer_commission_pct: 12 })
+    expect(appSettingsUpsertMock).toHaveBeenCalledWith([expect.objectContaining({ key: "influencer_commission_pct" })], { onConflict: "key" })
   })
 })

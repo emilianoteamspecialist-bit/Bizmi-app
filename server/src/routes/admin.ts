@@ -184,4 +184,171 @@ adminRouter.get(
   })
 )
 
+adminRouter.get(
+  "/credits",
+  asyncHandler(async (req, res) => {
+    const [purchasesResult, freelancersResult] = await Promise.all([
+      req.supabase!.from("purchase_credits").select("id, credits_amount, paystack_reference, status, created_at, profiles(full_name)").order("created_at", { ascending: false }),
+      req.supabase!.from("profiles").select("id, full_name, created_at, account_type").eq("account_type", "freelancer").order("created_at", { ascending: false }),
+    ])
+
+    const purchases = (purchasesResult.data || []).map((p: any) => ({
+      id: p.id,
+      credits_amount: p.credits_amount,
+      paystack_reference: p.paystack_reference,
+      status: p.status,
+      created_at: p.created_at,
+      freelancer_name: p.profiles?.full_name || "Unknown",
+    }))
+    const freelancers = freelancersResult.data || []
+    const totalCredits = purchases.reduce((sum: number, p: any) => sum + (p.credits_amount || 0), 0)
+
+    res.json({ purchases, freelancers, totalCredits })
+  })
+)
+
+adminRouter.get(
+  "/influencers",
+  asyncHandler(async (_req, res) => {
+    const service = createServiceClient()
+
+    const { data: profiles } = await service
+      .from("influencer_profiles")
+      .select("user_id, referral_code, display_name, social_handle, total_referrals, total_qualified, total_earned_kobo, balance_unpaid_kobo")
+      .order("total_earned_kobo", { ascending: false })
+
+    const list = profiles ?? []
+    const ids = list.map((p: any) => p.user_id)
+
+    const { data: names } = ids.length ? await service.from("profiles").select("id, full_name, email").in("id", ids) : { data: [] as any[] }
+    const nameById = new Map((names ?? []).map((n: any) => [n.id, n]))
+
+    const [totalUsersResult, referredUsersResult, settingsResult] = await Promise.all([
+      service.from("profiles").select("*", { count: "exact", head: true }),
+      service.from("referrals").select("*", { count: "exact", head: true }),
+      service.from("app_settings").select("key, value").in("key", ["influencer_commission_pct", "platform_fee_pct"]),
+    ])
+
+    const toNaira = (kobo?: number | null) => Number(kobo || 0) / 100
+    const settingNum = (rows: any[], key: string, fallback: number) => {
+      const raw = rows.find((r) => r.key === key)?.value
+      const n = typeof raw === "number" ? raw : Number(raw)
+      return Number.isFinite(n) ? n : fallback
+    }
+
+    const influencers = list.map((p: any) => ({
+      id: p.user_id,
+      name: nameById.get(p.user_id)?.full_name || p.display_name || "Unknown",
+      email: nameById.get(p.user_id)?.email || null,
+      referralCode: p.referral_code,
+      socialHandle: p.social_handle,
+      referred: p.total_referrals ?? 0,
+      qualified: p.total_qualified ?? 0,
+      earnedNaira: toNaira(p.total_earned_kobo),
+      unpaidNaira: toNaira(p.balance_unpaid_kobo),
+    }))
+
+    const total = totalUsersResult.count ?? 0
+    const referred = referredUsersResult.count ?? 0
+
+    res.json({
+      influencers,
+      summary: { totalUsers: total, referred, organic: Math.max(total - referred, 0) },
+      commissionPct: settingNum(settingsResult.data ?? [], "influencer_commission_pct", 10),
+      platformFeePct: settingNum(settingsResult.data ?? [], "platform_fee_pct", 15),
+    })
+  })
+)
+
+adminRouter.post(
+  "/influencers/:id/payout",
+  asyncHandler(async (req, res) => {
+    const influencerId = req.params.id
+    const { note } = req.body ?? {}
+    const trimmedNote = typeof note === "string" ? note.slice(0, 500) : null
+
+    const service = createServiceClient()
+
+    const { data: influencer } = await service.from("influencer_profiles").select("user_id, balance_unpaid_kobo").eq("user_id", influencerId).maybeSingle()
+    if (!influencer) {
+      res.status(404).json({ error: "Influencer not found" })
+      return
+    }
+
+    const amountKobo = Number(influencer.balance_unpaid_kobo || 0)
+    if (amountKobo <= 0) {
+      res.status(409).json({ error: "Nothing to pay out" })
+      return
+    }
+
+    const { data: qualifiedRefs } = await service.from("referrals").select("id").eq("influencer_id", influencerId).eq("status", "qualified")
+    const coveredIds = (qualifiedRefs as { id: string }[] | null)?.map((r) => r.id) ?? []
+
+    const { data: zeroed } = await service
+      .from("influencer_profiles")
+      .update({ balance_unpaid_kobo: 0 })
+      .eq("user_id", influencerId)
+      .eq("balance_unpaid_kobo", amountKobo)
+      .select("user_id")
+      .maybeSingle()
+    if (!zeroed) {
+      res.status(409).json({ error: "Balance changed — please refresh and try again" })
+      return
+    }
+
+    await service.from("influencer_payouts").insert({ influencer_id: influencerId, amount_kobo: amountKobo, status: "paid", processed_by: req.user!.id, note: trimmedNote })
+
+    if (coveredIds.length > 0) {
+      await service.from("referrals").update({ status: "paid" }).in("id", coveredIds)
+    }
+
+    await logAdminAction(service, {
+      adminId: req.user!.id,
+      action: "influencer.payout",
+      targetType: "influencer",
+      targetId: influencerId,
+      details: { amount_kobo: amountKobo, referrals_paid: coveredIds.length, note: trimmedNote },
+    })
+
+    res.json({ success: true, amount_kobo: amountKobo })
+  })
+)
+
+const SETTINGS_ALLOWED_KEYS = new Set(["influencer_commission_pct", "platform_fee_pct"])
+
+adminRouter.post(
+  "/settings",
+  asyncHandler(async (req, res) => {
+    const body = req.body ?? {}
+    const updates: Record<string, number> = {}
+
+    for (const [key, raw] of Object.entries(body)) {
+      if (!SETTINGS_ALLOWED_KEYS.has(key)) continue
+      const n = Number(raw)
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        res.status(400).json({ error: `${key} must be a number between 0 and 100` })
+        return
+      }
+      updates[key] = n
+    }
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "No valid settings provided" })
+      return
+    }
+
+    const service = createServiceClient()
+    const rows = Object.entries(updates).map(([key, value]) => ({ key, value, updated_at: new Date().toISOString() }))
+    const { error } = await service.from("app_settings").upsert(rows, { onConflict: "key" })
+    if (error) {
+      res.status(500).json({ error: "Failed to save settings" })
+      return
+    }
+
+    await logAdminAction(service, { adminId: req.user!.id, action: "settings.update", targetType: "app_settings", targetId: Object.keys(updates).join(","), details: updates })
+
+    res.json({ success: true, updated: updates })
+  })
+)
+
 export default adminRouter
