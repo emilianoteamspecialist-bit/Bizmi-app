@@ -46,6 +46,18 @@ describe("AdminLogin", () => {
     expect(signOutMock).not.toHaveBeenCalled()
   })
 
+  it("signs in when the profile is admin only via account_type (not role) — this codebase uses both fields inconsistently, see CLAUDE.md", async () => {
+    const user = userEvent.setup()
+    signInWithPasswordMock.mockResolvedValue({ data: { user: { id: "admin-2" } }, error: null })
+    singleMock.mockResolvedValue({ data: { role: "freelancer", account_type: "admin" }, error: null })
+    renderPage()
+
+    await submit(user)
+
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/admin/dashboard"))
+    expect(signOutMock).not.toHaveBeenCalled()
+  })
+
   it("signs the user back out and shows an error when the profile is not an admin", async () => {
     const user = userEvent.setup()
     signInWithPasswordMock.mockResolvedValue({ data: { user: { id: "u-2" } }, error: null })

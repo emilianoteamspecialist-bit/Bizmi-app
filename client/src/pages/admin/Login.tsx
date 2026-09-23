@@ -22,11 +22,12 @@ export default function AdminLogin() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, account_type")
         .eq("id", data.user!.id)
         .single()
 
-      if (profileError || profile?.role !== "admin") {
+      const isAdmin = profile?.role === "admin" || profile?.account_type === "admin"
+      if (profileError || !isAdmin) {
         await supabase.auth.signOut()
         throw new Error("Access denied. Admin privileges required.")
       }
@@ -54,7 +55,7 @@ export default function AdminLogin() {
                 />
               </svg>
             </div>
-            <h1 className="text-primaryxl font-bold text-slate-900 mb-2">Admin Portal</h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Admin Portal</h1>
             <p className="text-slate-600">Sign in to access the admin dashboard</p>
           </div>
 
