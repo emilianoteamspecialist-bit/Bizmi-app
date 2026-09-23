@@ -8,7 +8,9 @@ import proposalsRouter from "./routes/proposals.js"
 import agenciesRouter from "./routes/agencies.js"
 import freelancersRouter from "./routes/freelancers.js"
 import messagesRouter from "./routes/messages.js"
+import adminRouter from "./routes/admin.js"
 import { requireAuth } from "./middleware/auth.js"
+import { requireAdmin } from "./middleware/admin.js"
 import { errorHandler, HttpError } from "./lib/http.js"
 
 export function createApp() {
@@ -28,6 +30,7 @@ export function createApp() {
   app.use("/api/agencies", requireAuth, agenciesRouter)
   app.use("/api/freelancers", requireAuth, freelancersRouter)
   app.use("/api/messages", requireAuth, messagesRouter)
+  app.use("/api/admin", requireAuth, requireAdmin, adminRouter)
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" })
