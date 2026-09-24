@@ -46,7 +46,7 @@ describe("requireAuth", () => {
     expect(next).not.toHaveBeenCalled()
   })
 
-  it("attaches req.user and req.supabase and calls next() on success", async () => {
+  it("attaches req.user (including user_metadata) and req.supabase and calls next() on success", async () => {
     getUserMock.mockResolvedValue({
       data: { user: { id: "user-1", email: "a@b.com" } },
       error: null,
@@ -58,8 +58,23 @@ describe("requireAuth", () => {
 
     await requireAuth(req, res, next)
 
-    expect(req.user).toEqual({ id: "user-1", email: "a@b.com" })
+    expect(req.user).toEqual({ id: "user-1", email: "a@b.com", user_metadata: {} })
     expect(req.supabase).toBeDefined()
     expect(next).toHaveBeenCalledOnce()
+  })
+
+  it("carries through a real user_metadata object when Supabase returns one", async () => {
+    getUserMock.mockResolvedValue({
+      data: { user: { id: "user-2", email: "c@d.com", user_metadata: { ref_code: "abc123", full_name: "Jane Doe" } } },
+      error: null,
+    })
+    const { requireAuth } = await import("./auth.js")
+    const req = { headers: { authorization: "Bearer good-token" } } as Request
+    const res = mockRes()
+    const next = vi.fn()
+
+    await requireAuth(req, res, next)
+
+    expect(req.user?.user_metadata).toEqual({ ref_code: "abc123", full_name: "Jane Doe" })
   })
 })
