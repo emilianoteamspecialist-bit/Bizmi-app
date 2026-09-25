@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 const useAuthMock = vi.fn()
 vi.mock("../../contexts/AuthContext", () => ({ useAuth: () => useAuthMock() }))
 
+vi.mock("../../components/ReferralSync", () => ({ default: () => null }))
+
 const useAgencyJobsQueryMock = vi.fn()
 const useUpdateJobStatusMutationMock = vi.fn()
 vi.mock("../../lib/queries/jobs", () => ({

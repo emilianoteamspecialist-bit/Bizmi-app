@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { useNavigate, Navigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import ReferralSync from "../../components/ReferralSync"
 import { Reveal } from "@/components/shared/reveal"
 import { Modal } from "@/components/shared/modal"
 import { StatBadge } from "@/components/shared/stat-badge"
@@ -186,6 +187,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-surface pb-20">
+      <ReferralSync />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-1 min-w-0">

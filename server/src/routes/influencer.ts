@@ -1,7 +1,7 @@
 import { Router } from "express"
 import { asyncHandler } from "../lib/http.js"
 import { createServiceClient } from "../lib/supabase.js"
-import { generateReferralCode } from "../lib/referralCode.js"
+import { runReferralSync } from "../lib/referralSync.js"
 
 const influencerRouter = Router()
 
@@ -31,69 +31,7 @@ influencerRouter.get(
     const service = createServiceClient()
     const meta = (req.user!.user_metadata ?? {}) as Record<string, unknown>
 
-    const { data: profileRow } = await service.from("profiles").select("account_type").eq("id", userId).maybeSingle()
-    const accountType = (profileRow as { account_type?: string } | null)?.account_type ?? null
-
-    // 1. Ensure the influencer's own profile + referral code exist.
-    if (accountType === "influencer") {
-      const { data: existing } = await service
-        .from("influencer_profiles")
-        .select("user_id")
-        .eq("user_id", userId)
-        .maybeSingle()
-
-      if (!existing) {
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const { error } = await service.from("influencer_profiles").insert({
-            user_id: userId,
-            referral_code: generateReferralCode(),
-            display_name: typeof meta.full_name === "string" ? meta.full_name : null,
-            social_handle: typeof meta.social_handle === "string" ? meta.social_handle : null,
-          })
-          if (!error) break
-          // 23505 = unique violation (code collision) -> retry; anything else -> stop.
-          if ((error as { code?: string }).code !== "23505") {
-            console.error("[influencer] create profile failed:", error)
-            break
-          }
-        }
-      }
-    }
-
-    // 2. Attribute the referral, once.
-    const refCode = typeof meta.ref_code === "string" ? meta.ref_code.trim() : ""
-    if (refCode) {
-      const { data: already } = await service.from("referrals").select("id").eq("referred_user_id", userId).maybeSingle()
-
-      if (!already) {
-        const { data: influencer } = await service
-          .from("influencer_profiles")
-          .select("user_id, total_referrals")
-          .eq("referral_code", refCode)
-          .maybeSingle()
-        const influencerRow = influencer as { user_id?: string; total_referrals?: number } | null
-        const influencerId = influencerRow?.user_id
-
-        if (influencerId && influencerId !== userId) {
-          const { error: insertError } = await service.from("referrals").insert({
-            influencer_id: influencerId,
-            referred_user_id: userId,
-            referred_account_type: accountType,
-            status: "pending",
-          })
-          if (!insertError) {
-            await service.from("profiles").update({ referred_by: influencerId }).eq("id", userId)
-            await service
-              .from("influencer_profiles")
-              .update({ total_referrals: (influencerRow?.total_referrals ?? 0) + 1 })
-              .eq("user_id", influencerId)
-          } else if ((insertError as { code?: string }).code !== "23505") {
-            // Unique violation = a concurrent call already attributed -- safe to ignore.
-            console.error("[influencer] attribute failed:", insertError)
-          }
-        }
-      }
-    }
+    await runReferralSync(service, userId, meta)
 
     // 3. Read the influencer's own data back through the request-scoped, RLS-
     // bound client -- defense-in-depth alongside the .eq() filters, matching

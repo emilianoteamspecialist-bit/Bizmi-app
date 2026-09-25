@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Navigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import ReferralSync from "../../components/ReferralSync"
 import { Reveal } from "@/components/shared/reveal"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Calendar, Clock, Edit, FileText, MapPin, MoreHorizontal, Pause, Play, Plus, Users, X } from "lucide-react"
@@ -103,6 +104,7 @@ export default function AgencyDashboard() {
 
   return (
     <div className="min-h-screen bg-surface pb-20">
+      <ReferralSync />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="space-y-1 min-w-0">

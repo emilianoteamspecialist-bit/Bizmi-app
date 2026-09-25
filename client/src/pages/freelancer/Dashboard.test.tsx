@@ -16,6 +16,8 @@ class MockIntersectionObserver {
 const useAuthMock = vi.fn()
 vi.mock("../../contexts/AuthContext", () => ({ useAuth: () => useAuthMock() }))
 
+vi.mock("../../components/ReferralSync", () => ({ default: () => null }))
+
 const useJobsQueryMock = vi.fn()
 const useToggleBookmarkMutationMock = vi.fn()
 vi.mock("../../lib/queries/jobs", () => ({
