@@ -23,6 +23,9 @@ import AdminJobs from "./pages/admin/Jobs"
 import AdminAuditLog from "./pages/admin/AuditLog"
 import AdminCredits from "./pages/admin/Credits"
 import AdminInfluencers from "./pages/admin/Influencers"
+import InfluencerDashboard from "./pages/influencer/Dashboard"
+import InfluencerReferrals from "./pages/influencer/Referrals"
+import InfluencerEarnings from "./pages/influencer/Earnings"
 
 export default function App() {
   return (
@@ -111,6 +114,30 @@ export default function App() {
               element={
                 <RequireAuth>
                   <Messages />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/influencer/dashboard"
+              element={
+                <RequireAuth>
+                  <InfluencerDashboard />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/influencer/referrals"
+              element={
+                <RequireAuth>
+                  <InfluencerReferrals />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/influencer/earnings"
+              element={
+                <RequireAuth>
+                  <InfluencerEarnings />
                 </RequireAuth>
               }
             />
