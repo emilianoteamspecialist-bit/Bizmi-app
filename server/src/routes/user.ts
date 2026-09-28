@@ -2,6 +2,7 @@ import { Router } from "express"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { asyncHandler } from "../lib/http.js"
 import { resolveAvatar, getAvatarUrl } from "../lib/avatar.js"
+import { createServiceClient } from "../lib/supabase.js"
 
 const userRouter = Router()
 
@@ -145,13 +146,28 @@ userRouter.post(
       return
     }
 
+    // Reject a reference that already belongs to an escrow/job-funding
+    // payment. This Paystack merchant account also processes escrow
+    // deposits, and a freelancer can read their own job's paystack_reference
+    // via existing RLS -- without this check, that same, already-spent
+    // payment would also mint credits here.
+    const service = createServiceClient()
+    const [escrowMatch, fundedJobMatch] = await Promise.all([
+      service.from("escrow_deposits").select("id").eq("paystack_reference", reference).maybeSingle(),
+      service.from("Funded_jobs101").select("id").eq("reference_id", reference).maybeSingle(),
+    ])
+    if (escrowMatch.data || fundedJobMatch.data) {
+      res.status(400).json({ success: false, error: "This payment reference cannot be used for credits" })
+      return
+    }
+
     // Derive credits from the Paystack-verified kobo amount server-side --
     // never trust a client-supplied credits_amount, which could claim any
     // value regardless of what was actually paid.
     const CREDITS_RATE_KOBO = 5000 // ₦50 per credit
     const credits_amount = Math.floor(transaction.amount / CREDITS_RATE_KOBO)
 
-    const { data, error } = await req.supabase!
+    const { data, error } = await service
       .from("purchase_credits")
       .insert({
         freelancer_id: req.user!.id,

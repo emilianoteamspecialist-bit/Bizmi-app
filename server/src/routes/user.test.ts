@@ -1,7 +1,10 @@
-import { describe, it, expect, vi, afterEach } from "vitest"
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest"
 import express from "express"
 import request from "supertest"
 import userRouter from "./user.js"
+
+const fakeService = { from: vi.fn() }
+vi.mock("../lib/supabase.js", () => ({ createServiceClient: () => fakeService }))
 
 function appWith(user: { id: string }, supabase: any) {
   const app = express()
@@ -85,26 +88,53 @@ describe("POST /credits/verify", () => {
     vi.unstubAllGlobals()
   })
 
+  beforeEach(() => {
+    fakeService.from = vi.fn()
+  })
+
+  function mockService({
+    escrowMatch = null,
+    fundedJobMatch = null,
+    insertResult = { data: null, error: null },
+  }: {
+    escrowMatch?: { id: string } | null
+    fundedJobMatch?: { id: string } | null
+    insertResult?: { data: any; error: any }
+  } = {}) {
+    const insertMock = vi.fn(() => ({ select: vi.fn(() => ({ single: vi.fn().mockResolvedValue(insertResult) })) }))
+    fakeService.from = vi.fn((table: string) => {
+      if (table === "escrow_deposits") {
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: escrowMatch, error: null }) })) })) }
+      }
+      if (table === "Funded_jobs101") {
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: fundedJobMatch, error: null }) })) })) }
+      }
+      if (table === "purchase_credits") return { insert: insertMock }
+      throw new Error(`unexpected service table ${table}`)
+    })
+    return insertMock
+  }
+
+  function mockFetch(data: { status: string; amount: number; currency: string }) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: true, data }) })
+    )
+  }
+
   it("returns 400 when reference or amount is missing or the wrong type", async () => {
     const supabase = { from: vi.fn() }
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send({ reference: "ref-123" })
     expect(res.status).toBe(400)
     expect(supabase.from).not.toHaveBeenCalled()
+    expect(fakeService.from).not.toHaveBeenCalled()
   })
 
   it("verifies with Paystack, inserts a completed purchase scoped to the caller, and returns success", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 50000, currency: "NGN" } }),
-      })
-    )
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
     const insertedRow = { id: "p-1", amount: 500, credits_amount: 10, status: "completed", created_at: "2026-01-01T00:00:00Z", paystack_reference: "ref-123" }
-    const singleMock = vi.fn().mockResolvedValue({ data: insertedRow, error: null })
-    const selectMock = vi.fn(() => ({ single: singleMock }))
-    const insertMock = vi.fn(() => ({ select: selectMock }))
-    const supabase = { from: vi.fn(() => ({ insert: insertMock })) }
+    const insertMock = mockService({ insertResult: { data: insertedRow, error: null } })
+    const supabase = { from: vi.fn() }
 
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
 
@@ -119,24 +149,17 @@ describe("POST /credits/verify", () => {
       paystack_reference: "ref-123",
       status: "completed",
     })
+    expect(supabase.from).not.toHaveBeenCalled()
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ success: true, credits_added: 10, purchase: insertedRow })
   })
 
   it("ignores a client-supplied credits_amount and derives it from the verified Paystack kobo amount instead", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 50000, currency: "NGN" } }),
-      })
-    )
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
     const insertedRow = { id: "p-1", amount: 500, credits_amount: 10, status: "completed", created_at: "2026-01-01T00:00:00Z", paystack_reference: "ref-123" }
-    const singleMock = vi.fn().mockResolvedValue({ data: insertedRow, error: null })
-    const insertMock = vi.fn(() => ({ select: vi.fn(() => ({ single: singleMock })) }))
-    const supabase = { from: vi.fn(() => ({ insert: insertMock })) }
+    const insertMock = mockService({ insertResult: { data: insertedRow, error: null } })
 
-    const res = await request(appWith({ id: "user-1" }, supabase))
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() }))
       .post("/credits/verify")
       .send({ reference: "ref-123", amount: 500, credits_amount: 999999 })
 
@@ -147,53 +170,57 @@ describe("POST /credits/verify", () => {
   })
 
   it("returns 400 when Paystack reports the transaction as not successful", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ status: true, data: { status: "failed", amount: 50000, currency: "NGN" } }),
-      })
-    )
-    const supabase = { from: vi.fn() }
+    mockFetch({ status: "failed", amount: 50000, currency: "NGN" })
+    mockService()
 
-    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
-    expect(supabase.from).not.toHaveBeenCalled()
+    expect(fakeService.from).not.toHaveBeenCalled()
   })
 
   it("returns 400 when the paid amount doesn't match Paystack's recorded amount", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 10000, currency: "NGN" } }),
-      })
-    )
-    const supabase = { from: vi.fn() }
+    mockFetch({ status: "success", amount: 10000, currency: "NGN" })
+    mockService()
 
-    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
+    expect(fakeService.from).not.toHaveBeenCalled()
   })
 
   it("returns 400 with a clear message when the reference was already used", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ status: true, data: { status: "success", amount: 50000, currency: "NGN" } }),
-      })
-    )
-    const singleMock = vi.fn().mockResolvedValue({ data: null, error: { code: "23505", message: "duplicate key" } })
-    const supabase = { from: vi.fn(() => ({ insert: vi.fn(() => ({ select: vi.fn(() => ({ single: singleMock })) })) })) }
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    mockService({ insertResult: { data: null, error: { code: "23505", message: "duplicate key" } } })
 
-    const res = await request(appWith({ id: "user-1" }, supabase)).post("/credits/verify").send(validVerifyBody)
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
 
     expect(res.status).toBe(400)
     expect(res.body).toEqual({ success: false, error: "This reference has already been used" })
+  })
+
+  it("rejects a reference that already belongs to an escrow deposit", async () => {
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    const insertMock = mockService({ escrowMatch: { id: "escrow-1" } })
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ success: false, error: "This payment reference cannot be used for credits" })
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it("rejects a reference that already belongs to a legacy Funded_jobs101 row", async () => {
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    const insertMock = mockService({ fundedJobMatch: { id: "job-1" } })
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ success: false, error: "This payment reference cannot be used for credits" })
+    expect(insertMock).not.toHaveBeenCalled()
   })
 })
 
