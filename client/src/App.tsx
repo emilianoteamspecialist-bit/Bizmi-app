@@ -6,6 +6,7 @@ import RequireAuth from "./components/RequireAuth"
 import Landing from "./pages/Landing"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
+import ResetPassword from "./pages/ResetPassword"
 import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/freelancer/dashboard"
               element={
