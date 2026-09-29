@@ -27,6 +27,43 @@
 - The already-existing "reference already used" 23505 duplicate-key path (on `purchase_credits` itself) must still work identically after the insert moves to the service-role client — a service-role insert still hits the same UNIQUE constraint and returns the same Postgres error code.
 - The denylist check must run for every code path that reaches it (i.e., after Paystack verification succeeds and amount/currency match, before the insert) — not skippable via any request shape.
 
+## Amendment (after Task 1's final whole-branch review)
+
+Task 1 merged its own final review with 2 Critical, 2 Important findings, both Criticals independently verified against the live legacy codebase before any further work:
+
+- **C1 (verified):** the still-live production Next.js app also writes to `purchase_credits`, via `createRouteHandlerClient` (session-scoped, RLS-bound) — NOT the service-role client. Applying Task 1's migration as originally written would break real users' credit purchases immediately.
+- **C2 (verified):** the original migration only dropped the INSERT policy; two UPDATE policies remain, which is the same bypass class Finding #2 was about (a freelancer can still `PATCH` their own row directly via PostgREST). Also compounds C1 — a legacy route depends on client-writable UPDATE too.
+- **I1/I2 (plausible, addressed below):** the Express route's denylist fails open on a lookup error, and misses a third table, `Paystack_data`, that also holds funding references.
+
+The user, presented with this, chose: (1) also patch the legacy Next.js routes so the live vulnerability is actually closed today, not just the not-yet-live Express route; (2) fix I1 and I2 too.
+
+**Further research** (by the controller, directly against the legacy codebase) found the live legacy attack surface is worse than Task 1's final review described: `app/api/verify-transaction/route.ts` — confirmed as THE live top-up path via `components/topit-modal.tsx:102` — takes `user_id` and `credits_amount` directly from the client request body with **zero server-side derivation**, and its only "denylist" check is implemented client-side in `topit-modal.tsx` (trivially bypassable by calling the API directly). This is a more direct vulnerability than the reference-reuse issue alone: a client can claim any `credits_amount` for any real (even unrelated) successful transaction.
+
+Every file in the legacy app referencing `purchase_credits` was enumerated and checked for (a) whether it's reachable from any live UI code, and (b) what Supabase client it uses:
+
+| File | Live? | Client | Action |
+|---|---|---|---|
+| `app/api/verify-transaction/route.ts` | **Yes** — called by `components/topit-modal.tsx:102` | session-scoped (`createRouteHandlerClient`) | **Task 3: full rewrite** |
+| `app/api/credits/verify-payment/route.ts` | **Yes** — called by `app/credits/verify/page.tsx:33` | session-scoped | **Task 4: service-role + denylist** |
+| `app/actions/user.ts` | Yes, but read-only (`.select` only, line 18) | n/a | No action needed |
+| `app/api/credits/verify-credits/route.ts` | No caller found in `app/`/`components/`/`lib/` | session-scoped | Left untouched (see below) |
+| `app/credits/verify-credits/route.ts` | No caller found | session-scoped | Left untouched |
+| `app/api/credits/initialize-payment/route.ts` | No caller found | session-scoped | Left untouched |
+| `app/api/paystack/initialize-payment/route.ts` | No caller found | session-scoped | Left untouched |
+| `app/api/credits/welcome-bonus/route.ts` | No caller found; welcome credits appear to actually be granted by a `SECURITY DEFINER` DB trigger (`scripts/create-welcome-credits-trigger.sql`, fires inside `handle_new_user`, bypasses RLS as the function owner) — this route looks superseded | anon client (`lib/supabase.ts`, unusual for a server route) | Left untouched |
+| `app/api/credits/webhook/route.ts`, `app/api/paystack/webhook/route.ts` | N/A | N/A | Confirmed via grep: neither references `purchase_credits` at all (an earlier review pass's claim about the credits webhook touching this table was checked and does not hold) |
+
+**Ruling:** patch only the two confirmed-live routes (Tasks 3-4). The five apparently-orphaned routes are left untouched — patching genuinely unreachable code adds review/maintenance surface for zero security benefit, and deleting dead code is a separate decision the user hasn't asked for. This table is the durable record of that decision; if any of these routes turns out to have a caller this research missed, re-open this finding.
+
+**This changes the migration's risk profile favorably.** Once Tasks 3-4 switch both live legacy writers to the service-role client, `purchase_credits`' RLS policies (INSERT and UPDATE alike) become genuinely dead weight — no live code depends on them anymore. Task 5 revises the migration to drop both INSERT and UPDATE policies (closing C2 for real) and removes the "hold until cutover" caveat, since after Tasks 3-4 there is no longer an ordering dependency — **but Tasks 3-4 must land before Task 5's migration is applied to the live database**, since until then the legacy routes still depend on those policies. The migration itself is still not applied by this plan; the user applies it via Supabase Studio, now after Tasks 3-4 are merged.
+
+**New Global Constraints for Tasks 2-5:**
+- The legacy Next.js app (`app/`) has **no automated test suite** (per `CLAUDE.md`) — Tasks 3-4 cannot be verified with `vitest`. Verification is `npx tsc --noEmit` from the repo root (a `tsconfig.json` exists there) plus careful manual trace of every code path by both the implementer and the task reviewer. Treat this as raising the review bar, not lowering it — there's no test safety net.
+- `app/api/verify-transaction/route.ts`'s rewrite drops `user_id` and `credits_amount` from the trusted request body entirely (derives both server-side instead: `user.id` from the authenticated session via `supabase.auth.getUser()`, `credits_amount` from the verified Paystack kobo amount). The client (`components/topit-modal.tsx`) is **not modified** — it can keep sending the now-ignored `user_id`/`credits_amount` fields harmlessly, and its own client-side denylist check (lines 76-97) is left in place as friendly, fail-fast UX; the route's own server-side check is what actually enforces the security property now, independent of the client.
+- `app/api/credits/verify-payment/route.ts`'s rewrite adds `.eq("freelancer_id", user.id)` to its purchase-record lookup — a genuine hardening (the original route completed a pending purchase found by reference alone, with no check that the caller is the same person who initiated it).
+- Both legacy route rewrites use `createServiceRoleClient()` from `lib/supabase-service.ts` (the Next.js app's own established service-role helper — see `CLAUDE.md`'s client-boundary rule), not the Express server's `createServiceClient()` (a different file in a different package).
+- The denylist check added to both legacy routes and the Express route (Task 2) checks `escrow_deposits.paystack_reference`, `Funded_jobs101.reference_id`, AND `Paystack_data.reference` (three tables, not two) — and fails closed (500) on any lookup `.error`, not just checking `.data`.
+
 ---
 
 ### Task 1: Server — denylist check + service-role insert in `POST /api/user/credits/verify`
@@ -358,3 +395,510 @@ git commit -m "fix(db): drop purchase_credits' client-writable INSERT policy"
 ```
 
 Note: do NOT run this migration against the live database as part of this task. The user has chosen to apply it themselves via the Supabase Studio SQL editor.
+
+---
+
+### Task 2: Server — fail-closed denylist + third table (`Paystack_data`) in the Express route
+
+**Files:**
+- Modify: `server/src/routes/user.ts`
+- Modify: `server/src/routes/user.test.ts`
+
+**Interfaces:**
+- Consumes: `createServiceClient()` (existing, already imported by Task 1).
+- Produces: no new exports. One new possible response, unchanged shape: `{ success: false, error: "Failed to verify payment reference" }` with HTTP 500 when a denylist lookup itself errors.
+
+- [ ] **Step 1: Write the failing tests**
+
+Edit `server/src/routes/user.test.ts`. Update the `mockService` helper inside the `describe("POST /credits/verify", ...)` block (added in Task 1) to this:
+
+```ts
+  function mockService({
+    escrowMatch = null,
+    fundedJobMatch = null,
+    paystackDataMatch = null,
+    denylistError = null,
+    insertResult = { data: null, error: null },
+  }: {
+    escrowMatch?: { id: string } | null
+    fundedJobMatch?: { id: string } | null
+    paystackDataMatch?: { id: string } | null
+    denylistError?: { message: string; code?: string } | null
+    insertResult?: { data: any; error: any }
+  } = {}) {
+    const insertMock = vi.fn(() => ({ select: vi.fn(() => ({ single: vi.fn().mockResolvedValue(insertResult) })) }))
+    fakeService.from = vi.fn((table: string) => {
+      if (table === "escrow_deposits") {
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: escrowMatch, error: denylistError }) })) })) }
+      }
+      if (table === "Funded_jobs101") {
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: fundedJobMatch, error: denylistError }) })) })) }
+      }
+      if (table === "Paystack_data") {
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: paystackDataMatch, error: denylistError }) })) })) }
+      }
+      if (table === "purchase_credits") return { insert: insertMock }
+      throw new Error(`unexpected service table ${table}`)
+    })
+    return insertMock
+  }
+```
+
+(This is a drop-in replacement for the existing `mockService` function — same name, same call sites in the existing tests keep working since every new parameter has a default.)
+
+Then add these two tests at the end of the `describe("POST /credits/verify", ...)` block, right before its closing `})`:
+
+```ts
+  it("rejects a reference that already belongs to a Paystack_data funding record", async () => {
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    const insertMock = mockService({ paystackDataMatch: { id: "pd-1" } })
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ success: false, error: "This payment reference cannot be used for credits" })
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it("fails closed with a 500 when the denylist lookup itself errors, without attempting the insert", async () => {
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    const insertMock = mockService({ denylistError: { message: "connection reset", code: "PGRST116" } })
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(500)
+    expect(res.body).toEqual({ success: false, error: "Failed to verify payment reference" })
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+```
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `cd server && npx vitest run src/routes/user.test.ts`
+Expected: FAIL — the route doesn't query `Paystack_data` yet and doesn't check `.error` on the denylist lookups yet.
+
+- [ ] **Step 3: Update the route**
+
+Edit `server/src/routes/user.ts`. Replace the denylist block (added in Task 1) with:
+
+```ts
+    // Reject a reference that already belongs to an escrow/job-funding
+    // payment. This Paystack merchant account also processes escrow
+    // deposits and manual job-funding references, and a freelancer can
+    // read their own job's reference via existing RLS -- without this
+    // check, that same, already-spent payment would also mint credits here.
+    const service = createServiceClient()
+    const [escrowMatch, fundedJobMatch, paystackDataMatch] = await Promise.all([
+      service.from("escrow_deposits").select("id").eq("paystack_reference", reference).maybeSingle(),
+      service.from("Funded_jobs101").select("id").eq("reference_id", reference).maybeSingle(),
+      service.from("Paystack_data").select("id").eq("reference", reference).maybeSingle(),
+    ])
+    if (escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error) {
+      console.error("credits/verify denylist check failed:", escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error)
+      res.status(500).json({ success: false, error: "Failed to verify payment reference" })
+      return
+    }
+    if (escrowMatch.data || fundedJobMatch.data || paystackDataMatch.data) {
+      res.status(400).json({ success: false, error: "This payment reference cannot be used for credits" })
+      return
+    }
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `cd server && npx vitest run src/routes/user.test.ts`
+Expected: PASS (10 tests in the `POST /credits/verify` block: the 8 from Task 1 plus these 2).
+
+- [ ] **Step 5: Run the full server suite and typecheck**
+
+Run: `cd server && npx vitest run` and `cd server && npx tsc --noEmit`
+Expected: full suite passes; typecheck clean except the one pre-existing, unrelated error (confirm by content, not line number, against `git show HEAD~1:server/src/routes/user.test.ts` if the line number has shifted again).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add server/src/routes/user.ts server/src/routes/user.test.ts
+git commit -m "fix(server): fail closed on denylist errors, check Paystack_data too"
+```
+
+---
+
+### Task 3: Legacy — `app/api/verify-transaction/route.ts` full rewrite
+
+**Files:**
+- Modify: `app/api/verify-transaction/route.ts`
+
+**Interfaces:**
+- Consumes: `createServiceRoleClient()` from `lib/supabase-service.ts` (existing).
+- Produces: no new exports. Request body shape narrows from `{ user_id, reference, credits_amount, amount }` to `{ reference, amount }` (extra fields sent by the still-unmodified client are simply ignored, not an error). Response shape unchanged on success; one new possible error, matching Task 2's Express route: `{ error: "Failed to verify payment reference" }` with HTTP 500.
+
+- [ ] **Step 1: Replace the route's full contents**
+
+Replace `app/api/verify-transaction/route.ts` in full with:
+
+```ts
+import { NextResponse } from "next/server"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
+import { createServiceRoleClient } from "@/lib/supabase-service"
+
+const CREDITS_RATE_KOBO = 5000 // ₦50 per credit
+
+export async function POST(req: Request) {
+  try {
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { reference, amount } = await req.json()
+
+    if (!reference || typeof amount !== "number") {
+      return NextResponse.json({ error: "Missing reference or amount" }, { status: 400 })
+    }
+
+    // Verify transaction with Paystack
+    const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      },
+    })
+
+    const verifyData = await verifyRes.json()
+
+    if (!verifyRes.ok || verifyData.status === false) {
+      return NextResponse.json({ error: "Transaction verification failed", details: verifyData }, { status: 400 })
+    }
+
+    const transaction = verifyData.data
+
+    if (transaction.status !== "success") {
+      return NextResponse.json({ error: "Transaction not successful" }, { status: 400 })
+    }
+
+    // Check that the amount matches (Paystack amounts are in kobo: ₦ 1 = 100 kobo)
+    const expectedAmountKobo = Math.round(Number(amount) * 100)
+    if (transaction.amount !== expectedAmountKobo) {
+      return NextResponse.json({ error: "Transaction amount does not match" }, { status: 400 })
+    }
+
+    // Optional: check currency is Nigerian Naira
+    if (transaction.currency !== "NGN") {
+      return NextResponse.json({ error: "Invalid transaction currency" }, { status: 400 })
+    }
+
+    // Reject a reference that already belongs to an escrow/job-funding
+    // payment. This Paystack merchant account also processes escrow
+    // deposits and manual job-funding references, and a freelancer can
+    // read their own job's reference via existing RLS -- without this
+    // check, that same, already-spent payment would also mint credits here.
+    const service = createServiceRoleClient()
+    const [escrowMatch, fundedJobMatch, paystackDataMatch] = await Promise.all([
+      service.from("escrow_deposits").select("id").eq("paystack_reference", reference).maybeSingle(),
+      service.from("Funded_jobs101").select("id").eq("reference_id", reference).maybeSingle(),
+      service.from("Paystack_data").select("id").eq("reference", reference).maybeSingle(),
+    ])
+    if (escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error) {
+      console.error("verify-transaction denylist check failed:", escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error)
+      return NextResponse.json({ error: "Failed to verify payment reference" }, { status: 500 })
+    }
+    if (escrowMatch.data || fundedJobMatch.data || paystackDataMatch.data) {
+      return NextResponse.json({ error: "This payment reference cannot be used for credits" }, { status: 400 })
+    }
+
+    // Derive credits from the Paystack-verified kobo amount server-side --
+    // never trust a client-supplied credits_amount, which could claim any
+    // value regardless of what was actually paid.
+    const credits_amount = Math.floor(transaction.amount / CREDITS_RATE_KOBO)
+
+    // Insert via the service-role client -- purchase_credits' client-writable
+    // INSERT/UPDATE policies are being retired (see the companion migration);
+    // this route no longer depends on them, and the freelancer_id comes from
+    // the authenticated session, never from the request body.
+    const { data, error } = await service
+      .from("purchase_credits")
+      .insert([
+        {
+          freelancer_id: user.id,
+          credits_amount,
+          amount,
+          paystack_reference: reference,
+          status: "completed",
+        },
+      ])
+      .select()
+
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json({ error: "This reference has already been used" }, { status: 400 })
+      }
+      console.error("Supabase insert error:", error)
+      return NextResponse.json({ error: "Failed to save purchase record", details: error.message }, { status: 500 })
+    }
+
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+
+    return NextResponse.json({
+      message: "Transaction verified and credits added successfully",
+      purchase: data,
+      success: true,
+      credits_added: credits_amount,
+      profile,
+    })
+  } catch (err: any) {
+    console.error("API error:", err)
+    return NextResponse.json({ error: "Internal server error", details: err.message }, { status: 500 })
+  }
+}
+```
+
+- [ ] **Step 2: Typecheck**
+
+Run (from the repo root, not `server/` or `client/`): `npx tsc --noEmit`
+Expected: no new errors introduced by this file. This app's build ignores TypeScript errors (`next.config.mjs`), so this is the only automated check available — read the full diff once more after typechecking and manually trace: (a) every early return happens before the denylist check and the insert; (b) `user.id` (not any request-body field) is what's written as `freelancer_id`; (c) `credits_amount` is computed only from `transaction.amount`, never from the request body.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/api/verify-transaction/route.ts
+git commit -m "fix(legacy): derive credits_amount/user_id server-side, add denylist to verify-transaction"
+```
+
+---
+
+### Task 4: Legacy — `app/api/credits/verify-payment/route.ts` service-role + denylist
+
+**Files:**
+- Modify: `app/api/credits/verify-payment/route.ts`
+
+**Interfaces:**
+- Consumes: `createServiceRoleClient()` from `lib/supabase-service.ts` (existing).
+- Produces: no new exports. Response shape unchanged on success; one new possible error: `{ error: "Failed to verify payment reference" }` with HTTP 500; the existing 404 ("Purchase record not found") now also fires if the reference belongs to a different user's pending purchase, not just a nonexistent one — this is intentional (see the plan's Amendment section).
+
+- [ ] **Step 1: Replace the route's full contents**
+
+Replace `app/api/credits/verify-payment/route.ts` in full with:
+
+```ts
+import { type NextRequest, NextResponse } from "next/server"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
+import { createServiceRoleClient } from "@/lib/supabase-service"
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const reference = searchParams.get("reference")
+    console.log("🔍 Verifying credits payment - Reference:", reference)
+
+    if (!reference) {
+      return NextResponse.json({ error: "Payment reference is required" }, { status: 400 })
+    }
+
+    const cookieStore = await cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const service = createServiceRoleClient()
+
+    // Find the purchase record first, scoped to the caller -- this route
+    // only ever completes the caller's OWN pending purchase, never anyone
+    // else's.
+    const { data: purchaseRecord, error: purchaseError } = await service
+      .from("purchase_credits")
+      .select("*")
+      .eq("paystack_reference", reference)
+      .eq("freelancer_id", user.id)
+      .single()
+
+    if (purchaseError || !purchaseRecord) {
+      console.error("❌ Purchase record not found:", purchaseError)
+      return NextResponse.json({ error: "Purchase record not found" }, { status: 404 })
+    }
+
+    // If already processed, return success
+    if (purchaseRecord.status === "completed") {
+      console.log("✅ Payment already processed")
+      return NextResponse.json({
+        success: true,
+        message: "Credits purchase completed successfully",
+        credits_added: purchaseRecord.credits_amount,
+        amount_paid: purchaseRecord.amount,
+      })
+    }
+
+    // Reject a reference that already belongs to an escrow/job-funding
+    // payment, mirroring the same check in /api/verify-transaction.
+    const [escrowMatch, fundedJobMatch, paystackDataMatch] = await Promise.all([
+      service.from("escrow_deposits").select("id").eq("paystack_reference", reference).maybeSingle(),
+      service.from("Funded_jobs101").select("id").eq("reference_id", reference).maybeSingle(),
+      service.from("Paystack_data").select("id").eq("reference", reference).maybeSingle(),
+    ])
+    if (escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error) {
+      console.error("verify-payment denylist check failed:", escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error)
+      return NextResponse.json({ error: "Failed to verify payment reference" }, { status: 500 })
+    }
+    if (escrowMatch.data || fundedJobMatch.data || paystackDataMatch.data) {
+      return NextResponse.json({ error: "This payment reference cannot be used for credits" }, { status: 400 })
+    }
+
+    // Verify payment with Paystack
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
+    if (!PAYSTACK_SECRET_KEY) {
+      console.error("PAYSTACK_SECRET_KEY is not set")
+      return NextResponse.json({ error: "Payment service not configured" }, { status: 500 })
+    }
+
+    console.log("📡 Verifying with Paystack...")
+    const paystackResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+      },
+    })
+    const paystackData = await paystackResponse.json()
+    console.log("📥 Paystack verification response:", paystackData)
+
+    if (!paystackData.status || paystackData.data.status !== "success") {
+      console.error("❌ Payment verification failed:", paystackData)
+      return NextResponse.json({ error: "Payment verification failed" }, { status: 400 })
+    }
+
+    // Verify amount matches
+    const paidAmount = paystackData.data.amount / 100 // Convert from kobo
+    if (paidAmount !== purchaseRecord.amount) {
+      console.error("❌ Amount mismatch:", { paid: paidAmount, expected: purchaseRecord.amount })
+      return NextResponse.json({ error: "Payment amount mismatch" }, { status: 400 })
+    }
+
+    console.log("💳 Payment verified successfully, adding credits to user...")
+
+    const freelancerId = purchaseRecord.freelancer_id
+
+    // Mark the purchase complete via the service-role client -- purchase_credits'
+    // client-writable UPDATE policy is being retired (see the companion
+    // migration); this route no longer depends on it.
+    const { error: statusError } = await service
+      .from("purchase_credits")
+      .update({ status: "completed" })
+      .eq("id", purchaseRecord.id)
+    if (statusError) {
+      console.error("❌ Error updating purchase status:", statusError)
+      return NextResponse.json({ error: "Failed to complete credits purchase" }, { status: 500 })
+    }
+
+    // Authoritative balance, derived from the ledger.
+    const { data: ledgerRows } = await service
+      .from("purchase_credits")
+      .select("credits_amount")
+      .eq("freelancer_id", freelancerId)
+      .eq("status", "completed")
+    const newBalance = (ledgerRows ?? []).reduce(
+      (sum: number, row: any) => sum + (row.credits_amount || 0),
+      0,
+    )
+
+    console.log("✅ Credits added successfully!")
+    return NextResponse.json({
+      success: true,
+      message: "Credits purchase completed successfully",
+      credits_added: purchaseRecord.credits_amount,
+      amount_paid: purchaseRecord.amount,
+      new_balance: newBalance,
+    })
+  } catch (error: any) {
+    console.error("💥 Credits verification error:", error)
+    return NextResponse.json(
+      {
+        error: "Payment verification failed",
+        details: error.message,
+      },
+      { status: 500 },
+    )
+  }
+}
+```
+
+- [ ] **Step 2: Typecheck**
+
+Run (from the repo root): `npx tsc --noEmit`
+Expected: no new errors introduced by this file. Manually trace: (a) the purchase-record lookup is scoped to both `paystack_reference` AND `freelancer_id: user.id`; (b) the denylist check runs before the Paystack verify call and before the status update; (c) both the status update and the balance read use `service`, not `supabase`.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/api/credits/verify-payment/route.ts
+git commit -m "fix(legacy): scope verify-payment to the caller, service-role update, add denylist"
+```
+
+---
+
+### Task 5: Migration — drop both INSERT and UPDATE policies, remove the hold-until-cutover caveat
+
+**Files:**
+- Modify: `supabase/migrations/20260926000000_lock_down_purchase_credits_insert.sql` → rename to `supabase/migrations/20260926000000_lock_down_purchase_credits_writes.sql`
+
+**Interfaces:**
+- Consumes: nothing (pure SQL, no code interface).
+- Produces: nothing consumed by other tasks — this is the last task in the plan.
+
+- [ ] **Step 1: Rewrite and rename the migration file**
+
+Delete `supabase/migrations/20260926000000_lock_down_purchase_credits_insert.sql` and create `supabase/migrations/20260926000000_lock_down_purchase_credits_writes.sql` with:
+
+```sql
+-- ============================================================
+-- Security fix: lock down purchase_credits' client-writable INSERT/UPDATE
+-- policies
+--
+-- purchase_credits previously let any authenticated freelancer INSERT or
+-- UPDATE a row directly via PostgREST -- including an arbitrary
+-- credits_amount on INSERT, or flipping status/credits_amount on UPDATE --
+-- completely bypassing this codebase's server-side verification of
+-- Paystack payments. fetchCredits sums credits_amount over
+-- status='completed' with no other gate, so a forged or altered row
+-- immediately changes the visible balance.
+--
+-- Safe to apply now: every LIVE writer of this table has been switched to
+-- the service-role client and no longer depends on these policies --
+-- the new Express server's POST /api/user/credits/verify, and the legacy
+-- Next.js app's POST /api/verify-transaction and GET
+-- /api/credits/verify-payment (the only two legacy routes with a live
+-- caller in the current UI; several other legacy routes under
+-- app/api/credits/ and app/api/paystack/ reference this table but have no
+-- live caller and were deliberately left untouched -- see this plan's
+-- Amendment section, and the react-node-migration-status memory, for the
+-- full list).
+--
+-- This repo's ad hoc scripts/ directory recreated this table's RLS
+-- multiple times over its history, under two different names each for
+-- INSERT and for UPDATE -- drop every historical name so this migration
+-- is correct regardless of which iteration is actually live. IF EXISTS
+-- makes each DROP a no-op for a name that was never created.
+-- ============================================================
+
+DROP POLICY IF EXISTS "Freelancers can insert own credit purchases" ON public.purchase_credits;
+DROP POLICY IF EXISTS "Users can insert own credit purchases" ON public.purchase_credits;
+DROP POLICY IF EXISTS "System can update credit purchases" ON public.purchase_credits;
+DROP POLICY IF EXISTS "Users can update own credit purchases" ON public.purchase_credits;
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git rm supabase/migrations/20260926000000_lock_down_purchase_credits_insert.sql
+git add supabase/migrations/20260926000000_lock_down_purchase_credits_writes.sql
+git commit -m "fix(db): also drop purchase_credits' UPDATE policies, now safe post-Tasks-3-4"
+```
+
+Note: do NOT run this migration against the live database as part of this task. The user will apply it themselves via the Supabase Studio SQL editor, after Tasks 3-4 are merged (not before — the legacy routes still depend on the current policies until then).
