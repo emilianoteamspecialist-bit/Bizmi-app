@@ -148,15 +148,21 @@ userRouter.post(
 
     // Reject a reference that already belongs to an escrow/job-funding
     // payment. This Paystack merchant account also processes escrow
-    // deposits, and a freelancer can read their own job's paystack_reference
-    // via existing RLS -- without this check, that same, already-spent
-    // payment would also mint credits here.
+    // deposits and manual job-funding references, and a freelancer can
+    // read their own job's reference via existing RLS -- without this
+    // check, that same, already-spent payment would also mint credits here.
     const service = createServiceClient()
-    const [escrowMatch, fundedJobMatch] = await Promise.all([
+    const [escrowMatch, fundedJobMatch, paystackDataMatch] = await Promise.all([
       service.from("escrow_deposits").select("id").eq("paystack_reference", reference).maybeSingle(),
       service.from("Funded_jobs101").select("id").eq("reference_id", reference).maybeSingle(),
+      service.from("Paystack_data").select("id").eq("reference", reference).maybeSingle(),
     ])
-    if (escrowMatch.data || fundedJobMatch.data) {
+    if (escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error) {
+      console.error("credits/verify denylist check failed:", escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error)
+      res.status(500).json({ success: false, error: "Failed to verify payment reference" })
+      return
+    }
+    if (escrowMatch.data || fundedJobMatch.data || paystackDataMatch.data) {
       res.status(400).json({ success: false, error: "This payment reference cannot be used for credits" })
       return
     }

@@ -95,19 +95,26 @@ describe("POST /credits/verify", () => {
   function mockService({
     escrowMatch = null,
     fundedJobMatch = null,
+    paystackDataMatch = null,
+    denylistError = null,
     insertResult = { data: null, error: null },
   }: {
     escrowMatch?: { id: string } | null
     fundedJobMatch?: { id: string } | null
+    paystackDataMatch?: { id: string } | null
+    denylistError?: { message: string; code?: string } | null
     insertResult?: { data: any; error: any }
   } = {}) {
     const insertMock = vi.fn(() => ({ select: vi.fn(() => ({ single: vi.fn().mockResolvedValue(insertResult) })) }))
     fakeService.from = vi.fn((table: string) => {
       if (table === "escrow_deposits") {
-        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: escrowMatch, error: null }) })) })) }
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: escrowMatch, error: denylistError }) })) })) }
       }
       if (table === "Funded_jobs101") {
-        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: fundedJobMatch, error: null }) })) })) }
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: fundedJobMatch, error: denylistError }) })) })) }
+      }
+      if (table === "Paystack_data") {
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: paystackDataMatch, error: denylistError }) })) })) }
       }
       if (table === "purchase_credits") return { insert: insertMock }
       throw new Error(`unexpected service table ${table}`)
@@ -220,6 +227,28 @@ describe("POST /credits/verify", () => {
 
     expect(res.status).toBe(400)
     expect(res.body).toEqual({ success: false, error: "This payment reference cannot be used for credits" })
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it("rejects a reference that already belongs to a Paystack_data funding record", async () => {
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    const insertMock = mockService({ paystackDataMatch: { id: "pd-1" } })
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ success: false, error: "This payment reference cannot be used for credits" })
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it("fails closed with a 500 when the denylist lookup itself errors, without attempting the insert", async () => {
+    mockFetch({ status: "success", amount: 50000, currency: "NGN" })
+    const insertMock = mockService({ denylistError: { message: "connection reset", code: "PGRST116" } })
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/credits/verify").send(validVerifyBody)
+
+    expect(res.status).toBe(500)
+    expect(res.body).toEqual({ success: false, error: "Failed to verify payment reference" })
     expect(insertMock).not.toHaveBeenCalled()
   })
 })
