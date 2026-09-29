@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
+import { createServiceRoleClient } from "@/lib/supabase-service"
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,12 +16,23 @@ export async function GET(req: NextRequest) {
     const cookieStore = await cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
 
-    // Find the purchase record first
-    // This record contains the freelancer_id, which we will use to update credits.
-    const { data: purchaseRecord, error: purchaseError } = await supabase
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const service = createServiceRoleClient()
+
+    // Find the purchase record first, scoped to the caller -- this route
+    // only ever completes the caller's OWN pending purchase, never anyone
+    // else's.
+    const { data: purchaseRecord, error: purchaseError } = await service
       .from("purchase_credits")
       .select("*")
       .eq("paystack_reference", reference)
+      .eq("freelancer_id", user.id)
       .single()
 
     if (purchaseError || !purchaseRecord) {
@@ -39,6 +51,21 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    // Reject a reference that already belongs to an escrow/job-funding
+    // payment, mirroring the same check in /api/verify-transaction.
+    const [escrowMatch, fundedJobMatch, paystackDataMatch] = await Promise.all([
+      service.from("escrow_deposits").select("id").eq("paystack_reference", reference).maybeSingle(),
+      service.from("Funded_jobs101").select("id").eq("reference_id", reference).maybeSingle(),
+      service.from("Paystack_data").select("id").eq("reference", reference).maybeSingle(),
+    ])
+    if (escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error) {
+      console.error("verify-payment denylist check failed:", escrowMatch.error || fundedJobMatch.error || paystackDataMatch.error)
+      return NextResponse.json({ error: "Failed to verify payment reference" }, { status: 500 })
+    }
+    if (escrowMatch.data || fundedJobMatch.data || paystackDataMatch.data) {
+      return NextResponse.json({ error: "This payment reference cannot be used for credits" }, { status: 400 })
+    }
+
     // Verify payment with Paystack
     const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
     if (!PAYSTACK_SECRET_KEY) {
@@ -47,7 +74,7 @@ export async function GET(req: NextRequest) {
     }
 
     console.log("📡 Verifying with Paystack...")
-    const paystackResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+    const paystackResponse = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: {
         Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
       },
@@ -60,6 +87,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Payment verification failed" }, { status: 400 })
     }
 
+    if (paystackData.data.reference !== reference) {
+      console.error("❌ Reference mismatch:", { requested: reference, verified: paystackData.data.reference })
+      return NextResponse.json({ error: "Payment verification failed" }, { status: 400 })
+    }
+
     // Verify amount matches
     const paidAmount = paystackData.data.amount / 100 // Convert from kobo
     if (paidAmount !== purchaseRecord.amount) {
@@ -67,14 +99,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Payment amount mismatch" }, { status: 400 })
     }
 
+    // Reject completion of a pending row whose stored credits_amount doesn't
+    // match what the verified payment actually justifies -- a pending row
+    // could have been forged with an inflated credits_amount while
+    // purchase_credits' INSERT policy was still client-writable (see the
+    // companion migration).
+    const expectedCreditsAmount = Math.floor(paystackData.data.amount / 5000) // ₦50 per credit
+    if (purchaseRecord.credits_amount !== expectedCreditsAmount) {
+      console.error("❌ credits_amount mismatch:", { stored: purchaseRecord.credits_amount, expected: expectedCreditsAmount })
+      return NextResponse.json({ error: "Purchase record does not match verified payment" }, { status: 400 })
+    }
+
     console.log("💳 Payment verified successfully, adding credits to user...")
 
     const freelancerId = purchaseRecord.freelancer_id
 
-    // Mark the purchase complete. purchase_credits is the single source of
-    // truth for a freelancer's balance (summed in getUserCredits), so completing
-    // this row IS the credit — there is no separate profile column to keep in sync.
-    const { error: statusError } = await supabase
+    // Mark the purchase complete via the service-role client -- purchase_credits'
+    // client-writable UPDATE policy is being retired (see the companion
+    // migration); this route no longer depends on it.
+    const { error: statusError } = await service
       .from("purchase_credits")
       .update({ status: "completed" })
       .eq("id", purchaseRecord.id)
@@ -84,7 +127,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Authoritative balance, derived from the ledger.
-    const { data: ledgerRows } = await supabase
+    const { data: ledgerRows } = await service
       .from("purchase_credits")
       .select("credits_amount")
       .eq("freelancer_id", freelancerId)
