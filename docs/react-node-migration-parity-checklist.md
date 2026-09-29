@@ -11,8 +11,8 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/` | `/` | ✅ | `Landing` |
 | `/login` | `/login` | ✅ | `Login` |
 | `/signup` | `/signup` | ✅ | `Signup` — also handles `?ref=` capture for the influencer referral program (Phase 5e) |
-| `/reset-password` | — | ⬜ | Not ported. Legacy page exists (`app/reset-password/page.tsx`). No blocker — straightforward, just not yet scheduled. |
-| `/contact` | — | ⬜ | Not ported. Legacy page exists (`app/contact/page.tsx`). No blocker. |
+| `/reset-password` | `/reset-password` | ✅⚠️ | Ported 2026-09-29 (`aaa5a0e`), faithful port with the security property verified end-to-end by final review. **But no real Supabase recovery email actually reaches this page yet** — the legacy "request reset" modal (`components/forgot-password-modal.tsx`) sets `redirectTo: ${origin}/freelancer/reset-password`, a path the new SPA doesn't have; its catch-all route sends that link to `/` instead. Needs a follow-up: port the "request reset" step, settle on one `redirectTo` target, register it in Supabase's allowed redirect URLs. Don't mark this fully parity-complete until that lands. |
+| `/contact` | `/contact` | ✅ | Ported 2026-09-29 (`aaa5a0e`), byte-for-byte static content port |
 
 ## Freelancer routes
 
@@ -77,9 +77,9 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 
 ## Summary
 
-- **Fully ported and wired:** 21 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency, except the 8 marked ⬜ below).
+- **Fully ported and wired:** 23 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency, except the 7 marked ⬜ below). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; treat it as functionally incomplete until the "request reset" step is also ported.
 - **Escrow-gated (⛔), blocked on Phase 4:** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes` — 6 routes. None of these can be started until `docs/escrow-production-plan.md`'s own Status line clears "Phase 1 in progress."
-- **Not started, no blocker (⬜):** `/reset-password`, `/contact`, `/freelancer/identity`, `/freelancer/settings`, `/freelancer/tutorial`, `/agency/posts`, `/agency/settings`, `/agency/tutorial`, `/admin/analytics` — 9 routes. These are legitimate escrow-independent work whenever there's capacity for them; none were in any Phase 1-5 sub-plan's scope.
+- **Not started, no blocker (⬜):** `/freelancer/identity`, `/freelancer/settings`, `/freelancer/tutorial`, `/agency/posts`, `/agency/settings`, `/agency/tutorial`, `/admin/analytics` — 7 routes. These are legitimate escrow-independent work whenever there's capacity for them; none were in any Phase 1-5 sub-plan's scope. Note: `/freelancer/identity`'s legacy source has a real discrepancy from `CLAUDE.md`'s documented architecture — see the `react-node-migration-status` memory before porting it.
 - **Doc gaps found:** `docs/platform-routes.md` is missing `/freelancer/marketplace`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the entire Influencer role section. Worth a follow-up pass to update that doc directly so it stays a reliable reference — not done as part of this checklist to avoid conflating "what's ported" with "fixing an unrelated doc."
 - **Known path difference to reconcile before cutover:** freelancer dashboard is `/dashboard` in the legacy app, `/freelancer/dashboard` in the new SPA.
 
