@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     }
 
     console.log("📡 Verifying with Paystack...")
-    const paystackResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+    const paystackResponse = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: {
         Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
       },
@@ -87,11 +87,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Payment verification failed" }, { status: 400 })
     }
 
+    if (paystackData.data.reference !== reference) {
+      console.error("❌ Reference mismatch:", { requested: reference, verified: paystackData.data.reference })
+      return NextResponse.json({ error: "Payment verification failed" }, { status: 400 })
+    }
+
     // Verify amount matches
     const paidAmount = paystackData.data.amount / 100 // Convert from kobo
     if (paidAmount !== purchaseRecord.amount) {
       console.error("❌ Amount mismatch:", { paid: paidAmount, expected: purchaseRecord.amount })
       return NextResponse.json({ error: "Payment amount mismatch" }, { status: 400 })
+    }
+
+    // Reject completion of a pending row whose stored credits_amount doesn't
+    // match what the verified payment actually justifies -- a pending row
+    // could have been forged with an inflated credits_amount while
+    // purchase_credits' INSERT policy was still client-writable (see the
+    // companion migration).
+    const expectedCreditsAmount = Math.floor(paystackData.data.amount / 5000) // ₦50 per credit
+    if (purchaseRecord.credits_amount !== expectedCreditsAmount) {
+      console.error("❌ credits_amount mismatch:", { stored: purchaseRecord.credits_amount, expected: expectedCreditsAmount })
+      return NextResponse.json({ error: "Purchase record does not match verified payment" }, { status: 400 })
     }
 
     console.log("💳 Payment verified successfully, adding credits to user...")

@@ -122,10 +122,13 @@ describe("POST /credits/verify", () => {
     return insertMock
   }
 
-  function mockFetch(data: { status: string; amount: number; currency: string }) {
+  function mockFetch(data: { status: string; amount: number; currency: string; reference?: string }) {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: true, data }) })
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ status: true, data: { reference: "ref-123", ...data } }),
+      })
     )
   }
 
@@ -184,6 +187,24 @@ describe("POST /credits/verify", () => {
 
     expect(res.status).toBe(400)
     expect(res.body.success).toBe(false)
+    expect(fakeService.from).not.toHaveBeenCalled()
+  })
+
+  it("returns 400 when Paystack's returned reference doesn't match what was requested (fragment/mismatch defense)", async () => {
+    // Simulates a client submitting "realref#1" -- fetch() strips the "#1"
+    // fragment before it ever reaches Paystack, so Paystack verifies and
+    // returns the bare "realref" while the request body still has the
+    // fragment-suffixed string. The route must reject rather than trust
+    // the mismatched values as if they were the same payment.
+    mockFetch({ status: "success", amount: 50000, currency: "NGN", reference: "realref" })
+    mockService()
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() }))
+      .post("/credits/verify")
+      .send({ reference: "realref#1", amount: 500 })
+
+    expect(res.status).toBe(400)
+    expect(res.body).toEqual({ success: false, error: "Transaction verification failed" })
     expect(fakeService.from).not.toHaveBeenCalled()
   })
 

@@ -121,7 +121,7 @@ userRouter.post(
     })
     const verifyData = (await verifyRes.json()) as {
       status: boolean
-      data?: { status: string; amount: number; currency: string }
+      data?: { status: string; amount: number; currency: string; reference: string }
     }
 
     if (!verifyRes.ok || verifyData.status === false || !verifyData.data) {
@@ -132,6 +132,11 @@ userRouter.post(
     const transaction = verifyData.data
     if (transaction.status !== "success") {
       res.status(400).json({ success: false, error: "Transaction not successful" })
+      return
+    }
+
+    if (transaction.reference !== reference) {
+      res.status(400).json({ success: false, error: "Transaction verification failed" })
       return
     }
 

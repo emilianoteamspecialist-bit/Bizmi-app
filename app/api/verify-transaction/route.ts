@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     // Verify transaction with Paystack
-    const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+    const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       headers: {
         Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
       },
@@ -40,6 +40,10 @@ export async function POST(req: Request) {
 
     if (transaction.status !== "success") {
       return NextResponse.json({ error: "Transaction not successful" }, { status: 400 })
+    }
+
+    if (transaction.reference !== reference) {
+      return NextResponse.json({ error: "Transaction verification failed" }, { status: 400 })
     }
 
     // Check that the amount matches (Paystack amounts are in kobo: ₦ 1 = 100 kobo)
