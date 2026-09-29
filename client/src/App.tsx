@@ -7,6 +7,7 @@ import Landing from "./pages/Landing"
 import Login from "./pages/Login"
 import Signup from "./pages/Signup"
 import ResetPassword from "./pages/ResetPassword"
+import Contact from "./pages/Contact"
 import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/contact" element={<Contact />} />
             <Route
               path="/freelancer/dashboard"
               element={
