@@ -571,3 +571,78 @@ describe("POST /account", () => {
     expect(res.status).toBe(500)
   })
 })
+
+describe("GET /verification", () => {
+  it("returns the caller's own verification record", async () => {
+    const record = { nin: "12345678901", status: "pending", created_at: "2026-01-01T00:00:00Z" }
+    const eqMock = vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: record, error: null }) }))
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: eqMock })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/verification")
+
+    expect(res.status).toBe(200)
+    expect(supabase.from).toHaveBeenCalledWith("freelancer_verification")
+    expect(eqMock).toHaveBeenCalledWith("freelancer_id", "user-1")
+    expect(res.body).toEqual({ verification: record })
+  })
+
+  it("returns null when the caller has no record", async () => {
+    const supabase = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) })) })) })) }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).get("/verification")
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ verification: null })
+  })
+})
+
+describe("POST /verification", () => {
+  it("returns 400 when nin is missing or the wrong shape", async () => {
+    const supabase = { from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({})
+    expect(res.status).toBe(400)
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it("returns 400 when nin is not exactly 11 digits", async () => {
+    const supabase = { from: vi.fn() }
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345" })
+    expect(res.status).toBe(400)
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it("returns 400 when the nin already exists for any user", async () => {
+    const checkSingle = vi.fn().mockResolvedValue({ data: { nin: "12345678901" }, error: null })
+    const insertMock = vi.fn()
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ single: checkSingle })) })),
+        insert: insertMock,
+      })),
+    }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345678901" })
+
+    expect(res.status).toBe(400)
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it("inserts a pending record scoped to the caller when the nin is new", async () => {
+    const checkSingle = vi.fn().mockResolvedValue({ data: null, error: { code: "PGRST116" } })
+    const insertMock = vi.fn().mockResolvedValue({ error: null })
+    const supabase = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({ eq: vi.fn(() => ({ single: checkSingle })) })),
+        insert: insertMock,
+      })),
+    }
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345678901" })
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ success: true })
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ freelancer_id: "user-1", nin: "12345678901", status: "pending" })
+    )
+  })
+})
