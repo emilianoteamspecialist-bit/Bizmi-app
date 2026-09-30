@@ -12,6 +12,7 @@ import Dashboard from "./pages/freelancer/Dashboard"
 import SavedJobs from "./pages/freelancer/SavedJobs"
 import Proposals from "./pages/freelancer/Proposals"
 import FreelancerProfile from "./pages/freelancer/Profile"
+import Identity from "./pages/freelancer/Identity"
 import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
 import AgencyProfile from "./pages/agency/Profile"
@@ -70,6 +71,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <FreelancerProfile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/freelancer/identity"
+              element={
+                <RequireAuth>
+                  <Identity />
                 </RequireAuth>
               }
             />
