@@ -378,4 +378,30 @@ userRouter.get(
   })
 )
 
+userRouter.post(
+  "/account",
+  asyncHandler(async (req, res) => {
+    const service = createServiceClient()
+
+    // Remove application data first. Child tables FK profiles(id) ON DELETE
+    // CASCADE, so this clears the user's jobs, proposals, referrals, etc.
+    const { error: profileError } = await service.from("profiles").delete().eq("id", req.user!.id)
+    if (profileError) {
+      console.error("Error deleting profile:", profileError)
+      res.status(500).json({ error: "Failed to delete account data" })
+      return
+    }
+
+    // Remove the auth identity so the email can be reused on a fresh sign-up.
+    const { error: authError } = await service.auth.admin.deleteUser(req.user!.id)
+    if (authError) {
+      console.error("Error deleting auth user:", authError)
+      res.status(500).json({ error: "Failed to delete account" })
+      return
+    }
+
+    res.json({ ok: true })
+  })
+)
+
 export default userRouter

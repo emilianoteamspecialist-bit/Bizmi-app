@@ -3,7 +3,7 @@ import express from "express"
 import request from "supertest"
 import userRouter from "./user.js"
 
-const fakeService = { from: vi.fn() }
+const fakeService = { from: vi.fn(), auth: { admin: { deleteUser: vi.fn() } } as any }
 vi.mock("../lib/supabase.js", () => ({ createServiceClient: () => fakeService }))
 
 function appWith(user: { id: string }, supabase: any) {
@@ -525,5 +525,49 @@ describe("GET /agency-image", () => {
     expect(res.body).toEqual({
       image: "https://example.supabase.co/storage/v1/object/public/avatars/a1/logo.png",
     })
+  })
+})
+
+describe("POST /account", () => {
+  it("deletes the caller's own profile row and auth user, scoped to their own id", async () => {
+    const deleteMock = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }))
+    const deleteUserMock = vi.fn().mockResolvedValue({ error: null })
+    fakeService.from = vi.fn((table: string) => {
+      if (table === "profiles") return { delete: deleteMock }
+      throw new Error(`unexpected service table ${table}`)
+    })
+    fakeService.auth = { admin: { deleteUser: deleteUserMock } }
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/account")
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ ok: true })
+    expect(deleteMock).toHaveBeenCalled()
+    expect(deleteUserMock).toHaveBeenCalledWith("user-1")
+  })
+
+  it("returns 500 when the profile delete fails, and never attempts the auth user delete", async () => {
+    fakeService.from = vi.fn((table: string) => {
+      if (table === "profiles") return { delete: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: { message: "boom" } }) })) }
+      throw new Error(`unexpected service table ${table}`)
+    })
+    fakeService.auth = { admin: { deleteUser: vi.fn() } }
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/account")
+
+    expect(res.status).toBe(500)
+    expect(fakeService.auth.admin.deleteUser).not.toHaveBeenCalled()
+  })
+
+  it("returns 500 when the auth user delete fails, after the profile row is already gone", async () => {
+    fakeService.from = vi.fn((table: string) => {
+      if (table === "profiles") return { delete: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) })) }
+      throw new Error(`unexpected service table ${table}`)
+    })
+    fakeService.auth = { admin: { deleteUser: vi.fn().mockResolvedValue({ error: { message: "boom" } }) } }
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/account")
+
+    expect(res.status).toBe(500)
   })
 })
