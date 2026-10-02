@@ -18,6 +18,8 @@ import Tutorial from "./pages/freelancer/Tutorial"
 import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
 import AgencyProfile from "./pages/agency/Profile"
+import AgencySettings from "./pages/agency/Settings"
+import AgencyTutorial from "./pages/agency/Tutorial"
 import FindFreelancers from "./pages/agency/FindFreelancers"
 import Bizpal from "./pages/freelancer/Bizpal"
 import Messages from "./pages/shared/Messages"
@@ -113,6 +115,22 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AgencyProfile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agency/settings"
+              element={
+                <RequireAuth>
+                  <AgencySettings />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agency/tutorial"
+              element={
+                <RequireAuth>
+                  <AgencyTutorial />
                 </RequireAuth>
               }
             />
