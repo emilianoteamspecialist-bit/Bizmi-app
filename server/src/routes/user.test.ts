@@ -559,6 +559,22 @@ describe("POST /account", () => {
     expect(fakeService.auth.admin.deleteUser).not.toHaveBeenCalled()
   })
 
+  it("returns 409 with a clear message when the profile delete fails due to a foreign-key violation", async () => {
+    fakeService.from = vi.fn((table: string) => {
+      if (table === "profiles") return { delete: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: { code: "23503", message: "foreign key violation" } }) })) }
+      throw new Error(`unexpected service table ${table}`)
+    })
+    fakeService.auth = { admin: { deleteUser: vi.fn() } }
+
+    const res = await request(appWith({ id: "user-1" }, { from: vi.fn() })).post("/account")
+
+    expect(res.status).toBe(409)
+    expect(res.body).toEqual({
+      error: "Your account has financial or administrative history and can't be deleted automatically. Please contact support.",
+    })
+    expect(fakeService.auth.admin.deleteUser).not.toHaveBeenCalled()
+  })
+
   it("returns 500 when the auth user delete fails, after the profile row is already gone", async () => {
     fakeService.from = vi.fn((table: string) => {
       if (table === "profiles") return { delete: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) })) }

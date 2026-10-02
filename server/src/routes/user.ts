@@ -388,6 +388,10 @@ userRouter.post(
     const { error: profileError } = await service.from("profiles").delete().eq("id", req.user!.id)
     if (profileError) {
       console.error("Error deleting profile:", profileError)
+      if (profileError.code === "23503") {
+        res.status(409).json({ error: "Your account has financial or administrative history and can't be deleted automatically. Please contact support." })
+        return
+      }
       res.status(500).json({ error: "Failed to delete account data" })
       return
     }

@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "../../components/ui/separator"
 import { Save, Shield, Bell, Mail, Lock, Eye, EyeOff, Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { apiFetch } from "../../lib/api"
 import { useAuth } from "../../contexts/AuthContext"
 import { DeleteAccountDialog } from "../../components/DeleteAccountDialog"
 
@@ -130,20 +131,14 @@ export default function FreelancerSettings() {
       // Account deletion runs server-side with the service role: deleting the
       // auth user (not just the profile) is the only way to free the email for
       // re-signup, and the browser client can't touch auth.users.
-      const res = await fetch("/api/user/account", { method: "POST" })
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: "" }))
-        console.error("Error deleting account:", error)
-        alert("Error deleting account")
-        return
-      }
+      await apiFetch("/api/user/account", { method: "POST" })
 
       await supabase.auth.signOut()
       navigate("/")
       alert("Account deleted successfully")
     } catch (error) {
       console.error("Error deleting account:", error)
-      alert("Error deleting account")
+      alert(error instanceof Error ? error.message : "Error deleting account")
     } finally {
       setSaving(false)
     }
