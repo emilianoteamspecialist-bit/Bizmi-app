@@ -378,4 +378,90 @@ userRouter.get(
   })
 )
 
+userRouter.post(
+  "/account",
+  asyncHandler(async (req, res) => {
+    const service = createServiceClient()
+
+    // Remove application data first. Child tables FK profiles(id) ON DELETE
+    // CASCADE, so this clears the user's jobs, proposals, referrals, etc.
+    const { error: profileError } = await service.from("profiles").delete().eq("id", req.user!.id)
+    if (profileError) {
+      console.error("Error deleting profile:", profileError)
+      if (profileError.code === "23503") {
+        res.status(409).json({ error: "Your account has financial or administrative history and can't be deleted automatically. Please contact support." })
+        return
+      }
+      res.status(500).json({ error: "Failed to delete account data" })
+      return
+    }
+
+    // Remove the auth identity so the email can be reused on a fresh sign-up.
+    const { error: authError } = await service.auth.admin.deleteUser(req.user!.id)
+    if (authError) {
+      console.error("Error deleting auth user:", authError)
+      res.status(500).json({ error: "Failed to delete account" })
+      return
+    }
+
+    res.json({ ok: true })
+  })
+)
+
+userRouter.get(
+  "/verification",
+  asyncHandler(async (req, res) => {
+    const { data } = await req.supabase!
+      .from("freelancer_verification")
+      .select("nin, status, created_at")
+      .eq("freelancer_id", req.user!.id)
+      .maybeSingle()
+
+    res.json({ verification: data ?? null })
+  })
+)
+
+userRouter.post(
+  "/verification",
+  asyncHandler(async (req, res) => {
+    const { nin } = req.body ?? {}
+    if (typeof nin !== "string" || !/^\d{11}$/.test(nin)) {
+      res.status(400).json({ success: false, error: "NIN must be exactly 11 digits" })
+      return
+    }
+
+    const { data: existingNin, error: checkError } = await req.supabase!
+      .from("freelancer_verification")
+      .select("nin")
+      .eq("nin", nin)
+      .single()
+
+    if (checkError && checkError.code !== "PGRST116") {
+      console.error("Error checking NIN:", checkError)
+      res.status(500).json({ success: false, error: "Error checking NIN. Please try again." })
+      return
+    }
+
+    if (existingNin) {
+      res.status(400).json({ success: false, error: "NIN already exists in the system" })
+      return
+    }
+
+    const { error: insertError } = await req.supabase!.from("freelancer_verification").insert({
+      freelancer_id: req.user!.id,
+      nin,
+      status: "pending",
+      created_at: new Date().toISOString(),
+    })
+
+    if (insertError) {
+      console.error("Error inserting NIN:", insertError)
+      res.status(500).json({ success: false, error: "Failed to submit NIN for verification" })
+      return
+    }
+
+    res.json({ success: true })
+  })
+)
+
 export default userRouter
