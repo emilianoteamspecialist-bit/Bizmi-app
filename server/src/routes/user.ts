@@ -408,6 +408,8 @@ userRouter.post(
   })
 )
 
+const NIN_TAKEN_ERROR = "NIN already exists in the system"
+
 userRouter.get(
   "/verification",
   asyncHandler(async (req, res) => {
@@ -451,6 +453,28 @@ userRouter.post(
       return
     }
 
+    // RLS only exposes the caller's own row, so check across all freelancers
+    // with the service role. Rejected rows don't reserve a NIN (matching the
+    // partial unique index freelancer_verification_active_nin_key), and the
+    // caller's own row is either absent or rejected by this point.
+    const { data: ninMatches, error: checkError } = await createServiceClient()
+      .from("freelancer_verification")
+      .select("freelancer_id")
+      .eq("nin", nin)
+      .neq("status", "rejected")
+      .limit(1)
+
+    if (checkError) {
+      console.error("Error checking NIN:", checkError)
+      res.status(500).json({ success: false, error: "Error checking NIN. Please try again." })
+      return
+    }
+
+    if (ninMatches && ninMatches.length > 0) {
+      res.status(400).json({ success: false, error: NIN_TAKEN_ERROR })
+      return
+    }
+
     if (ownRecord) {
       // Clients can't update or delete verification rows (status is owned by
       // the external KYC service), so clear the rejected row with the service
@@ -470,23 +494,6 @@ userRouter.post(
       }
     }
 
-    const { data: existingNin, error: checkError } = await req.supabase!
-      .from("freelancer_verification")
-      .select("nin")
-      .eq("nin", nin)
-      .single()
-
-    if (checkError && checkError.code !== "PGRST116") {
-      console.error("Error checking NIN:", checkError)
-      res.status(500).json({ success: false, error: "Error checking NIN. Please try again." })
-      return
-    }
-
-    if (existingNin) {
-      res.status(400).json({ success: false, error: "NIN already exists in the system" })
-      return
-    }
-
     const { error: insertError } = await req.supabase!.from("freelancer_verification").insert({
       freelancer_id: userId,
       nin,
@@ -495,6 +502,12 @@ userRouter.post(
     })
 
     if (insertError) {
+      // 23505: lost a race -- on the active-NIN unique index, or a concurrent
+      // first submission by the same freelancer (UNIQUE freelancer_id).
+      if (insertError.code === "23505") {
+        res.status(400).json({ success: false, error: NIN_TAKEN_ERROR })
+        return
+      }
       console.error("Error inserting NIN:", insertError)
       res.status(500).json({ success: false, error: "Failed to submit NIN for verification" })
       return
