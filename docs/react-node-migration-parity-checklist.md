@@ -60,7 +60,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/admin/credits` | `/admin/credits` | ✅ | Phase 5d — read-only oversight of `purchase_credits`/freelancers |
 | `/admin/transactions` | — | ⛔ | Escrow-gated (Phase 4) — deliberately excluded from every Phase 5 sub-plan |
 | `/admin/disputes` | — | ⛔ | Escrow-gated (Phase 4) — deliberately excluded from every Phase 5 sub-plan |
-| `/admin/analytics` | — | ⬜ | Not ported. Legacy page exists (`AnalyticsClient.tsx`). No blocker, just not yet scheduled — lower priority than the money-adjacent pages. |
+| `/admin/analytics` | — | ⛔ | Escrow-gated (Phase 4) — reclassified 2026-10-03 from ⬜. Legacy page (`AnalyticsClient.tsx`) is entirely top-20 freelancer payouts / agency deposits aggregated from `Funded_jobs101`, the table `docs/escrow-production-plan.md` removes ("Kill `Funded_jobs101`"). Newer escrow funding writes `escrow_deposits`, so the legacy numbers likely already undercount. Port against `escrow_deposits`/`payouts` after cutover, like `/admin/transactions`. |
 | — | `/admin/jobs` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — job moderation queue, Phase 5c). |
 | — | `/admin/audit` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — admin audit log, Phase 5c). |
 | — | `/admin/influencers` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — influencer program admin, Phase 5d). |
@@ -77,9 +77,9 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 
 ## Summary
 
-- **Fully ported and wired:** 29 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency, except the 1 marked ⬜ below). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; treat it as functionally incomplete until the "request reset" step is also ported. It also includes `/freelancer/identity`, ported but with a known, tracked gap — see its row above; the 60-second client-side auto-verify timer was deliberately not ported in this pass. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
-- **Escrow-gated (⛔), blocked on Phase 4:** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes` — 6 routes. None of these can be started until `docs/escrow-production-plan.md`'s own Status line clears "Phase 1 in progress."
-- **Not started, no blocker (⬜):** `/admin/analytics` — 1 route. These are legitimate escrow-independent work whenever there's capacity for them; none were in any Phase 1-5 sub-plan's scope.
+- **Fully ported and wired:** 29 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; treat it as functionally incomplete until the "request reset" step is also ported. It also includes `/freelancer/identity`, ported but with a known, tracked gap — see its row above; the 60-second client-side auto-verify timer was deliberately not ported in this pass. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
+- **Escrow-gated (⛔), blocked on Phase 4:** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes`, `/admin/analytics` — 7 routes. None of these can be started until `docs/escrow-production-plan.md`'s own Status line clears "Phase 1 in progress."
+- **Not started, no blocker (⬜):** none — every remaining unported route is escrow-gated. (`/admin/analytics` was listed here until 2026-10-03; reclassified ⛔ because it reads only `Funded_jobs101`.)
 - **Doc gaps found:** `docs/platform-routes.md` is missing `/freelancer/marketplace`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the entire Influencer role section. Worth a follow-up pass to update that doc directly so it stays a reliable reference — not done as part of this checklist to avoid conflating "what's ported" with "fixing an unrelated doc."
 - **Known path difference to reconcile before cutover:** freelancer dashboard is `/dashboard` in the legacy app, `/freelancer/dashboard` in the new SPA.
 
