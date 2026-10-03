@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,39 +32,6 @@ export default function IdentityClient({ initialVerification }: IdentityClientPr
     type: "success" | "error" | null
     message: string
   }>({ type: null, message: "" })
-
-  useEffect(() => {
-    if (!user?.id) {
-      return
-    }
-    // Initial verification data comes from the server (source of truth).
-    // Only run the auto-verify timer for a pending record seeded from props.
-    if (initialVerification?.status === "pending") {
-      const createdAt = new Date(initialVerification.created_at)
-      const now = new Date()
-      const timeDiff = now.getTime() - createdAt.getTime()
-      const oneMinute = 60 * 1000
-
-      const verifyNow = async () => {
-        const { error: updateError } = await supabase
-          .from("freelancer_verification")
-          .update({ status: "verified" })
-          .eq("freelancer_id", user.id)
-
-        if (!updateError) {
-          setExistingVerification({ ...initialVerification, status: "verified" })
-        }
-      }
-
-      if (timeDiff >= oneMinute) {
-        verifyNow()
-      } else {
-        const remainingTime = oneMinute - timeDiff
-        const timer = setTimeout(verifyNow, remainingTime)
-        return () => clearTimeout(timer)
-      }
-    }
-  }, [user?.id])
 
   const validateNin = (value: string) => {
     if (value.length !== 11) {
@@ -138,18 +105,6 @@ export default function IdentityClient({ initialVerification }: IdentityClientPr
           created_at: new Date().toISOString(),
         }
         setExistingVerification(newVerification)
-
-        // Set timer to auto-verify after 1 minute
-        setTimeout(async () => {
-          const { error: updateError } = await supabase
-            .from("freelancer_verification")
-            .update({ status: "verified" })
-            .eq("freelancer_id", user.id)
-
-          if (!updateError) {
-            setExistingVerification({ ...newVerification, status: "verified" })
-          }
-        }, 60000) // 1 minute
       }
     } catch (error) {
       console.error("Unexpected error:", error)
