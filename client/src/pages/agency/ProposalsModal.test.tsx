@@ -17,6 +17,13 @@ vi.mock("../../lib/queries/user", () => ({
   useFreelancerLogosQuery: (...args: unknown[]) => useFreelancerLogosQueryMock(...args),
 }))
 
+const useJobEscrowQueryMock = vi.fn()
+const initEscrowMutate = vi.fn()
+vi.mock("@/lib/queries/escrow", () => ({
+  useJobEscrowQuery: (...args: unknown[]) => useJobEscrowQueryMock(...args),
+  useInitializeEscrowMutation: () => ({ mutate: initEscrowMutate, isPending: false }),
+}))
+
 import ProposalsModal from "./ProposalsModal"
 
 const job = {
@@ -49,9 +56,48 @@ beforeEach(() => {
   vi.clearAllMocks()
   useRespondToProposalMutationMock.mockReturnValue({ mutate: vi.fn(), isPending: false })
   useFreelancerLogosQueryMock.mockReturnValue({ data: { logos: {} } })
+  useJobEscrowQueryMock.mockReturnValue({ isLoading: false, data: { escrow: null } })
 })
 
+const acceptedProposal = {
+  id: "prop-1",
+  job_id: "job-1",
+  freelancer_id: "freelancer-1",
+  proposal_text: "I can build this",
+  budget: 5000,
+  timeline: "2 weeks",
+  attachments: null,
+  status: "accepted",
+  created_at: "2026-01-01T00:00:00Z",
+  updated_at: "2026-01-01T00:00:00Z",
+  profiles: { id: "freelancer-1", full_name: "Jane Doe", bio: null, location: "Lagos", phone: null, website: null },
+}
+
 describe("ProposalsModal", () => {
+  it("funds an accepted proposal by sending the agency to Paystack checkout", async () => {
+    useJobProposalsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { proposals: [acceptedProposal] } })
+    const assign = vi.fn()
+    vi.stubGlobal("location", { ...window.location, assign })
+    initEscrowMutate.mockImplementation((_id: string, opts: any) => opts.onSuccess({ authorization_url: "https://checkout.paystack.com/x" }))
+
+    renderModal()
+    fireEvent.click(await screen.findByRole("button", { name: /fund job/i }))
+
+    expect(initEscrowMutate).toHaveBeenCalledWith("prop-1", expect.anything())
+    expect(assign).toHaveBeenCalledWith("https://checkout.paystack.com/x")
+    vi.unstubAllGlobals()
+  })
+
+  it("shows Funded instead of the button once the job's escrow is funded", async () => {
+    useJobProposalsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { proposals: [acceptedProposal] } })
+    useJobEscrowQueryMock.mockReturnValue({ isLoading: false, data: { escrow: { id: "esc-1", status_v2: "funded", amount_kobo: 500000 } } })
+
+    renderModal()
+
+    expect(await screen.findByText(/funded — money is held in escrow/i)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /fund job/i })).not.toBeInTheDocument()
+  })
+
   it("shows an empty state when there are no proposals", async () => {
     useJobProposalsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { proposals: [] } })
     renderModal()
