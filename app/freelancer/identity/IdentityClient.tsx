@@ -93,7 +93,10 @@ export default function IdentityClient({ initialVerification }: IdentityClientPr
 
       if (insertError) {
         console.error("Error inserting NIN:", insertError)
-        const errorMessage = handleSupabaseError(insertError)
+        // 23505 here is the active-NIN unique index (the pre-check above can
+        // only see this freelancer's own row under RLS).
+        const errorMessage =
+          insertError.code === "23505" ? "NIN already exists in the system" : handleSupabaseError(insertError)
         setStatus({ type: "error", message: errorMessage })
       } else {
         setStatus({ type: "success", message: "NIN submitted successfully for verification!" })
