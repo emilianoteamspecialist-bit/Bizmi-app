@@ -288,7 +288,7 @@ describe("GET /profile", () => {
 describe("PATCH /profile", () => {
   it("writes only whitelisted fields, scoped to the caller's own id", async () => {
     const eqMock = vi.fn().mockResolvedValue({ error: null })
-    const updateMock = vi.fn(() => ({ eq: eqMock }))
+    const updateMock = vi.fn((_fields: Record<string, unknown>) => ({ eq: eqMock }))
     const supabase = { from: vi.fn(() => ({ update: updateMock })) }
 
     const res = await request(appWith({ id: "user-1" }, supabase))
