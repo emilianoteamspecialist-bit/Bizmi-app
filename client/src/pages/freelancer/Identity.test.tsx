@@ -44,6 +44,22 @@ describe("Identity", () => {
     expect(screen.getByText(/verification in progress/i)).toBeInTheDocument()
   })
 
+  it("shows the unsuccessful state with a resubmission form when the record was rejected", async () => {
+    useVerificationQueryMock.mockReturnValue({
+      isLoading: false,
+      data: { nin: "12345678901", status: "rejected", created_at: "2026-01-01T00:00:00Z" },
+    })
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(screen.getByText(/verification unsuccessful/i)).toBeInTheDocument()
+    expect(screen.queryByText(/verification in progress/i)).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/national identity number/i), "10987654321")
+    await user.click(screen.getByRole("button", { name: /submit again/i }))
+    expect(submitMutate).toHaveBeenCalledWith({ nin: "10987654321" }, expect.anything())
+  })
+
   it("shows the submission form when there is no record, and disables submit until 11 digits are entered", async () => {
     useVerificationQueryMock.mockReturnValue({ isLoading: false, data: null })
     const user = userEvent.setup()

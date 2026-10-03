@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, AlertCircle, Clock, ShieldCheck, BadgeCheck, Lock } from "lucide-react"
+import { Loader2, AlertCircle, Clock, ShieldCheck, ShieldX, BadgeCheck, Lock } from "lucide-react"
 import { useVerificationQuery, useSubmitVerificationMutation } from "../../lib/queries/verification"
 
 export default function Identity() {
@@ -20,6 +20,8 @@ export default function Identity() {
   }
 
   const verification = verificationQuery.data
+  // A rejected NIN can be resubmitted (the server replaces the rejected row).
+  const isRejected = verification?.status === "rejected"
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +61,7 @@ export default function Identity() {
               <span className="text-sm font-medium text-foreground tabular-nums">NIN {verification.nin}</span>
             </div>
           </div>
-        ) : verification ? (
+        ) : verification && !isRejected ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center">
             <div className="mx-auto h-16 w-16 rounded-full bg-warning/10 text-warning flex items-center justify-center ring-8 ring-warning/5">
               <Clock className="h-8 w-8" />
@@ -75,13 +77,28 @@ export default function Identity() {
           </div>
         ) : (
           <div className="rounded-2xl border border-border bg-card p-8 text-center">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-              <ShieldCheck className="h-7 w-7" />
-            </div>
-            <h2 className="mt-5 text-lg font-semibold text-foreground">Verify your identity</h2>
-            <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-              Enter your 11-digit National Identity Number (NIN) to get verified.
-            </p>
+            {isRejected ? (
+              <>
+                <div className="mx-auto h-14 w-14 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center">
+                  <ShieldX className="h-7 w-7" />
+                </div>
+                <h2 className="mt-5 text-lg font-semibold text-foreground">Verification unsuccessful</h2>
+                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                  We couldn&apos;t verify NIN <span className="tabular-nums">{verification.nin}</span>. Check the number
+                  and submit it again.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                  <ShieldCheck className="h-7 w-7" />
+                </div>
+                <h2 className="mt-5 text-lg font-semibold text-foreground">Verify your identity</h2>
+                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
+                  Enter your 11-digit National Identity Number (NIN) to get verified.
+                </p>
+              </>
+            )}
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4 text-left max-w-sm mx-auto">
               <div className="space-y-2">
@@ -120,6 +137,8 @@ export default function Identity() {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Submitting…
                   </>
+                ) : isRejected ? (
+                  "Submit again"
                 ) : (
                   "Submit for verification"
                 )}
