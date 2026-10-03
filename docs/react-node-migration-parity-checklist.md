@@ -2,7 +2,7 @@
 
 Manual old-vs-new comparison, per Phase 6 of `docs/superpowers/specs/2026-09-08-nextjs-to-react-node-migration-design.md` ("manual parity checklist derived from `docs/platform-routes.md`, old-vs-new side-by-side per route"). This is a point-in-time snapshot (originally 2026-09-29 at `d57d685`; last updated 2026-10-03) — re-generate or update after any phase that adds/moves a route.
 
-Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (escrow) · ⬜ not started, no blocker · 📄 documented in `docs/platform-routes.md` but missing here (doc gap, not a code gap)
+Legend: ✅ ported and wired in `client/`+`server/` · 🟡 built on escrow v2, awaiting live go-live checks · ⛔ blocked on Phase 4 (escrow) · ⬜ not started, no blocker · 📄 documented in `docs/platform-routes.md` but missing here (doc gap, not a code gap)
 
 ## Public routes
 
@@ -24,7 +24,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/freelancer/saved-jobs` | `/freelancer/saved-jobs` | ✅ | |
 | `/freelancer/messages` | `/freelancer/messages` | ✅ | Shared `Messages.tsx`, also mounted for agency |
 | `/freelancer/bizpal` | `/freelancer/bizpal` | ✅ | Credits store — see the credits-verify security fixes (merged 2026-09-29) before treating this area as fully hardened; the RLS migration still needs manual application |
-| `/freelancer/funded-jobs` | — | ⛔ | Escrow-gated (Phase 4) |
+| `/freelancer/funded-jobs` | `/freelancer/funded-jobs` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Adds payout-account management (legacy had no UI to save bank details). |
 | `/freelancer/identity` | `/freelancer/identity` | ✅ | Ported 2026-09-30 (display + submit via `GET/POST /api/user/verification`). KYC/NIN verification is done by an **external service** per `CLAUDE.md`. The legacy 60-second client-side auto-verify timer was a fake-KYC stub that self-set `status='verified'` via a client-writable RLS UPDATE policy — **deliberately not ported, and removed from the legacy page** 2026-10-03; the SPA instead polls status every 30s while pending. Companion migration `supabase/migrations/20261003000000_lock_down_freelancer_verification_writes.sql` closes the self-verify RLS hole — **must be applied manually** (assumes the external service writes with the service-role key). |
 | `/freelancer/settings` | `/freelancer/settings` | ✅ | Ported 2026-10-02, near-byte-identical port of the 543-line legacy page (verified via exhaustive full-body diff). Account tab (email/password, real `supabase.auth.updateUser` calls) and Danger Zone (real `DeleteAccountDialog` → `POST /api/user/account`) are fully functional; Notifications/Privacy/Security tabs are faithfully-ported **fake stubs** (no persistence) matching the legacy source exactly — not a regression. |
 | `/freelancer/tutorial` | `/freelancer/tutorial` | ✅ | Ported 2026-10-02, fully static content, all 8 sections word-for-word from the legacy source including the real (if inconsistent) `contact@bizimii.com` support address. |
@@ -40,7 +40,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/agency/profile` | `/agency/profile` | ✅ | |
 | `/agency/find-freelancers` | `/agency/find-freelancers` | ✅ | |
 | `/agency/messages` | `/agency/messages` | ✅ | Shared `Messages.tsx` |
-| `/agency/wallet` | — | ⛔ | Escrow-gated (Phase 4) |
+| `/agency/wallet` | `/agency/wallet` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Reads v2 escrows, not `Funded_jobs101`/`agency_fundings`. |
 | `/agency/posts` | `/agency/posts` | ✅⚠️ | Slim port 2026-10-03: job-post grid + title/description search (client-side over `useAgencyJobsQuery`, so no pagination) + shared `ProposalsModal`. **Omitted:** legacy "Fund job" (`/api/escrow/initialize`) and "Mark done" (`/api/paystack/mark-complete`) — escrow-gated, add in Phase 4; also the realtime proposal-count refresh and the inline "Message freelancer" box on accepted proposals (`/agency/messages` covers messaging). |
 | `/agency/settings` | `/agency/settings` | ✅ | Ported 2026-10-02 — mirrors `/freelancer/settings`; reuses `DeleteAccountDialog` + `POST /api/user/account` (Danger Zone under the Security tab, as in legacy). Notification/privacy saves are still no-op stubs, same as legacy. |
 | `/agency/tutorial` | `/agency/tutorial` | ✅ | Ported 2026-10-02, static content port |
@@ -49,8 +49,8 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 
 | Route (legacy) | New SPA path | Status | Notes |
 |---|---|---|---|
-| `/workspace/[job_id]` | — | ⛔ | Escrow-gated (Phase 4) |
-| `/disputes/[id]` | — | ⛔ | Escrow-gated (Phase 4) |
+| `/workspace/[job_id]` | `/workspace/:jobId` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Approve releases the escrow (funded → released). Identities from the session (legacy API trusted body ids). |
+| `/disputes/[id]` | `/disputes/:id` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Opening a dispute freezes funds (funded → disputed). |
 
 ## Admin routes
 
@@ -60,9 +60,9 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/admin/dashboard` | `/admin/dashboard` | ✅ | |
 | `/admin/users` | `/admin/users` | ✅ | |
 | `/admin/credits` | `/admin/credits` | ✅ | Phase 5d — read-only oversight of `purchase_credits`/freelancers |
-| `/admin/transactions` | — | ⛔ | Escrow-gated (Phase 4) — deliberately excluded from every Phase 5 sub-plan |
-| `/admin/disputes` | — | ⛔ | Escrow-gated (Phase 4) — deliberately excluded from every Phase 5 sub-plan |
-| `/admin/analytics` | — | ⛔ | Escrow-gated (Phase 4) — reclassified 2026-10-03 from ⬜. Legacy page (`AnalyticsClient.tsx`) is entirely top-20 freelancer payouts / agency deposits aggregated from `Funded_jobs101`, the table `docs/escrow-production-plan.md` removes ("Kill `Funded_jobs101`"). Newer escrow funding writes `escrow_deposits`, so the legacy numbers likely already undercount. Port against `escrow_deposits`/`payouts` after cutover, like `/admin/transactions`. |
+| `/admin/transactions` | `/admin/transactions` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Read-only v2 ledger + per-escrow event trail; the legacy mark_done/process_payout flag toggles are intentionally not ported. |
+| `/admin/disputes` | `/admin/disputes` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Full release or Paystack refund; partial release returns 422 pending a product decision. |
+| `/admin/analytics` | `/admin/analytics` | 🟡 | Phase 4 (2026-10-03), on escrow v2 — see `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md` §3–4 for the go-live gates (not yet run against live Supabase/Paystack). Rebuilt on `payouts`/`escrow_deposits` instead of `Funded_jobs101`. |
 | `/admin/jobs` | `/admin/jobs` | ✅ | Job moderation queue, Phase 5c. Now documented in `docs/platform-routes.md`. |
 | `/admin/audit` | `/admin/audit` | ✅ | Admin audit log, Phase 5c. Now documented in `docs/platform-routes.md`. |
 | `/admin/influencers` | `/admin/influencers` | ✅ | Influencer program admin, Phase 5d. Now documented in `docs/platform-routes.md`. |
@@ -80,7 +80,7 @@ Real, live routes in both the legacy app and the new SPA (documented in `docs/pl
 ## Summary
 
 - **Fully ported and wired:** 31 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; the "request reset" step is now ported, but the Supabase redirect-URL allowlist still needs confirming before it can be called complete. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
-- **Escrow-gated (⛔), blocked on Phase 4:** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes`, `/admin/analytics` — 7 routes. None of these can be started until `docs/escrow-production-plan.md`'s own Status line clears "Phase 1 in progress."
+- **Built on escrow v2, awaiting go-live checks (🟡):** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes`, `/admin/analytics` — 7 routes, plus "Fund job" on accepted proposals and `/agency/escrow/return`. Code and tests are in; what's left is verification against live Supabase and Paystack test mode, and the webhook cutover (readiness doc §4).
 - **Not started, no blocker (⬜):** none — every remaining unported route is escrow-gated. (`/admin/analytics` was listed here until 2026-10-03; reclassified ⛔ because it reads only `Funded_jobs101`.)
 - **Doc gaps:** resolved 2026-10-03 — `docs/platform-routes.md` now covers `/freelancer/marketplace`, `/freelancer/contact`, `/freelancer/policy`, `/freelancer/reset-password`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the Influencer role.
 - **Path differences:** none. (The freelancer dashboard is `/freelancer/dashboard` in both apps; the legacy bare `/dashboard` is just a redirect.)
