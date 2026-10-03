@@ -39,7 +39,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/agency/find-freelancers` | `/agency/find-freelancers` | ✅ | |
 | `/agency/messages` | `/agency/messages` | ✅ | Shared `Messages.tsx` |
 | `/agency/wallet` | — | ⛔ | Escrow-gated (Phase 4) |
-| `/agency/posts` | — | ⬜ | Not ported. Legacy is a distinct page (`PostsClient.tsx`, separate from the dashboard's inline job list) — confirm during porting whether it's actually redundant with `/agency/dashboard`'s own listing or has distinct content before assuming a 1:1 port. No blocker. |
+| `/agency/posts` | `/agency/posts` | ✅⚠️ | Slim port 2026-10-03: job-post grid + title/description search (client-side over `useAgencyJobsQuery`, so no pagination) + shared `ProposalsModal`. **Omitted:** legacy "Fund job" (`/api/escrow/initialize`) and "Mark done" (`/api/paystack/mark-complete`) — escrow-gated, add in Phase 4; also the realtime proposal-count refresh and the inline "Message freelancer" box on accepted proposals (`/agency/messages` covers messaging). |
 | `/agency/settings` | `/agency/settings` | ✅ | Ported 2026-10-02 — mirrors `/freelancer/settings`; reuses `DeleteAccountDialog` + `POST /api/user/account` (Danger Zone under the Security tab, as in legacy). Notification/privacy saves are still no-op stubs, same as legacy. |
 | `/agency/tutorial` | `/agency/tutorial` | ✅ | Ported 2026-10-02, static content port |
 
@@ -77,9 +77,9 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 
 ## Summary
 
-- **Fully ported and wired:** 28 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency, except the 2 marked ⬜ below). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; treat it as functionally incomplete until the "request reset" step is also ported. It also includes `/freelancer/identity`, ported but with a known, tracked gap — see its row above; the 60-second client-side auto-verify timer was deliberately not ported in this pass.
+- **Fully ported and wired:** 29 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency, except the 1 marked ⬜ below). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; treat it as functionally incomplete until the "request reset" step is also ported. It also includes `/freelancer/identity`, ported but with a known, tracked gap — see its row above; the 60-second client-side auto-verify timer was deliberately not ported in this pass. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
 - **Escrow-gated (⛔), blocked on Phase 4:** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes` — 6 routes. None of these can be started until `docs/escrow-production-plan.md`'s own Status line clears "Phase 1 in progress."
-- **Not started, no blocker (⬜):** `/agency/posts`, `/admin/analytics` — 2 routes. These are legitimate escrow-independent work whenever there's capacity for them; none were in any Phase 1-5 sub-plan's scope.
+- **Not started, no blocker (⬜):** `/admin/analytics` — 1 route. These are legitimate escrow-independent work whenever there's capacity for them; none were in any Phase 1-5 sub-plan's scope.
 - **Doc gaps found:** `docs/platform-routes.md` is missing `/freelancer/marketplace`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the entire Influencer role section. Worth a follow-up pass to update that doc directly so it stays a reliable reference — not done as part of this checklist to avoid conflating "what's ported" with "fixing an unrelated doc."
 - **Known path difference to reconcile before cutover:** freelancer dashboard is `/dashboard` in the legacy app, `/freelancer/dashboard` in the new SPA.
 
