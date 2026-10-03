@@ -4,6 +4,8 @@ This document is the architecture and rollout plan to turn the current escrow sy
 
 **Status:** Phase 1 in progress (schema + state machine + backfill).
 
+> Code-observed state as of 2026-10-03 (not verified against the live DB): funding (2.1) runs on v2; release (2.2), payout (2.3) and refund/dispute (2.4) do not; `Funded_jobs101` is still dual-written. Details and the gate checklist for the React + Node port: `docs/superpowers/plans/2026-10-03-phase4-escrow-readiness.md`. Update the Status line above when §2 of that doc is done — it is the gate the migration waits on.
+
 ---
 
 ## Design principles (non-negotiable)
