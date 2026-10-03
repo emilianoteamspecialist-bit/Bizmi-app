@@ -1,6 +1,6 @@
 # Bizimi Platform Routes
 
-This document outlines the entire routing structure of the Bizimi platform, organized by user role.
+This document outlines the entire routing structure of the Bizimi platform, organized by user role. Paths are the legacy Next.js app's; the new React SPA (`client/`) uses the same paths — see `docs/react-node-migration-parity-checklist.md` for what is ported and what is blocked on escrow (Phase 4).
 
 ## 🌍 Public / General Routes (Unauthenticated)
 
@@ -13,7 +13,7 @@ These routes are accessible to anyone visiting the site.
 *   `/signup`
     *   **Registration Wizard:** A multi-step stepper where new users select their account type (Agency or Freelancer), provide personal details, select skills (if applicable), and set up their security credentials.
 *   `/reset-password`
-    *   **Password Recovery:** Allows users to reset their forgotten passwords via email verification.
+    *   **Password Recovery:** Where the emailed recovery link lands to set a new password. The reset email is requested from the "Forgot?" link on `/login`.
 *   `/contact`
     *   **Support/Contact Us:** A general form for visitors or users to reach out to the platform administration.
 
@@ -23,8 +23,10 @@ These routes are accessible to anyone visiting the site.
 
 These routes are restricted to users with the `account_type: 'freelancer'`.
 
-*   `/dashboard`
-    *   **Freelancer Hub:** The main marketplace view. Freelancers can browse active jobs, filter by category/budget, view their available credits, and see high-level earning stats.
+*   `/freelancer/dashboard`
+    *   **Freelancer Hub:** Briefs matched to the freelancer's skills, their available credits, and high-level earning stats. (The bare `/dashboard` redirects here.)
+*   `/freelancer/marketplace`
+    *   **Job Marketplace:** Browse all open projects with search and filters (category, budget, job type), Smart Match, and bookmarking.
 *   `/freelancer/profile`
     *   **Public Profile Editor:** Where freelancers manage the information agencies see when reviewing proposals (bio, skills, hourly rate, portfolio links, and profile picture).
 *   `/freelancer/proposals`
@@ -38,11 +40,17 @@ These routes are restricted to users with the `account_type: 'freelancer'`.
 *   `/freelancer/bizpal`
     *   **Credit Store:** The portal where freelancers purchase additional "credits" (using Paystack) to continue bidding on new projects.
 *   `/freelancer/identity`
-    *   **Verification:** The required KYC (Know Your Customer) step where freelancers submit their NIN (National Identity Number) for platform approval.
+    *   **Verification:** The required KYC (Know Your Customer) step where freelancers submit their NIN (National Identity Number). Verification itself is done by an external service; this page submits the NIN and shows the resulting status (pending, verified, or unsuccessful — a rejected NIN can be resubmitted).
 *   `/freelancer/settings`
     *   **Account Configuration:** Manage account-level settings, notification preferences, and password changes.
 *   `/freelancer/tutorial`
     *   **Onboarding:** Educational content/videos explaining how to succeed on the Bizimi platform.
+*   `/freelancer/contact`
+    *   **Freelancer Support:** Email, WhatsApp and community-group support channels plus social links (linked from the navbar's Support item).
+*   `/freelancer/policy`
+    *   **Duplicates & Verification Policy:** The single-account, authenticity, profile-image and NIN-verification rules, and the consequences of violating them.
+*   `/freelancer/reset-password`
+    *   **Legacy Recovery Target:** Older password-reset emails link here; it serves the same page as `/reset-password`.
 
 ---
 
@@ -89,7 +97,7 @@ These routes are restricted to platform administrators for oversight and moderat
 *   `/admin/dashboard`
     *   **Platform Overview:** High-level metrics showing total user growth, active jobs, platform revenue (from credit sales and the 15% payout fee), and system health.
 *   `/admin/users`
-    *   **User Management:** A CRM-style view of all registered freelancers and agencies, allowing admins to verify identities, ban users, or manually adjust trust scores.
+    *   **User Management:** All registered freelancers and agencies, grouped by account type, with per-user details and the ability to disable an account. (Identity verification is handled by the external KYC service, not here.)
 *   `/admin/transactions`
     *   **Financial Ledger:** A global log of all money movements across the platform, including credit purchases, escrow deposits, and successful payouts.
 *   `/admin/disputes`
@@ -98,3 +106,22 @@ These routes are restricted to platform administrators for oversight and moderat
     *   **Business Intelligence:** Deeper charts and graphs analyzing user behavior, popular job categories, and platform retention.
 *   `/admin/credits`
     *   **Credit System Management:** Oversight of the virtual economy, tracking how many credits are being bought vs. spent, and adjusting pricing or welcome bonuses.
+*   `/admin/jobs`
+    *   **Job Moderation:** Review job postings and remove fraudulent or policy-violating ones from the marketplace.
+*   `/admin/audit`
+    *   **Audit Log:** A record of consequential admin actions (money movement, account changes).
+*   `/admin/influencers`
+    *   **Influencer Program:** Referral performance and user acquisition per influencer, program settings, and recording influencer payouts.
+
+---
+
+## 📣 Influencer Routes (Authenticated)
+
+These routes are restricted to referral partners — signed-in users with an `influencer_profiles` record.
+
+*   `/influencer/dashboard`
+    *   **Influencer Hub:** The influencer's referral link (anyone who signs up through it is attributed to them), their unpaid commission balance, and recent referrals.
+*   `/influencer/referrals`
+    *   **Referrals:** Everyone who signed up through the influencer's link — user type, status, commission and join date.
+*   `/influencer/earnings`
+    *   **Earnings:** Commission earnings and payout history. Payouts are processed by the Bizimi team.
