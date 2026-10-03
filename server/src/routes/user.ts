@@ -430,6 +430,46 @@ userRouter.post(
       return
     }
 
+    const userId = req.user!.id
+
+    // One verification row per freelancer (UNIQUE freelancer_id). Only a
+    // rejected submission may be replaced; pending/verified ones are final.
+    const { data: ownRecord, error: ownError } = await req.supabase!
+      .from("freelancer_verification")
+      .select("status")
+      .eq("freelancer_id", userId)
+      .maybeSingle()
+
+    if (ownError) {
+      console.error("Error loading verification:", ownError)
+      res.status(500).json({ success: false, error: "Error checking NIN. Please try again." })
+      return
+    }
+
+    if (ownRecord && ownRecord.status !== "rejected") {
+      res.status(409).json({ success: false, error: "You've already submitted a NIN for verification" })
+      return
+    }
+
+    if (ownRecord) {
+      // Clients can't update or delete verification rows (status is owned by
+      // the external KYC service), so clear the rejected row with the service
+      // role -- scoped to the caller and to status='rejected' -- and insert a
+      // fresh 'pending' row below, so a resubmission reaches the KYC service
+      // exactly like a first submission.
+      const { error: deleteError } = await createServiceClient()
+        .from("freelancer_verification")
+        .delete()
+        .eq("freelancer_id", userId)
+        .eq("status", "rejected")
+
+      if (deleteError) {
+        console.error("Error clearing rejected verification:", deleteError)
+        res.status(500).json({ success: false, error: "Failed to submit NIN for verification" })
+        return
+      }
+    }
+
     const { data: existingNin, error: checkError } = await req.supabase!
       .from("freelancer_verification")
       .select("nin")
@@ -448,7 +488,7 @@ userRouter.post(
     }
 
     const { error: insertError } = await req.supabase!.from("freelancer_verification").insert({
-      freelancer_id: req.user!.id,
+      freelancer_id: userId,
       nin,
       status: "pending",
       created_at: new Date().toISOString(),
