@@ -15,6 +15,8 @@ import FreelancerProfile from "./pages/freelancer/Profile"
 import Identity from "./pages/freelancer/Identity"
 import Settings from "./pages/freelancer/Settings"
 import Tutorial from "./pages/freelancer/Tutorial"
+import SupportContact from "./pages/freelancer/SupportContact"
+import Policy from "./pages/freelancer/Policy"
 import AgencyDashboard from "./pages/agency/Dashboard"
 import Marketplace from "./pages/freelancer/Marketplace"
 import AgencyProfile from "./pages/agency/Profile"
@@ -102,6 +104,22 @@ export default function App() {
               element={
                 <RequireAuth>
                   <Tutorial />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/freelancer/contact"
+              element={
+                <RequireAuth>
+                  <SupportContact />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/freelancer/policy"
+              element={
+                <RequireAuth>
+                  <Policy />
                 </RequireAuth>
               }
             />
