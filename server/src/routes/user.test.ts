@@ -613,29 +613,19 @@ describe("GET /verification", () => {
 })
 
 describe("POST /verification", () => {
-  // User-scoped client: eq("freelancer_id") -> caller's own row (maybeSingle),
-  // eq("nin") -> NIN-already-exists check (single), plus insert.
+  // User-scoped client: the caller's own row (maybeSingle) + insert.
   function verificationClient(opts: {
     own?: { status: string } | null
     ownError?: unknown
-    ninMatch?: { nin: string } | null
     insertResult?: { error: unknown }
   }) {
     const insertMock = vi.fn().mockResolvedValue(opts.insertResult ?? { error: null })
     const supabase = {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
-          eq: vi.fn((col: string) =>
-            col === "freelancer_id"
-              ? { maybeSingle: vi.fn().mockResolvedValue({ data: opts.own ?? null, error: opts.ownError ?? null }) }
-              : {
-                  single: vi
-                    .fn()
-                    .mockResolvedValue(
-                      opts.ninMatch ? { data: opts.ninMatch, error: null } : { data: null, error: { code: "PGRST116" } }
-                    ),
-                }
-          ),
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: opts.own ?? null, error: opts.ownError ?? null }),
+          })),
         })),
         insert: insertMock,
       })),
@@ -643,12 +633,17 @@ describe("POST /verification", () => {
     return { supabase, insertMock }
   }
 
-  function serviceDelete(result: { error: unknown } = { error: null }) {
-    const eqStatus = vi.fn().mockResolvedValue(result)
+  // Service-role client: cross-user NIN check (select.eq.neq.limit) + the
+  // rejected-row delete (delete.eq.eq).
+  function serviceClient(opts: { ninMatches?: unknown[]; checkError?: unknown; deleteResult?: { error: unknown } } = {}) {
+    const limitMock = vi.fn().mockResolvedValue({ data: opts.ninMatches ?? [], error: opts.checkError ?? null })
+    const neqMock = vi.fn(() => ({ limit: limitMock }))
+    const ninEqMock = vi.fn(() => ({ neq: neqMock }))
+    const eqStatus = vi.fn().mockResolvedValue(opts.deleteResult ?? { error: null })
     const eqFreelancer = vi.fn(() => ({ eq: eqStatus }))
     const deleteMock = vi.fn(() => ({ eq: eqFreelancer }))
-    fakeService.from = vi.fn(() => ({ delete: deleteMock }))
-    return { deleteMock, eqFreelancer, eqStatus }
+    fakeService.from = vi.fn(() => ({ select: vi.fn(() => ({ eq: ninEqMock })), delete: deleteMock }))
+    return { ninEqMock, neqMock, deleteMock, eqFreelancer, eqStatus }
   }
 
   beforeEach(() => {
@@ -669,17 +664,32 @@ describe("POST /verification", () => {
     expect(supabase.from).not.toHaveBeenCalled()
   })
 
-  it("returns 400 when the nin already exists", async () => {
-    const { supabase, insertMock } = verificationClient({ ninMatch: { nin: "12345678901" } })
+  it("returns 400 when another freelancer already holds the nin, checked across users via the service role", async () => {
+    const { supabase, insertMock } = verificationClient({})
+    const { ninEqMock, neqMock } = serviceClient({ ninMatches: [{ freelancer_id: "user-2" }] })
 
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345678901" })
 
     expect(res.status).toBe(400)
+    expect(res.body.error).toBe("NIN already exists in the system")
+    expect(ninEqMock).toHaveBeenCalledWith("nin", "12345678901")
+    expect(neqMock).toHaveBeenCalledWith("status", "rejected")
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
+  it("returns 500 and does not insert when the nin check fails", async () => {
+    const { supabase, insertMock } = verificationClient({})
+    serviceClient({ checkError: { message: "boom" } })
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345678901" })
+
+    expect(res.status).toBe(500)
     expect(insertMock).not.toHaveBeenCalled()
   })
 
   it("inserts a pending record scoped to the caller when they have no record yet", async () => {
     const { supabase, insertMock } = verificationClient({})
+    const { deleteMock } = serviceClient()
 
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345678901" })
 
@@ -688,7 +698,17 @@ describe("POST /verification", () => {
     expect(insertMock).toHaveBeenCalledWith(
       expect.objectContaining({ freelancer_id: "user-1", nin: "12345678901", status: "pending" })
     )
-    expect(fakeService.from).not.toHaveBeenCalled()
+    expect(deleteMock).not.toHaveBeenCalled()
+  })
+
+  it("maps a unique-violation on insert (lost race) to the nin-taken 400", async () => {
+    const { supabase } = verificationClient({ insertResult: { error: { code: "23505" } } })
+    serviceClient()
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "12345678901" })
+
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe("NIN already exists in the system")
   })
 
   it.each(["pending", "verified"])("returns 409 and changes nothing when the caller's record is %s", async (status) => {
@@ -703,7 +723,7 @@ describe("POST /verification", () => {
 
   it("replaces a rejected record: service-role delete scoped to the caller + rejected, then a fresh pending insert", async () => {
     const { supabase, insertMock } = verificationClient({ own: { status: "rejected" } })
-    const { eqFreelancer, eqStatus } = serviceDelete()
+    const { eqFreelancer, eqStatus } = serviceClient()
 
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "10987654321" })
 
@@ -716,9 +736,20 @@ describe("POST /verification", () => {
     )
   })
 
+  it("keeps the rejected record when the new nin is already taken", async () => {
+    const { supabase, insertMock } = verificationClient({ own: { status: "rejected" } })
+    const { deleteMock } = serviceClient({ ninMatches: [{ freelancer_id: "user-2" }] })
+
+    const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "10987654321" })
+
+    expect(res.status).toBe(400)
+    expect(deleteMock).not.toHaveBeenCalled()
+    expect(insertMock).not.toHaveBeenCalled()
+  })
+
   it("returns 500 and does not insert when clearing the rejected record fails", async () => {
     const { supabase, insertMock } = verificationClient({ own: { status: "rejected" } })
-    serviceDelete({ error: { message: "boom" } })
+    serviceClient({ deleteResult: { error: { message: "boom" } } })
 
     const res = await request(appWith({ id: "user-1" }, supabase)).post("/verification").send({ nin: "10987654321" })
 
