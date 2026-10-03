@@ -28,6 +28,19 @@ describe("useVerificationQuery", () => {
   })
 })
 
+describe("verificationRefetchInterval", () => {
+  it("polls only while the verification is pending", async () => {
+    const { verificationRefetchInterval, PENDING_VERIFICATION_POLL_MS } = await import("./verification")
+    const base = { nin: "12345678901", created_at: "2026-01-01T00:00:00Z" }
+
+    expect(verificationRefetchInterval({ ...base, status: "pending" })).toBe(PENDING_VERIFICATION_POLL_MS)
+    expect(verificationRefetchInterval({ ...base, status: "verified" })).toBe(false)
+    expect(verificationRefetchInterval({ ...base, status: "rejected" })).toBe(false)
+    expect(verificationRefetchInterval(null)).toBe(false)
+    expect(verificationRefetchInterval(undefined)).toBe(false)
+  })
+})
+
 describe("useSubmitVerificationMutation", () => {
   it("POSTs /api/user/verification and invalidates the verification query on success", async () => {
     apiFetchMock.mockResolvedValue({ success: true })

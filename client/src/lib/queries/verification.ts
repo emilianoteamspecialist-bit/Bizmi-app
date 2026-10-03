@@ -7,6 +7,15 @@ export type Verification = {
   created_at: string
 }
 
+// NIN verification is decided by an external KYC service, which updates the
+// status out of band. While a submission is pending, poll so the result shows
+// up without a manual refresh; stop once it's settled (or there's no record).
+export const PENDING_VERIFICATION_POLL_MS = 30_000
+
+export function verificationRefetchInterval(verification: Verification | null | undefined): number | false {
+  return verification?.status === "pending" ? PENDING_VERIFICATION_POLL_MS : false
+}
+
 export function useVerificationQuery() {
   return useQuery({
     queryKey: ["user", "verification"],
@@ -14,6 +23,7 @@ export function useVerificationQuery() {
       const { verification } = await apiFetch<{ verification: Verification | null }>("/api/user/verification")
       return verification
     },
+    refetchInterval: (query) => verificationRefetchInterval(query.state.data),
   })
 }
 
