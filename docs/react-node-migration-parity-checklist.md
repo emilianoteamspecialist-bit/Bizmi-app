@@ -1,6 +1,6 @@
 # React+Node Migration — Route Parity Checklist
 
-Manual old-vs-new comparison, per Phase 6 of `docs/superpowers/specs/2026-09-08-nextjs-to-react-node-migration-design.md` ("manual parity checklist derived from `docs/platform-routes.md`, old-vs-new side-by-side per route"). This is a point-in-time snapshot (as of 2026-09-29, `main` at `d57d685`) — re-generate or update after any phase that adds/moves a route.
+Manual old-vs-new comparison, per Phase 6 of `docs/superpowers/specs/2026-09-08-nextjs-to-react-node-migration-design.md` ("manual parity checklist derived from `docs/platform-routes.md`, old-vs-new side-by-side per route"). This is a point-in-time snapshot (originally 2026-09-29 at `d57d685`; last updated 2026-10-03) — re-generate or update after any phase that adds/moves a route.
 
 Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (escrow) · ⬜ not started, no blocker · 📄 documented in `docs/platform-routes.md` but missing here (doc gap, not a code gap)
 
@@ -18,7 +18,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 
 | Route (legacy) | New SPA path | Status | Notes |
 |---|---|---|---|
-| `/dashboard` | `/freelancer/dashboard` | ✅ | **Path changed** — legacy mounts the freelancer dashboard at the bare `/dashboard`, the new SPA uses `/freelancer/dashboard`. Not a gap, but a real difference to account for at cutover (bookmarks, any hardcoded links to `/dashboard`, `middleware.ts`'s route-protection list). |
+| `/freelancer/dashboard` (legacy `/dashboard` redirects here) | `/freelancer/dashboard` | ✅ | Same path in both apps — the legacy bare `/dashboard` is only a redirect to `/freelancer/dashboard` (corrected 2026-10-03; earlier versions of this checklist called it a path difference). |
 | `/freelancer/profile` | `/freelancer/profile` | ✅ | |
 | `/freelancer/proposals` | `/freelancer/proposals` | ✅ | |
 | `/freelancer/saved-jobs` | `/freelancer/saved-jobs` | ✅ | |
@@ -28,7 +28,9 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/freelancer/identity` | `/freelancer/identity` | ✅ | Ported 2026-09-30 (display + submit via `GET/POST /api/user/verification`). KYC/NIN verification is done by an **external service** per `CLAUDE.md`. The legacy 60-second client-side auto-verify timer was a fake-KYC stub that self-set `status='verified'` via a client-writable RLS UPDATE policy — **deliberately not ported, and removed from the legacy page** 2026-10-03; the SPA instead polls status every 30s while pending. Companion migration `supabase/migrations/20261003000000_lock_down_freelancer_verification_writes.sql` closes the self-verify RLS hole — **must be applied manually** (assumes the external service writes with the service-role key). |
 | `/freelancer/settings` | `/freelancer/settings` | ✅ | Ported 2026-10-02, near-byte-identical port of the 543-line legacy page (verified via exhaustive full-body diff). Account tab (email/password, real `supabase.auth.updateUser` calls) and Danger Zone (real `DeleteAccountDialog` → `POST /api/user/account`) are fully functional; Notifications/Privacy/Security tabs are faithfully-ported **fake stubs** (no persistence) matching the legacy source exactly — not a regression. |
 | `/freelancer/tutorial` | `/freelancer/tutorial` | ✅ | Ported 2026-10-02, fully static content, all 8 sections word-for-word from the legacy source including the real (if inconsistent) `contact@bizimii.com` support address. |
-| — | `/freelancer/marketplace` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — the browse-jobs flow was ported as its own route during Phase 2, commit `e580583`, but the routes doc was never updated to reflect it). |
+| `/freelancer/marketplace` | `/freelancer/marketplace` | ✅ | Phase 2 (`e580583`). Exists in both apps; now documented in `docs/platform-routes.md`. |
+| `/freelancer/contact` | `/freelancer/contact` | ✅ | Ported 2026-10-03 — freelancer support page (navbar Support item), distinct from public `/contact`. Was missing from both this checklist and the routes doc. |
+| `/freelancer/policy` | `/freelancer/policy` | ✅ | Ported 2026-10-03 — duplicates & verification policy, static. Was missing from both this checklist and the routes doc. |
 
 ## Agency routes
 
@@ -61,13 +63,13 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 | `/admin/transactions` | — | ⛔ | Escrow-gated (Phase 4) — deliberately excluded from every Phase 5 sub-plan |
 | `/admin/disputes` | — | ⛔ | Escrow-gated (Phase 4) — deliberately excluded from every Phase 5 sub-plan |
 | `/admin/analytics` | — | ⛔ | Escrow-gated (Phase 4) — reclassified 2026-10-03 from ⬜. Legacy page (`AnalyticsClient.tsx`) is entirely top-20 freelancer payouts / agency deposits aggregated from `Funded_jobs101`, the table `docs/escrow-production-plan.md` removes ("Kill `Funded_jobs101`"). Newer escrow funding writes `escrow_deposits`, so the legacy numbers likely already undercount. Port against `escrow_deposits`/`payouts` after cutover, like `/admin/transactions`. |
-| — | `/admin/jobs` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — job moderation queue, Phase 5c). |
-| — | `/admin/audit` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — admin audit log, Phase 5c). |
-| — | `/admin/influencers` | ✅ | **New SPA route not in `docs/platform-routes.md`** (doc gap — influencer program admin, Phase 5d). |
+| `/admin/jobs` | `/admin/jobs` | ✅ | Job moderation queue, Phase 5c. Now documented in `docs/platform-routes.md`. |
+| `/admin/audit` | `/admin/audit` | ✅ | Admin audit log, Phase 5c. Now documented in `docs/platform-routes.md`. |
+| `/admin/influencers` | `/admin/influencers` | ✅ | Influencer program admin, Phase 5d. Now documented in `docs/platform-routes.md`. |
 
-## Influencer routes (entire role missing from `docs/platform-routes.md`)
+## Influencer routes
 
-`docs/platform-routes.md` has no "Influencer" section at all — it predates the influencer referral program entirely. These are real, live routes in both the legacy app and the new SPA:
+Real, live routes in both the legacy app and the new SPA (documented in `docs/platform-routes.md` as of 2026-10-03):
 
 | Route (legacy) | New SPA path | Status | Notes |
 |---|---|---|---|
@@ -77,11 +79,11 @@ Legend: ✅ ported and wired in `client/`+`server/` · ⛔ blocked on Phase 4 (e
 
 ## Summary
 
-- **Fully ported and wired:** 29 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; the "request reset" step is now ported, but the Supabase redirect-URL allowlist still needs confirming before it can be called complete. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
+- **Fully ported and wired:** 31 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; the "request reset" step is now ported, but the Supabase redirect-URL allowlist still needs confirming before it can be called complete. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
 - **Escrow-gated (⛔), blocked on Phase 4:** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes`, `/admin/analytics` — 7 routes. None of these can be started until `docs/escrow-production-plan.md`'s own Status line clears "Phase 1 in progress."
 - **Not started, no blocker (⬜):** none — every remaining unported route is escrow-gated. (`/admin/analytics` was listed here until 2026-10-03; reclassified ⛔ because it reads only `Funded_jobs101`.)
-- **Doc gaps found:** `docs/platform-routes.md` is missing `/freelancer/marketplace`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the entire Influencer role section. Worth a follow-up pass to update that doc directly so it stays a reliable reference — not done as part of this checklist to avoid conflating "what's ported" with "fixing an unrelated doc."
-- **Known path difference to reconcile before cutover:** freelancer dashboard is `/dashboard` in the legacy app, `/freelancer/dashboard` in the new SPA.
+- **Doc gaps:** resolved 2026-10-03 — `docs/platform-routes.md` now covers `/freelancer/marketplace`, `/freelancer/contact`, `/freelancer/policy`, `/freelancer/reset-password`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the Influencer role.
+- **Path differences:** none. (The freelancer dashboard is `/freelancer/dashboard` in both apps; the legacy bare `/dashboard` is just a redirect.)
 
 ## What this checklist does NOT cover
 
