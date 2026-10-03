@@ -43,12 +43,6 @@ describe("AdminUsers", () => {
     expect(screen.getByRole("tab", { name: /freelancers \(1\)/i })).toBeInTheDocument()
   })
 
-  // Note: opening this Radix DropdownMenu goes through userEvent's real pointerdown
-  // dispatch (assertPointerEvents + DismissableLayer/RovingFocusGroup setup), which
-  // is measured to take ~30-40s per click in this repo's jsdom + Windows environment
-  // (confirmed via isolated timing: NOT an infinite hang, not fixed by
-  // pointerEventsCheck/delay tuning or silencing console — see task-4-report.md).
-  // Each of these tests performs two such clicks, so they need a generous timeout.
   it("disables a user after confirmation, via the real mutation", async () => {
     const user = userEvent.setup()
     renderPage()
@@ -61,7 +55,7 @@ describe("AdminUsers", () => {
       { userId: "f-1", disabled: true },
       expect.objectContaining({ onSuccess: expect.any(Function), onError: expect.any(Function) })
     )
-  }, 120000)
+  })
 
   it("does not call the mutation if the confirmation is declined", async () => {
     vi.stubGlobal("confirm", vi.fn(() => false))
@@ -72,5 +66,5 @@ describe("AdminUsers", () => {
     await user.click(screen.getByText("Disable user"))
 
     expect(disableMutate).not.toHaveBeenCalled()
-  }, 120000)
+  })
 })

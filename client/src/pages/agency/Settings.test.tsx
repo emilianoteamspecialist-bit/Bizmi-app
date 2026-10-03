@@ -102,8 +102,7 @@ describe("Settings", () => {
       expect(apiFetchMock).toHaveBeenCalledWith("/api/user/account", { method: "POST" })
       expect(await screen.findByText("Landing")).toBeInTheDocument()
       expect(signOutMock).toHaveBeenCalled()
-    },
-    120000
+    }
   )
 
   it(
@@ -116,7 +115,6 @@ describe("Settings", () => {
       expect(apiFetchMock).toHaveBeenCalledWith("/api/user/account", { method: "POST" })
       expect(signOutMock).not.toHaveBeenCalled()
       expect(screen.queryByText("Landing")).not.toBeInTheDocument()
-    },
-    120000
+    }
   )
 })
