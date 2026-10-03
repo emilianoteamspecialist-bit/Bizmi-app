@@ -125,5 +125,5 @@ describe("PostJobModal", () => {
         idempotencyKey: expect.any(String),
       })
     )
-  }, 120_000)
+  })
 })

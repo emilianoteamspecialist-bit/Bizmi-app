@@ -19,7 +19,7 @@ describe("DeleteAccountDialog", () => {
     await user.clear(screen.getByLabelText(/type delete to confirm/i))
     await user.type(screen.getByLabelText(/type delete to confirm/i), "delete")
     expect(confirmButton).toBeEnabled()
-  }, 120000)
+  })
 
   it("calls onConfirm only after DELETE is typed and the confirm button is clicked", async () => {
     const user = userEvent.setup()
@@ -31,5 +31,5 @@ describe("DeleteAccountDialog", () => {
     await user.click(screen.getByRole("button", { name: /^delete account$/i }))
 
     expect(onConfirm).toHaveBeenCalledOnce()
-  }, 120000)
+  })
 })
