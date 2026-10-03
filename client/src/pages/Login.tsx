@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Loader2, ArrowLeft, ArrowUpRight } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import ForgotPasswordModal from "../components/ForgotPasswordModal"
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
@@ -13,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [showForgotModal, setShowForgotModal] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,9 +134,8 @@ export default function Login() {
                 <Label htmlFor="password" className="text-xs font-bold uppercase tracking-[0.15em] text-ink/50">Password</Label>
                 <button
                   type="button"
-                  disabled
-                  title="Password recovery is not yet available in this preview — deferred from Phase 0"
-                  className="text-xs font-bold uppercase tracking-[0.15em] text-ink/30 cursor-not-allowed"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-xs font-bold uppercase tracking-[0.15em] text-primary hover:text-primary-hover"
                 >
                   Forgot?
                 </button>
@@ -189,6 +190,8 @@ export default function Login() {
           <p className="text-xs font-medium text-ink/40">Encrypted in transit. Your credentials stay yours.</p>
         </div>
       </main>
+
+      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
     </div>
   )
 }
