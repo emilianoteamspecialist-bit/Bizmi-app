@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, AlertCircle, Clock, ShieldCheck, BadgeCheck, Lock } from "lucide-react"
+import { Loader2, AlertCircle, Clock, ShieldCheck, ShieldX, BadgeCheck, Lock } from "lucide-react"
 import { supabase, handleSupabaseError } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -146,6 +146,22 @@ export default function IdentityClient({ initialVerification }: IdentityClientPr
               <BadgeCheck className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium text-foreground tabular-nums">NIN {existingVerification.nin}</span>
             </div>
+          </div>
+        ) : existingVerification?.status === "rejected" ? (
+          /* Rejected -- resubmission isn't possible from this page (the row is
+             owned by the external KYC service), so route to support. */
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center ring-8 ring-destructive/5">
+              <ShieldX className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 text-lg font-semibold text-foreground">Verification unsuccessful</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              We couldn&apos;t verify NIN <span className="tabular-nums">{existingVerification.nin}</span>. Please{" "}
+              <a href="mailto:contact@bizimii.com" className="font-medium text-primary hover:underline">
+                contact support
+              </a>{" "}
+              to resubmit.
+            </p>
           </div>
         ) : existingVerification ? (
           /* Pending */
