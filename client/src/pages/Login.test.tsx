@@ -43,4 +43,17 @@ describe("Login", () => {
 
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/agency/dashboard"))
   })
+
+  it("opens the forgot-password modal from the Forgot? link", async () => {
+    const { default: Login } = await import("./Login")
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    )
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: /forgot\?/i }))
+    expect(screen.getByRole("dialog", { name: /reset password/i })).toBeInTheDocument()
+  })
 })

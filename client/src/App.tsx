@@ -45,6 +45,8 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Legacy recovery-email target; kept so already-sent reset links still land here. */}
+            <Route path="/freelancer/reset-password" element={<ResetPassword />} />
             <Route path="/contact" element={<Contact />} />
             <Route
               path="/freelancer/dashboard"
