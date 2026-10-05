@@ -33,6 +33,14 @@ import AdminJobs from "./pages/admin/Jobs"
 import AdminAuditLog from "./pages/admin/AuditLog"
 import AdminCredits from "./pages/admin/Credits"
 import AdminInfluencers from "./pages/admin/Influencers"
+import AdminTransactions from "./pages/admin/Transactions"
+import AdminAnalytics from "./pages/admin/Analytics"
+import AdminDisputes from "./pages/admin/Disputes"
+import FundedJobs from "./pages/freelancer/FundedJobs"
+import AgencyWallet from "./pages/agency/Wallet"
+import EscrowReturn from "./pages/agency/EscrowReturn"
+import Workspace from "./pages/shared/Workspace"
+import DisputeRoom from "./pages/shared/DisputeRoom"
 import InfluencerDashboard from "./pages/influencer/Dashboard"
 import InfluencerReferrals from "./pages/influencer/Referrals"
 import InfluencerEarnings from "./pages/influencer/Earnings"
@@ -265,6 +273,70 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AdminInfluencers />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/freelancer/funded-jobs"
+              element={
+                <RequireAuth>
+                  <FundedJobs />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agency/wallet"
+              element={
+                <RequireAuth>
+                  <AgencyWallet />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agency/escrow/return"
+              element={
+                <RequireAuth>
+                  <EscrowReturn />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/workspace/:jobId"
+              element={
+                <RequireAuth>
+                  <Workspace />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/disputes/:id"
+              element={
+                <RequireAuth>
+                  <DisputeRoom />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/transactions"
+              element={
+                <RequireAuth>
+                  <AdminTransactions />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <RequireAuth>
+                  <AdminAnalytics />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/admin/disputes"
+              element={
+                <RequireAuth>
+                  <AdminDisputes />
                 </RequireAuth>
               }
             />

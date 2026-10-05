@@ -4,10 +4,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, FileText, Search, X, XCircle } from "lucide-react"
+import { CheckCircle, FileText, Loader2, Search, Wallet, X, XCircle } from "lucide-react"
 import { useJobProposalsQuery, type AgencyJob, type JobProposal } from "@/lib/queries/jobs"
 import { useRespondToProposalMutation } from "@/lib/queries/proposals"
 import { useFreelancerLogosQuery } from "@/lib/queries/user"
+import { useInitializeEscrowMutation, useJobEscrowQuery } from "@/lib/queries/escrow"
 
 function statusBadgeClass(status: string) {
   switch (status) {
@@ -29,6 +30,9 @@ export default function ProposalsModal({ job, isOpen, onClose }: { job: AgencyJo
   const freelancerIds = proposals.map((p) => p.freelancer_id)
   const logosQuery = useFreelancerLogosQuery(freelancerIds)
   const logos = logosQuery.data?.logos ?? {}
+  const escrowQuery = useJobEscrowQuery(job?.id, isOpen)
+  const escrowStatus = escrowQuery.data?.escrow?.status_v2 ?? null
+  const initEscrow = useInitializeEscrowMutation()
 
   if (!isOpen || !job) return null
 
@@ -42,6 +46,15 @@ export default function ProposalsModal({ job, isOpen, onClose }: { job: AgencyJo
       (proposal.proposal_text?.toLowerCase() || "").includes(term)
     )
   })
+
+  // Funding hands off to Paystack's hosted checkout; the agency comes back to
+  // /agency/escrow/return. The amount is taken server-side from the proposal.
+  const handleFund = (proposalId: string) => {
+    initEscrow.mutate(proposalId, {
+      onSuccess: ({ authorization_url }) => window.location.assign(authorization_url),
+      onError: (err) => alert(err instanceof Error ? err.message : "Could not start funding"),
+    })
+  }
 
   const handleClose = () => {
     setSearchTerm("")
@@ -152,6 +165,20 @@ export default function ProposalsModal({ job, isOpen, onClose }: { job: AgencyJo
                       <div>
                         <h5 className="font-medium mb-1">About Freelancer</h5>
                         <p className="text-sm text-muted-foreground">{proposal.profiles.bio}</p>
+                      </div>
+                    )}
+                    {proposal.status === "accepted" && (
+                      <div className="pt-4">
+                        {escrowStatus && escrowStatus !== "pending" && escrowStatus !== "awaiting" ? (
+                          <p className="inline-flex items-center gap-1.5 text-sm text-success">
+                            <CheckCircle className="h-4 w-4" /> Funded — money is held in escrow
+                          </p>
+                        ) : (
+                          <Button className="gap-2" onClick={() => handleFund(proposal.id)} disabled={initEscrow.isPending || escrowQuery.isLoading}>
+                            {initEscrow.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+                            {escrowStatus === "awaiting" ? "Complete payment" : "Fund job"}
+                          </Button>
+                        )}
                       </div>
                     )}
                     {proposal.status === "pending" && (

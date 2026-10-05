@@ -1,7 +1,7 @@
 # Phase 4 (Escrow & payments) — readiness assessment and gated plan
 
 **Date:** 2026-10-03
-**Status:** **Blocked.** Phase 4 of the React + Node migration cannot start yet. Its gate, set as a locked decision in `docs/superpowers/specs/2026-09-08-nextjs-to-react-node-migration-design.md` §1/§7, is: *"gated on the Supabase-side escrow v2 migration being finished"*. That migration is not finished (evidence below).
+**Status (updated later on 2026-10-03):** **Built, not yet live-verified.** At the user's direction (goal: "finish the phase"), Phase 4 was implemented on branch `phase4-escrow` by building the new backend's money paths directly on the escrow v2 schema (`scripts/escrow-00{1,2}-*.sql`) and the escrow plan's design — release, payout and refund included — rather than porting the legacy app's half-migrated logic. That gives the port the stable target the original gate asked for. §1–2 below record the original assessment; §3 is what was built; §4 is what still has to happen before it carries real money.
 
 This document records what the code shows today (`main` @ `ec32cd5`), what has to happen before Phase 4 can begin, and the port plan to run once it can.
 
@@ -47,7 +47,7 @@ In order:
 5. **Move the read paths to v2** (`escrow_deposits` + `payouts` + `escrow_events`) and end the soak: stop writing `Funded_jobs101`, then drop it.
 6. **Update `docs/escrow-production-plan.md`'s Status line.** That line is the gate the migration spec points to.
 
-## 3. Phase 4 port plan (run once §2 is done)
+## 3. Phase 4 — what was built (branch `phase4-escrow`)
 
 Following the established pattern: Express routes in `server/src/routes/escrow.ts` (+ tests with supertest), TanStack Query hooks in `client/src/lib/queries/escrow.ts`, pages ported per vertical.
 
@@ -62,7 +62,20 @@ Following the established pattern: Express routes in `server/src/routes/escrow.t
 
 Each step must ship with: supertest coverage of auth/ownership/state-guard/idempotency branches, a webhook replay test (same event twice → one effect), and a Paystack **test-mode** end-to-end run before the step merges. Never derive an amount from the request body.
 
-## 4. Remaining Phase 7 prerequisites unrelated to escrow
+Server (`server/src`): `lib/escrow.ts` (guarded transitions + `escrow_append_event`, legacy `status` mirroring, `Funded_jobs101` soak sync, kobo fee math), `lib/paystack.ts` (timing-safe HMAC, strict API wrapper), `lib/payouts.ts`; routes `webhooks.ts`, `escrow.ts`, `submissions.ts`, `payouts.ts`, `disputes.ts`, `adminEscrow.ts`. Client (`client/src`): `lib/queries/escrow.ts`, pages FundedJobs, Wallet, EscrowReturn, Workspace, DisputeRoom, admin Transactions/Analytics/Disputes, "Fund job" in `ProposalsModal`. Tests: server lib + route suites using `src/test/fakeSupabase.ts`; client page suites.
+
+Deliberate differences from the legacy app: identities are never taken from request bodies; the admin transactions page has no flag-toggling "mark done / process payout" actions; partial dispute release returns 422 (no v2 representation yet); the legacy "credits webhook" (really the v1 `dep_` deposit confirmation) is not ported.
+
+## 4. Go-live gates (must all pass before the new money paths handle real money)
+
+1. **Run the server test suite** (`cd server && npx vitest run`). It was blocked by the session's permission checker when this was built: every lib/route suite except `routes/disputes.test.ts` was run individually and passed; `disputes.test.ts` has not been run.
+2. **Verify the live schema** the code depends on: `escrow-001/002` applied (`status_v2`, `amount_kobo`, `escrow_events`, `payouts`, `webhook_events`, the transition trigger, the `escrow_append_event` function); `escrow_deposits.paystack_access_code`; `freelancer_bank_details`; RLS letting participants read `escrow_deposits`/`project_submissions`/`disputes`.
+3. **Paystack test mode end to end:** fund → `charge.success` webhook → submit → approve → payout (`/transferrecipient` + `/transfer`; Transfers enabled, OTP off) → `transfer.success`; a failed transfer and a retry; a dispute refund. Replay each webhook to confirm dedupe.
+4. **Webhook cutover.** Paystack has one webhook URL. While it points at the legacy app, its handler also confirms the new app's funding (it matches the `escrow_` prefix), but it ignores `transfer.*`, so payouts requested from the new app would sit in `processing`. Do not enable new-app payouts until the webhook points at `<server>/api/webhooks/paystack`. Once it does, legacy-initiated transfers (reference `payout_<jobId>`) won't map to a `payouts` row; that's harmless, because the legacy route sets `jobs.payout_status='paid'` synchronously.
+5. **Reconcile legacy-approved escrows.** Jobs approved in the legacy app have `jobs.payout_status='completed'` but `status_v2` still `funded` (legacy approve never transitioned v2). The new app can't pay those out until they're moved to `released` (a one-off backfill with `escrow_events` rows).
+6. **Product decisions:** partial release; whether in-app wallet credits (legacy dispute path) survive; Paystack refund idempotency (a refund that succeeds but whose DB transition fails can't be retried through Paystack — needs a manual-intervention path per escrow plan §5.4).
+
+## 5. Remaining Phase 7 prerequisites unrelated to escrow
 
 From `docs/react-node-migration-parity-checklist.md` — owned by the user, in Supabase Studio:
 
