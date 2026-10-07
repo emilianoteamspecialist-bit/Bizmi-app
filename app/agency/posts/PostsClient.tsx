@@ -346,32 +346,6 @@ export default function PostsClient({
     }
   }
 
-  const handleJobDone = async (jobId: string) => {
-    try {
-      const response = await fetch("/api/paystack/mark-complete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jobId,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        alert("Job marked as completed!")
-        loadJobs(0, debouncedSearchTerm, false)
-      } else {
-        alert("Error marking job as done: " + (data.error || "Unknown error"))
-      }
-    } catch (error) {
-      console.error("Error marking job as done:", error)
-      alert("Error marking job as done. Please try again.")
-    }
-  }
-
   useEffect(() => {
     if (!currentUserId) setLoading(false)
   }, [currentUserId])
@@ -510,14 +484,18 @@ export default function PostsClient({
                           Posted {new Date(job.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                         </CardDescription>
                       </div>
+                      {/* Completion happens in the workspace: the agency reviews
+                          the submission there and approving it releases the
+                          escrow. (This used to be a "Mark done" button calling
+                          /api/paystack/mark-complete, a route that never existed.) */}
                       {job.funding_status === "funded" && (
                         <Button
-                          onClick={() => handleJobDone(job.id)}
+                          onClick={() => router.push(`/workspace/${job.id}`)}
                           variant="outline"
                           size="sm"
-                          className="shrink-0 gap-1.5 text-success border-success/30 hover:bg-success/10"
+                          className="shrink-0 gap-1.5"
                         >
-                          <CheckCircle className="h-4 w-4" /> Mark done
+                          <FileText className="h-4 w-4" /> Workspace
                         </Button>
                       )}
                     </div>

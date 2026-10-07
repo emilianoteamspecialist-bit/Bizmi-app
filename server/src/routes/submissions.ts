@@ -2,6 +2,7 @@ import { Router } from "express"
 import { asyncHandler } from "../lib/http.js"
 import { createServiceClient } from "../lib/supabase.js"
 import { transitionEscrow } from "../lib/escrow.js"
+import { qualifyReferralOnRelease } from "../lib/influencerReferrals.js"
 
 const submissionsRouter = Router()
 
@@ -269,6 +270,10 @@ submissionsRouter.post(
       .update({ job_completed: true })
       .eq("job_id", submission.job_id)
     if (fundedError) console.warn("[submissions] could not mirror job_completed to Funded_jobs101", fundedError)
+
+    // Influencer program: a referred party's first release qualifies their
+    // referral (one-time guarded, fail-soft) -- same hook as the legacy app.
+    await qualifyReferralOnRelease(service, escrow)
 
     res.json({ success: true, status: "released" })
   })
