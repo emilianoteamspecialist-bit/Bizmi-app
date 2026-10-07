@@ -22,6 +22,13 @@ vi.mock("../../lib/queries/messages", () => ({
   useRealtimeMessages: (...args: unknown[]) => useRealtimeMessagesMock(...args),
 }))
 
+vi.mock("@/lib/supabase", () => ({ supabase: {} }))
+const escrowsMock = vi.fn()
+vi.mock("@/lib/queries/escrow", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/queries/escrow")>("@/lib/queries/escrow")
+  return { ...actual, useMyEscrowsQuery: () => escrowsMock() }
+})
+
 import Messages from "./Messages"
 
 function renderPage() {
@@ -43,9 +50,45 @@ beforeEach(() => {
   useAuthMock.mockReturnValue({ user: { id: "user-1" } })
   useConversationsQueryMock.mockReturnValue({ isLoading: false, data: { conversations: [] } })
   useConversationMessagesQueryMock.mockReturnValue({ isLoading: false, data: { messages: [] } })
+  escrowsMock.mockReturnValue({ data: { escrows: [] } })
 })
 
 describe("Messages", () => {
+  it("opens the conversation named in ?conversationId= (from a notification)", () => {
+    useConversationsQueryMock.mockReturnValue({
+      isLoading: false,
+      data: { conversations: [oneConversation, { ...oneConversation, id: "conv-2", participant: { id: "user-3", full_name: "Acme Co", avatar: "" } }] },
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/freelancer/messages?conversationId=conv-2"]}>
+          <Messages />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    expect(useConversationMessagesQueryMock).toHaveBeenLastCalledWith("conv-2")
+    expect(markReadMutate).toHaveBeenCalledWith("conv-2")
+  })
+
+  it("shows contracts with the other participant in the context panel", () => {
+    useConversationsQueryMock.mockReturnValue({ isLoading: false, data: { conversations: [oneConversation] } })
+    escrowsMock.mockReturnValue({
+      data: { escrows: [{ id: "e1", job_id: "job-1", agency_id: "user-2", freelancer_id: "user-1", status_v2: "funded", amount_kobo: 5_000_000, job_title: "Landing page" }] },
+    })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/freelancer/messages"]}>
+          <Messages />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    const panel = screen.getByRole("complementary", { name: "Conversation details" })
+    expect(within(panel).getByText("Landing page")).toBeInTheDocument()
+    expect(within(panel).getByRole("link", { name: "Open workspace" })).toHaveAttribute("href", "/workspace/job-1")
+  })
+
   it("shows a loading skeleton while conversations are pending", () => {
     useConversationsQueryMock.mockReturnValue({ isLoading: true, data: undefined })
     renderPage()

@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react"
+import { Link, useLocation, useSearchParams } from "react-router-dom"
+import { ArrowLeft, File, ImageIcon, MessageSquare, Paperclip, Search, Send, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Send, MessageSquare, User, Search, ArrowLeft, MoreVertical, Upload, File, ImageIcon, X } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import {
   useConversationsQuery,
@@ -16,7 +14,11 @@ import {
   useRealtimeMessages,
   type ConversationSummary,
 } from "@/lib/queries/messages"
+import { formatKobo, useMyEscrowsQuery } from "@/lib/queries/escrow"
 import { fileToBase64 } from "@/lib/file"
+import { formatTimeAgo } from "@/lib/format"
+import { cn } from "@/lib/utils"
+import EscrowStatusBadge from "@/components/shared/EscrowStatusBadge"
 
 const ALLOWED_FILE_TYPES = [
   "image/jpeg",
@@ -27,21 +29,35 @@ const ALLOWED_FILE_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]
 
+function ParticipantAvatar({ participant, size = "md" }: { participant: ConversationSummary["participant"]; size?: "sm" | "md" | "lg" }) {
+  const cls = size === "lg" ? "h-14 w-14" : size === "sm" ? "h-8 w-8" : "h-10 w-10"
+  return (
+    <Avatar className={cls}>
+      <AvatarImage src={participant.avatar || undefined} alt="" />
+      <AvatarFallback className="bg-surface-2 font-semibold text-foreground">{participant.full_name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
+    </Avatar>
+  )
+}
+
 export default function Messages() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
+  const role = pathname.startsWith("/agency") ? "agency" : "freelancer"
   const currentUserId = user?.id ?? null
-
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
+  const [searchParams] = useSearchParams()
+  const requestedConversation = searchParams.get("conversationId")
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(requestedConversation)
   const [newMessage, setNewMessage] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [showConversationList, setShowConversationList] = useState(true)
+  const [showConversationList, setShowConversationList] = useState(!requestedConversation)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const didAutoSelect = useRef(false)
+  const didAutoSelect = useRef(!!requestedConversation)
 
   const conversationsQuery = useConversationsQuery()
   const messagesQuery = useConversationMessagesQuery(selectedConversationId)
+  const escrowsQuery = useMyEscrowsQuery()
   const sendMessage = useSendMessageMutation()
   const sendFile = useSendFileMessageMutation()
   const markRead = useMarkReadMutation()
@@ -57,20 +73,29 @@ export default function Messages() {
     setSelectedConversationId(conversations[0].id)
   }, [conversations])
 
+  // A link from a notification (?conversationId=) opens that conversation.
+  useEffect(() => {
+    if (requestedConversation) {
+      setSelectedConversationId(requestedConversation)
+      setShowConversationList(false)
+    }
+  }, [requestedConversation])
+
   useEffect(() => {
     if (selectedConversationId) markRead.mutate(selectedConversationId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedConversationId])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" })
   }, [messages])
 
-  const filteredConversations = conversations.filter((c) =>
-    searchTerm ? c.participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) : true
-  )
-
+  const filteredConversations = conversations.filter((c) => (searchTerm ? c.participant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) : true))
   const selectedConversation = conversations.find((c) => c.id === selectedConversationId) ?? null
+  // Contracts with the other participant give the conversation context.
+  const sharedContracts = selectedConversation
+    ? (escrowsQuery.data?.escrows ?? []).filter((e) => (role === "agency" ? e.freelancer_id : e.agency_id) === selectedConversation.participant.id)
+    : []
 
   const handleSelect = (conversation: ConversationSummary) => {
     setSelectedConversationId(conversation.id)
@@ -79,10 +104,7 @@ export default function Messages() {
 
   const handleSend = () => {
     if (!newMessage.trim() || !selectedConversationId) return
-    sendMessage.mutate(
-      { conversationId: selectedConversationId, message_text: newMessage },
-      { onSuccess: () => setNewMessage("") }
-    )
+    sendMessage.mutate({ conversationId: selectedConversationId, message_text: newMessage }, { onSuccess: () => setNewMessage("") })
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,220 +133,216 @@ export default function Messages() {
 
   if (conversationsQuery.isLoading) {
     return (
-      <div data-testid="messages-skeleton" className="min-h-screen bg-surface">
-        <div className="max-w-7xl mx-auto py-8 px-4">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-foreground/5 rounded w-1/4 mb-6" />
-            <div className="h-32 bg-foreground/5 rounded" />
-            <div className="h-20 bg-foreground/5 rounded" />
-            <div className="h-20 bg-foreground/5 rounded" />
-          </div>
+      <div data-testid="messages-skeleton" className="mx-auto flex h-[calc(100svh-3.5rem)] max-w-[1280px] gap-0 p-4 sm:p-6" aria-label="Loading messages">
+        <div className="w-80 space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-md bg-surface-2" />
+          ))}
         </div>
+        <div className="ml-4 hidden flex-1 animate-pulse rounded-lg bg-surface-2 sm:block" />
       </div>
     )
   }
 
+  const showThread = !!selectedConversation && !showConversationList
+
   return (
-    <div className="h-[calc(100svh-4rem)] bg-surface flex flex-col overflow-hidden">
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <Card
+    <div className="mx-auto h-[calc(100svh-3.5rem)] max-w-[1280px] p-0 sm:p-4 lg:p-6">
+      <div className="flex h-full overflow-hidden border-border bg-card sm:rounded-lg sm:border">
+        {/* Conversation list */}
+        <section
           data-testid="conversation-list"
-          className={`w-full flex-shrink-0 border-r rounded-none flex flex-col overflow-y-auto ${
-            selectedConversation && !showConversationList ? "hidden sm:flex" : "flex"
-          } sm:w-80 md:w-96 lg:w-[400px]`}
+          aria-label="Conversations"
+          className={cn("w-full shrink-0 flex-col border-r border-border sm:flex sm:w-72 lg:w-80", showThread ? "hidden" : "flex")}
         >
-          <CardHeader className="border-b">
-            <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg font-semibold text-foreground">Messages</CardTitle>
-            </div>
-            <div className="relative mt-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
+          <div className="border-b border-border p-3">
+            <h1 className="mb-2 px-1 font-heading text-base font-semibold text-foreground">Messages</h1>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <input
+                type="search"
+                aria-label="Search conversations"
                 placeholder="Search conversations..."
-                className="pl-9"
+                className="h-9 w-full rounded-md border border-transparent bg-surface-2 pl-9 pr-3 text-sm focus:border-primary focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-          </CardHeader>
-          <CardContent className="flex-1 p-0">
+          </div>
+          <ul className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground text-sm">No conversations found.</div>
+              <li className="p-6 text-center text-sm text-muted-foreground">No conversations found.</li>
             ) : (
-              filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`flex items-center gap-3 p-4 cursor-pointer border-b border-border last:border-b-0 transition-colors hover:bg-surface-2 ${
-                    selectedConversationId === conversation.id ? "bg-surface-2" : ""
-                  }`}
-                  onClick={() => handleSelect(conversation)}
-                >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={conversation.participant.avatar || undefined} alt={conversation.participant.full_name} />
-                    <AvatarFallback className="bg-primary text-white flex items-center justify-center">
-                      {conversation.participant.full_name.charAt(0) || <User className="h-6 w-6" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{conversation.participant.full_name}</p>
-                    <p className="text-sm text-muted-foreground truncate mt-0.5">
-                      {conversation.last_message_at
-                        ? new Date(conversation.last_message_at).toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" })
-                        : "No messages yet"}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <div className={`flex-1 min-w-0 min-h-0 flex flex-col bg-card ${selectedConversation && !showConversationList ? "flex" : "hidden"} sm:flex`}>
-          <CardHeader className="border-b flex-shrink-0 py-3 px-4 sm:py-4 sm:px-6">
-            {selectedConversation ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setShowConversationList(true)}>
-                    <ArrowLeft className="h-5 w-5" />
-                    <span className="sr-only">Back to conversations</span>
-                  </Button>
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={selectedConversation.participant.avatar || undefined} alt={selectedConversation.participant.full_name} />
-                    <AvatarFallback className="bg-primary text-white flex items-center justify-center">
-                      {selectedConversation.participant.full_name.charAt(0) || <User className="h-5 w-5" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <CardTitle className="text-lg font-semibold">{selectedConversation.participant.full_name}</CardTitle>
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto max-w-xs text-sm p-2">Always engage with agency on Google meets</PopoverContent>
-                </Popover>
-              </div>
-            ) : (
-              <CardTitle className="text-lg text-muted-foreground">No conversation selected</CardTitle>
-            )}
-          </CardHeader>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-4">
-              {messages.length === 0 && selectedConversation ? (
-                <div className="text-center text-muted-foreground text-sm py-8">Start your conversation here!</div>
-              ) : (
-                messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.sender_id === currentUserId ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] p-2 sm:p-3 rounded-2xl ${
-                        message.sender_id === currentUserId ? "bg-primary text-white" : "bg-surface-2 text-foreground"
-                      }`}
-                    >
-                      {message.file_url ? (
-                        message.file_type?.startsWith("image/") ? (
-                          <div>
-                            <img
-                              src={message.file_url}
-                              alt={message.file_name ?? ""}
-                              className="max-w-[200px] sm:max-w-[250px] md:max-w-[300px] h-auto rounded-md cursor-pointer object-cover"
-                              onClick={() => window.open(message.file_url ?? undefined, "_blank", "noopener,noreferrer")}
-                            />
-                            <p className="text-xs mt-1 opacity-75">{message.file_name}</p>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2 p-2 bg-black/10 rounded max-w-[250px] sm:max-w-[280px]">
-                            <File className="h-4 w-4" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{message.file_name}</p>
-                              <p className="text-xs opacity-75">{((message.file_size ?? 0) / 1024).toFixed(1)} KB</p>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => window.open(message.file_url ?? undefined, "_blank", "noopener,noreferrer")}
-                            >
-                              <Upload className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )
-                      ) : (
-                        <p className="text-sm whitespace-pre-wrap">{message.message_text}</p>
+              filteredConversations.map((conversation) => {
+                const active = selectedConversationId === conversation.id
+                return (
+                  <li key={conversation.id}>
+                    <button
+                      onClick={() => handleSelect(conversation)}
+                      aria-current={active ? "true" : undefined}
+                      className={cn(
+                        "flex w-full items-center gap-3 border-l-2 px-3 py-3 text-left transition-colors hover:bg-surface-2",
+                        active ? "border-primary bg-surface-2" : "border-transparent"
                       )}
-                      <span className="block text-xs mt-1 opacity-75">
-                        {new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    >
+                      <ParticipantAvatar participant={conversation.participant} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-foreground">{conversation.participant.full_name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {conversation.last_message_at ? formatTimeAgo(conversation.last_message_at) : "No messages yet"}
+                        </span>
                       </span>
+                    </button>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+        </section>
+
+        {/* Active conversation */}
+        <section aria-label="Conversation" className={cn("min-w-0 flex-1 flex-col sm:flex", showThread ? "flex" : "hidden")}>
+          <div className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-3 sm:px-4">
+            {selectedConversation ? (
+              <>
+                <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden" onClick={() => setShowConversationList(true)}>
+                  <ArrowLeft className="h-5 w-5" />
+                  <span className="sr-only">Back to conversations</span>
+                </Button>
+                <ParticipantAvatar participant={selectedConversation.participant} size="sm" />
+                <h2 className="truncate text-sm font-semibold text-foreground">{selectedConversation.participant.full_name}</h2>
+              </>
+            ) : (
+              <h2 className="text-sm text-muted-foreground">No conversation selected</h2>
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto bg-surface p-4">
+            <div className="space-y-3">
+              {!selectedConversation ? (
+                <div className="flex flex-col items-center py-16 text-center text-sm text-muted-foreground">
+                  <MessageSquare className="mb-2 h-6 w-6" aria-hidden />
+                  Choose a conversation to read it.
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">No messages yet — say hello.</div>
+              ) : (
+                messages.map((message) => {
+                  const mine = message.sender_id === currentUserId
+                  return (
+                    <div key={message.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                      <div className={cn("max-w-[85%] rounded-lg px-3 py-2 sm:max-w-[70%]", mine ? "bg-primary text-primary-foreground" : "border border-border bg-card text-foreground")}>
+                        {message.file_url ? (
+                          message.file_type?.startsWith("image/") ? (
+                            <a href={message.file_url} target="_blank" rel="noopener noreferrer" className="block">
+                              <img src={message.file_url} alt={message.file_name ?? "Image attachment"} className="h-auto max-w-[240px] rounded object-cover" />
+                              <span className="mt-1 block text-xs opacity-75">{message.file_name}</span>
+                            </a>
+                          ) : (
+                            <a href={message.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                              <File className="h-4 w-4 shrink-0" aria-hidden />
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-medium underline-offset-2 hover:underline">{message.file_name}</span>
+                                <span className="block text-xs opacity-75">{((message.file_size ?? 0) / 1024).toFixed(1)} KB</span>
+                              </span>
+                            </a>
+                          )
+                        ) : (
+                          <p className="whitespace-pre-wrap text-sm">{message.message_text}</p>
+                        )}
+                        <span className="mt-1 block text-[11px] opacity-70">{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
           </div>
 
-          <div className="p-4 border-t border-border bg-card flex-shrink-0">
+          <div className="shrink-0 border-t border-border bg-card p-3">
             {selectedFile && (
-              <div className="mb-3 p-3 bg-surface-2 rounded-lg flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2 rounded-md bg-surface-2 p-2">
                 {selectedFile.type.startsWith("image/") ? <ImageIcon className="h-4 w-4" /> : <File className="h-4 w-4" />}
-                <span className="text-sm flex-1 truncate">{selectedFile.name}</span>
+                <span className="flex-1 truncate text-sm">{selectedFile.name}</span>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="ghost"
-                  className="h-6 w-6 p-0"
+                  className="h-7 w-7"
+                  aria-label="Remove attachment"
                   onClick={() => {
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ""
                   }}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </Button>
                 <Button size="sm" onClick={handleSendFile} disabled={sendFile.isPending}>
-                  {sendFile.isPending ? "Uploading..." : "Send"}
+                  {sendFile.isPending ? "Uploading…" : "Send file"}
                 </Button>
               </div>
             )}
             <div className="flex items-end gap-2">
               <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" onChange={handleFileSelect} className="hidden" />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!selectedConversationId}
-                className="flex-shrink-0"
-              >
-                <Upload className="h-4 w-4" />
+              <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={!selectedConversationId} className="shrink-0" aria-label="Attach a file">
+                <Paperclip className="h-4 w-4" />
               </Button>
-              <div className="flex-1 relative">
-                <Textarea
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSend()
-                    }
-                  }}
-                  rows={1}
-                  className="flex-1 resize-none min-h-[40px]"
-                  disabled={!selectedConversationId}
-                />
-              </div>
-              <Button
-                onClick={handleSend}
-                disabled={!newMessage.trim() || !selectedConversationId}
-                className="flex-shrink-0 w-10 h-10 rounded-full p-0"
-                aria-label="Send message"
-              >
-                <Send className="h-5 w-5" />
+              <Textarea
+                aria-label="Message"
+                placeholder="Type your message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
+                rows={1}
+                className="min-h-[40px] flex-1 resize-none"
+                disabled={!selectedConversationId}
+              />
+              <Button onClick={handleSend} disabled={!newMessage.trim() || !selectedConversationId} size="icon" className="shrink-0" aria-label="Send message">
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </div>
+        </section>
+
+        {/* Context panel */}
+        {selectedConversation && (
+          <aside aria-label="Conversation details" className="hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-border xl:flex">
+            <div className="flex flex-col items-center border-b border-border px-4 py-6 text-center">
+              <ParticipantAvatar participant={selectedConversation.participant} size="lg" />
+              <p className="mt-2 text-sm font-semibold text-foreground">{selectedConversation.participant.full_name}</p>
+              <p className="text-xs text-muted-foreground">{role === "agency" ? "Freelancer" : "Agency"}</p>
+            </div>
+            <div className="p-4">
+              <h3 className="text-xs font-semibold text-muted-foreground">Contracts together</h3>
+              {sharedContracts.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">No contracts with {selectedConversation.participant.full_name.split(" ")[0]} yet.</p>
+              ) : (
+                <ul className="mt-2 space-y-2">
+                  {sharedContracts.map((c) => (
+                    <li key={c.id} className="rounded-md border border-border p-3">
+                      <p className="truncate text-sm font-medium text-foreground">{c.job_title ?? "Job"}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <span className="text-xs tabular-nums text-muted-foreground">{formatKobo(c.amount_kobo)}</span>
+                        <EscrowStatusBadge status={c.status_v2} />
+                      </div>
+                      {(c.status_v2 === "funded" || c.status_v2 === "disputed" || c.status_v2 === "released") && (
+                        <Link to={`/workspace/${c.job_id}`} className="mt-2 inline-block text-xs font-medium text-primary hover:underline">
+                          Open workspace
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-4 text-xs text-muted-foreground">Keep conversations and payments on Bizimi so escrow protects both of you.</p>
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   )
