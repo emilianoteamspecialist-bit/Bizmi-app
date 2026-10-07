@@ -8,7 +8,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · 🟡 built on escrow v2, 
 
 | Route (legacy) | New SPA path | Status | Notes |
 |---|---|---|---|
-| `/` | `/` | ✅ | `Landing` |
+| `/` | `/` | ✅ | `Landing`. Phase 0 only ported Nav/Hero/FinalCTA/Footer; the seven middle sections (stats, categories, how it works, featured talent, testimonials, for freelancers, FAQ) and the Sora/Inter/Instrument Serif/Bricolage fonts were added 2026-10-07. |
 | `/login` | `/login` | ✅ | `Login` |
 | `/signup` | `/signup` | ✅ | `Signup` — also handles `?ref=` capture for the influencer referral program (Phase 5e) |
 | `/reset-password` | `/reset-password` | ✅⚠️ | Ported 2026-09-29 (`aaa5a0e`). "Request reset" step ported 2026-10-03: `ForgotPasswordModal` + re-enabled "Forgot?" on `/login`, recovery emails now `redirectTo: ${origin}/reset-password`; legacy `/freelancer/reset-password` kept as a route alias for links already sent. **Remaining (config, not code):** `<SPA origin>/reset-password` (and `/freelancer/reset-password`) must be in Supabase Auth → URL Configuration → Redirect URLs, or Supabase falls back to the Site URL. Not verified from here — confirm in Supabase Studio and test one real recovery email end-to-end before marking ✅. |

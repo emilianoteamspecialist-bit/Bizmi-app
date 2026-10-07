@@ -125,5 +125,7 @@ describe("PostJobModal", () => {
         idempotencyKey: expect.any(String),
       })
     )
-  })
+    // Types through all four steps with userEvent (~2s alone); under full-suite
+    // load it can brush the 5s default, so give it headroom.
+  }, 15_000)
 })
