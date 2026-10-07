@@ -32,10 +32,11 @@ describe("FreelancerProfileModal", () => {
     expect(screen.getByText("Jane Doe")).toBeInTheDocument()
     expect(screen.getByText("I build things")).toBeInTheDocument()
     expect(screen.getByText("Lagos")).toBeInTheDocument()
-    expect(screen.getByText("Fully Verified")).toBeInTheDocument()
+    expect(screen.getByText("Identity verified")).toBeInTheDocument()
     expect(screen.getByText("Web Development")).toBeInTheDocument()
     expect(screen.getByText("Tech")).toBeInTheDocument()
     expect(screen.getByText("6")).toBeInTheDocument()
+    expect(screen.getByText(/6 jobs completed/)).toBeInTheDocument()
   })
 
   it("calls onClose when the close button is clicked", async () => {

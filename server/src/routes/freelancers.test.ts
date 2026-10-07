@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest"
 import request from "supertest"
 import express from "express"
+import { fakeSupabase, callsTo } from "../test/fakeSupabase.js"
+
+let service = fakeSupabase(() => ({}))
+vi.mock("../lib/supabase.js", () => ({ createServiceClient: () => service.client }))
+
 import freelancersRouter from "./freelancers.js"
 
 function appWith(supabase: any) {
@@ -55,11 +60,14 @@ describe("GET /freelancers", () => {
       [{ id: "f-1", full_name: "Jane Doe", bio: "A bio", location: "Lagos", created_at: "2026-01-01T00:00:00Z" }],
       {
         freelancer_logos: [{ freelancer_id: "f-1", logo_path: "f-1/avatar.png", logo_data: null }],
-        Freelancer_identitie: [{ user_id: "f-1", verification_status: "verified" }],
-        freelancer_proposal_status: [{ freelancer_id: "f-1", status: "completed" }],
         freelancer_skills: [{ user_id: "f-1", skill_name: "Web Development" }],
       }
     )
+    service = fakeSupabase((op) => {
+      if (op.table === "freelancer_verification") return { data: [{ freelancer_id: "f-1", status: "verified" }] }
+      if (op.table === "escrow_deposits") return { data: [{ freelancer_id: "f-1" }, { freelancer_id: "f-1" }] }
+      return {}
+    })
     process.env.SUPABASE_URL = "https://example.supabase.co"
 
     const res = await request(appWith(supabase)).get("/").query({ limit: "20", offset: "0" })
@@ -74,10 +82,15 @@ describe("GET /freelancers", () => {
         created_at: "2026-01-01T00:00:00Z",
         logo: "https://example.supabase.co/storage/v1/object/public/avatars/f-1/avatar.png",
         verification_status: "verified",
-        jobs_completed: 1,
+        identity_verified: true,
+        jobs_completed: 2,
       },
     ])
     expect(res.body.hasMore).toBe(false)
+    // Completed = escrows released or paid out to the freelancer.
+    const [escrows] = callsTo(service.calls, "escrow_deposits")
+    expect(escrows.filters).toContainEqual(["in", "freelancer_id", ["f-1"]])
+    expect(escrows.filters).toContainEqual(["in", "status_v2", ["released", "paid_out"]])
   })
 
   it("returns an empty page with hasMore false when there are no matching profiles", async () => {

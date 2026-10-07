@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { asyncHandler } from "../lib/http.js"
 import { resolveAvatar } from "../lib/avatar.js"
+import { createServiceClient } from "../lib/supabase.js"
 
 const freelancersRouter = Router()
 
@@ -44,14 +45,18 @@ freelancersRouter.get(
 
     const freelancerIds = profilesData.map((p: { id: string }) => p.id)
 
+    // Trust signals come from the systems of record, read with the service
+    // role because RLS only lets each user see their own rows -- and only the
+    // status/count for the freelancers on this page:
+    //   - identity: freelancer_verification (written by the external KYC
+    //     service), not the legacy Freelancer_identitie table;
+    //   - jobs completed: escrows released or paid out to the freelancer, not
+    //     the self-reported freelancer_proposal_status.
+    const service = createServiceClient()
     const [logosResult, verificationResult, completedJobsResult, skillsResult] = await Promise.all([
       supabase.from("freelancer_logos").select("freelancer_id, logo_path, logo_data").in("freelancer_id", freelancerIds),
-      supabase.from("Freelancer_identitie").select("user_id, verification_status").in("user_id", freelancerIds),
-      supabase
-        .from("freelancer_proposal_status")
-        .select("freelancer_id, status")
-        .in("freelancer_id", freelancerIds)
-        .eq("status", "completed"),
+      service.from("freelancer_verification").select("freelancer_id, status").in("freelancer_id", freelancerIds),
+      service.from("escrow_deposits").select("freelancer_id").in("freelancer_id", freelancerIds).in("status_v2", ["released", "paid_out"]),
       supabase.from("freelancer_skills").select("user_id, skill_name").in("user_id", freelancerIds),
     ])
 
@@ -61,8 +66,8 @@ freelancersRouter.get(
     })
 
     const verificationMap: Record<string, string> = {}
-    verificationResult.data?.forEach((v: { user_id: string; verification_status: string }) => {
-      verificationMap[v.user_id] = v.verification_status
+    verificationResult.data?.forEach((v: { freelancer_id: string; status: string }) => {
+      verificationMap[v.freelancer_id] = v.status
     })
 
     const completedCountMap: Record<string, number> = {}
@@ -85,6 +90,7 @@ freelancersRouter.get(
       created_at: p.created_at,
       logo: logoMap[p.id] || null,
       verification_status: verificationMap[p.id] || null,
+      identity_verified: verificationMap[p.id] === "verified",
       jobs_completed: completedCountMap[p.id] || 0,
     }))
 
