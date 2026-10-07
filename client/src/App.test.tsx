@@ -81,12 +81,12 @@ describe("route table", () => {
 
   it("renders Login at /login", () => {
     renderAt("/login")
-    expect(screen.getByRole("heading", { name: /Continue your work/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /Sign in to Bizimi/i })).toBeInTheDocument()
   })
 
   it("renders Signup at /signup", () => {
     renderAt("/signup")
-    expect(screen.getByRole("heading", { name: /Start your journey/i })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /Create your Bizimi account/i })).toBeInTheDocument()
   })
 })
 
@@ -102,47 +102,47 @@ describe("QueryClientProvider", () => {
 describe("protected routes", () => {
   it("redirects /freelancer/dashboard to /login when signed out", async () => {
     renderAt("/freelancer/dashboard")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("proposals route", () => {
   it("redirects /freelancer/proposals to /login when signed out", async () => {
     renderAt("/freelancer/proposals")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("agency dashboard route", () => {
   it("redirects /agency/dashboard to /login when signed out", async () => {
     renderAt("/agency/dashboard")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("find freelancers route", () => {
   it("redirects /agency/find-freelancers to /login when signed out", async () => {
     renderAt("/agency/find-freelancers")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("bizpal route", () => {
   it("redirects /freelancer/bizpal to /login when signed out", async () => {
     renderAt("/freelancer/bizpal")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("messages routes", () => {
   it("redirects /freelancer/messages to /login when signed out", async () => {
     renderAt("/freelancer/messages")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 
   it("redirects /agency/messages to /login when signed out", async () => {
     renderAt("/agency/messages")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
@@ -156,35 +156,35 @@ describe("admin login route", () => {
 describe("admin dashboard and users routes", () => {
   it("redirects /admin/dashboard to /login when signed out", async () => {
     renderAt("/admin/dashboard")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 
   it("redirects /admin/users to /login when signed out", async () => {
     renderAt("/admin/users")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("admin jobs and audit routes", () => {
   it("redirects /admin/jobs to /login when signed out", async () => {
     renderAt("/admin/jobs")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 
   it("redirects /admin/audit to /login when signed out", async () => {
     renderAt("/admin/audit")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })
 
 describe("admin credits and influencers routes", () => {
   it("redirects /admin/credits to /login when signed out", async () => {
     renderAt("/admin/credits")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 
   it("redirects /admin/influencers to /login when signed out", async () => {
     renderAt("/admin/influencers")
-    await screen.findByRole("heading", { name: /Continue your work/i })
+    await screen.findByRole("heading", { name: /Sign in to Bizimi/i })
   })
 })

@@ -2,16 +2,14 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Eye, EyeOff, User, Building2, Loader2, CheckCircle, AlertCircle, X,
-  ArrowLeft, ShieldCheck, Sparkles, Search, ChevronRight, ChevronLeft,
-} from "lucide-react"
+import { Eye, EyeOff, User, Building2, Loader2, CheckCircle, X, Sparkles, Search, ChevronRight, ChevronLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { trackSignUp } from "@/lib/fbpixel"
 import { ALL_SKILLS } from "@/lib/categories"
+import { cn } from "@/lib/utils"
+import { AuthShell, FormMessage } from "@/components/marketplace/AuthShell"
 
 type AccountType = "freelancer" | "agency"
 
@@ -71,7 +69,7 @@ export default function Signup() {
     if (signupStatus.type === "error") setSignupStatus({ type: null, message: "" })
   }
 
-  const steps = accountType === "freelancer" ? ["Account Type", "Details", "Skills", "Security"] : ["Account Type", "Details", "Security"]
+  const steps = accountType === "freelancer" ? ["Account type", "Details", "Skills", "Password"] : ["Account type", "Details", "Password"]
 
   const validateCurrentStep = () => {
     if (currentStep === 1) return true
@@ -94,7 +92,7 @@ export default function Signup() {
       setCurrentStep((prev) => prev + 1)
       setSignupStatus({ type: null, message: "" })
     } else {
-      setSignupStatus({ type: "error", message: "Please complete all required fields correctly." })
+      setSignupStatus({ type: "error", message: "Fill in every field on this step to continue." })
     }
   }
 
@@ -138,15 +136,15 @@ export default function Signup() {
           authError.message?.includes("already") ||
           (authError as any).code === "user_already_exists"
         ) {
-          errorMessage = "Sorry, email already registered"
+          errorMessage = "An account with this email already exists. Sign in instead."
         }
         setSignupStatus({ type: "error", message: errorMessage })
       } else if (authData.user) {
         trackSignUp()
         const successMessage =
           accountType === "freelancer"
-            ? "🎉 Account created successfully! You've received 80 free credits! Please check your email to activate."
-            : "✅ Account created successfully! Please check your email to activate your account."
+            ? "Account created, with 80 free credits. Check your email and open the link to activate it."
+            : "Account created. Check your email and open the link to activate it."
         setSignupStatus({ type: "success", message: successMessage })
       }
     } catch (error) {
@@ -163,278 +161,262 @@ export default function Signup() {
 
   const isFinalStep = currentStep === steps.length
 
+  const accountOption = (type: AccountType, Icon: typeof User, title: string, blurb: string, extra?: React.ReactNode) => {
+    const selected = accountType === type
+    return (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={selected}
+        onClick={() => setAccountType(type)}
+        className={cn(
+          "relative rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          selected ? "border-primary bg-primary-soft" : "border-border hover:border-foreground/30"
+        )}
+      >
+        <span className={cn("flex h-9 w-9 items-center justify-center rounded-md", selected ? "bg-primary text-white" : "bg-surface-2 text-muted-foreground")}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <p className="mt-3 font-semibold text-foreground">{title}</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{blurb}</p>
+        {extra}
+        {selected && <CheckCircle className="absolute right-3 top-3 h-4 w-4 text-primary" aria-hidden />}
+      </button>
+    )
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface p-4 py-12 sm:py-16 selection:bg-primary/20 selection:text-primary">
-      <Link to="/" className="fixed top-6 left-6 z-50 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to home
-      </Link>
-
-      <div className="w-full max-w-3xl space-y-6">
-        <div className="space-y-2 text-center">
-          <Link to="/" className="inline-flex items-center justify-center">
-            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl">
-              <img src="/favicon.ico" alt="Bizimi Logo" width={48} height={48} className="h-full w-full object-contain" />
-            </div>
+    <AuthShell
+      width="wide"
+      title="Create your Bizimi account"
+      description="Find work or hire Nigerian freelancers, with every payment held in escrow."
+      topRight={
+        <>
+          Have an account?{" "}
+          <Link to="/login" className="font-medium text-primary hover:underline">
+            Sign in
           </Link>
-          <h1 className="pt-2 text-3xl font-semibold tracking-tight text-foreground">Start your journey</h1>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            Join the most secure marketplace for high-impact Nigerian talent.
-          </p>
-        </div>
+        </>
+      }
+    >
+      <ol className="mb-6 flex gap-2" aria-label={`Step ${currentStep} of ${steps.length}`}>
+        {steps.map((step, idx) => {
+          const reached = currentStep >= idx + 1
+          return (
+            <li key={step} className="flex-1">
+              <div className={cn("h-1 rounded-full transition-colors", reached ? "bg-primary" : "bg-surface-2")} />
+              <p className={cn("mt-1.5 hidden text-xs sm:block", currentStep === idx + 1 ? "font-medium text-foreground" : "text-muted-foreground")}>{step}</p>
+            </li>
+          )
+        })}
+      </ol>
 
-        <Card className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          <CardHeader className="px-6 sm:px-8 pt-8 pb-0">
-            <div className="flex gap-2 mb-7">
-              {steps.map((step, idx) => {
-                const isActive = currentStep >= idx + 1
-                return (
-                  <div key={step} className="flex-1">
-                    <div className={`h-1.5 rounded-full transition-colors duration-300 ${isActive ? "bg-primary" : "bg-surface-2"}`} />
-                    <p className={`mt-2 text-[10px] font-semibold uppercase tracking-wider transition-colors duration-300 ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                      {step}
-                    </p>
-                  </div>
-                )
-              })}
+      {signupStatus.type && (
+        <div className="mb-5">
+          <FormMessage tone={signupStatus.type}>
+            <span className="inline-flex items-start gap-2">
+              {signupStatus.type === "info" && <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />}
+              {signupStatus.message}
+            </span>
+          </FormMessage>
+        </div>
+      )}
+
+      <form onSubmit={handleSignUp} className="space-y-6">
+        {currentStep === 1 && (
+          <div>
+            <StepHeading title="Choose account type" description="How do you want to use Bizimi?" />
+            <div role="radiogroup" aria-label="Account type" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {accountOption(
+                "freelancer",
+                User,
+                "Freelancer",
+                "Find work and get paid through escrow.",
+                <p className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-success">
+                  <Sparkles className="h-3 w-3" aria-hidden /> 80 free credits to start bidding
+                </p>
+              )}
+              {accountOption("agency", Building2, "Agency", "Post jobs and hire vetted freelancers.")}
+            </div>
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            <StepHeading title="Personal details" description="This is how you'll appear to others on Bizimi." />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="fullName">Full name</Label>
+                <Input id="fullName" autoComplete="name" placeholder="John Doe" value={formData.fullName} onChange={(e) => handleInputChange("fullName", e.target.value)} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email address</Label>
+                <Input id="email" type="email" autoComplete="email" placeholder="john@example.com" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} required />
+              </div>
             </div>
 
-            {signupStatus.type && (
-              <div
-                className={`mb-6 flex items-start gap-3 rounded-xl border p-3.5 text-left ${
-                  signupStatus.type === "success"
-                    ? "bg-success/10 border-success/20 text-success"
-                    : signupStatus.type === "error"
-                      ? "bg-destructive/10 border-destructive/20 text-destructive"
-                      : "bg-primary/10 border-primary/20 text-primary"
-                }`}
-              >
-                {signupStatus.type === "success" && <CheckCircle className="h-5 w-5 flex-shrink-0" />}
-                {signupStatus.type === "error" && <AlertCircle className="h-5 w-5 flex-shrink-0" />}
-                {signupStatus.type === "info" && <Loader2 className="h-5 w-5 flex-shrink-0 animate-spin" />}
-                <p className="text-sm font-medium leading-snug">{signupStatus.message}</p>
+            {accountType === "freelancer" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="username">Username</Label>
+                <Input id="username" autoComplete="username" placeholder="johndoe_creative" value={formData.username} onChange={(e) => handleInputChange("username", e.target.value)} required />
               </div>
             )}
-          </CardHeader>
 
-          <CardContent className="px-6 sm:px-8 py-8">
-            <form onSubmit={handleSignUp} className="space-y-8">
-              {currentStep === 1 && (
-                <div className="space-y-4">
-                  <div className="space-y-1 mb-5">
-                    <h2 className="text-xl font-semibold text-foreground">Choose account type</h2>
-                    <p className="text-sm text-muted-foreground">How do you want to use Bizimi?</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAccountType("freelancer")}
-                      className={`relative p-5 rounded-xl border text-left transition-all ${accountType === "freelancer" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                    >
-                      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${accountType === "freelancer" ? "bg-primary text-white" : "bg-surface-2 text-muted-foreground"}`}>
-                        <User className="h-5 w-5" />
-                      </div>
-                      <p className="font-semibold text-foreground">Freelancer</p>
-                      <p className="mt-1 text-xs text-muted-foreground">I want to work and earn.</p>
-                      {accountType === "freelancer" && (
-                        <div className="absolute top-3.5 right-3.5 rounded-full bg-primary p-1 text-white">
-                          <CheckCircle className="h-3 w-3" />
-                        </div>
-                      )}
-                      <div className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-success/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-success">
-                        <Sparkles className="h-3 w-3" />
-                        80 Free Credits
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAccountType("agency")}
-                      className={`relative p-5 rounded-xl border text-left transition-all ${accountType === "agency" ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                    >
-                      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${accountType === "agency" ? "bg-primary text-white" : "bg-surface-2 text-muted-foreground"}`}>
-                        <Building2 className="h-5 w-5" />
-                      </div>
-                      <p className="font-semibold text-foreground">Agency</p>
-                      <p className="mt-1 text-xs text-muted-foreground">I want to hire talent.</p>
-                      {accountType === "agency" && (
-                        <div className="absolute top-3.5 right-3.5 rounded-full bg-primary p-1 text-white">
-                          <CheckCircle className="h-3 w-3" />
-                        </div>
-                      )}
-                    </button>
-                  </div>
+            {accountType === "agency" && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="companyName">Company name</Label>
+                  <Input id="companyName" autoComplete="organization" placeholder="Bizimi Creative" value={formData.companyName} onChange={(e) => handleInputChange("companyName", e.target.value)} required />
                 </div>
-              )}
-
-              {currentStep === 2 && (
-                <div className="space-y-4">
-                  <div className="space-y-1 mb-5">
-                    <h2 className="text-xl font-semibold text-foreground">Personal details</h2>
-                    <p className="text-sm text-muted-foreground">Tell us a bit about yourself.</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-sm font-medium text-foreground">Full name</Label>
-                      <Input id="fullName" placeholder="John Doe" className="h-11" value={formData.fullName} onChange={(e) => handleInputChange("fullName", e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-foreground">Email address</Label>
-                      <Input id="email" type="email" placeholder="john@example.com" className="h-11" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} required />
-                    </div>
-                  </div>
-
-                  {accountType === "freelancer" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="username" className="text-sm font-medium text-foreground">Username</Label>
-                      <Input id="username" placeholder="johndoe_creative" className="h-11" value={formData.username} onChange={(e) => handleInputChange("username", e.target.value)} required />
-                    </div>
-                  )}
-
-                  {accountType === "agency" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="companyName" className="text-sm font-medium text-foreground">Company name</Label>
-                        <Input id="companyName" placeholder="Bizimi Creative" className="h-11" value={formData.companyName} onChange={(e) => handleInputChange("companyName", e.target.value)} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="companySize" className="text-sm font-medium text-foreground">Company size</Label>
-                        <select
-                          id="companySize"
-                          className="h-11 w-full rounded-md border border-border bg-card px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          value={formData.companySize}
-                          onChange={(e) => handleInputChange("companySize", e.target.value)}
-                          required
-                        >
-                          <option value="">Select size</option>
-                          <option value="1-10">1-10 Employees</option>
-                          <option value="11-50">11-50 Employees</option>
-                          <option value="51-200">51-200 Employees</option>
-                          <option value="200+">200+ Employees</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="companySize">Company size</Label>
+                  <select
+                    id="companySize"
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={formData.companySize}
+                    onChange={(e) => handleInputChange("companySize", e.target.value)}
+                    required
+                  >
+                    <option value="">Select size</option>
+                    <option value="1-10">1–10 employees</option>
+                    <option value="11-50">11–50 employees</option>
+                    <option value="51-200">51–200 employees</option>
+                    <option value="200+">200+ employees</option>
+                  </select>
                 </div>
-              )}
-
-              {currentStep === 3 && accountType === "freelancer" && (
-                <div className="space-y-4">
-                  <div className="space-y-1 mb-5">
-                    <h2 className="text-xl font-semibold text-foreground">Your expertise</h2>
-                    <p className="text-sm text-muted-foreground">Select up to 10 skills that define your work.</p>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Selected skills</Label>
-                    <span className="text-xs font-semibold text-primary tabular-nums">{selectedSkills.length}/10</span>
-                  </div>
-
-                  <div className="flex min-h-[60px] flex-wrap gap-2 rounded-xl border border-border bg-surface-2 p-3">
-                    {selectedSkills.length === 0 && <span className="m-2 text-xs italic text-muted-foreground">No skills selected yet.</span>}
-                    {selectedSkills.map((skill) => (
-                      <span key={skill} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground">
-                        {skill}
-                        <button type="button" onClick={() => handleSkillToggle(skill)} className="text-muted-foreground transition-colors hover:text-destructive">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input type="text" placeholder="Search skills (e.g. Web Development)" className="h-11 pl-10" value={skillSearchTerm} onChange={(e) => setSkillSearchTerm(e.target.value)} />
-                  </div>
-
-                  <div className="grid max-h-[160px] grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-border bg-surface-2/60 p-2">
-                    {filteredSkills.slice(0, 20).map((skill) => (
-                      <button
-                        key={skill}
-                        type="button"
-                        onClick={() => handleSkillToggle(skill)}
-                        disabled={selectedSkills.length >= 10}
-                        className="rounded-lg border border-border bg-card px-3 py-2 text-left text-xs font-medium transition-all hover:border-primary hover:text-primary disabled:opacity-40"
-                      >
-                        {skill}
-                      </button>
-                    ))}
-                    {filteredSkills.length === 0 && (
-                      <p className="col-span-2 py-4 text-center text-xs italic text-muted-foreground">No skills found matching your search</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {isFinalStep && (
-                <div className="space-y-4">
-                  <div className="space-y-1 mb-5">
-                    <h2 className="text-xl font-semibold text-foreground">Secure your account</h2>
-                    <p className="text-sm text-muted-foreground">Choose a strong password to protect your data.</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
-                      <div className="relative">
-                        <Input id="password" type={showPassword ? "text" : "password"} className="h-11 pr-11" value={formData.password} onChange={(e) => handleInputChange("password", e.target.value)} required minLength={6} />
-                        <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">Confirm password</Label>
-                      <div className="relative">
-                        <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} className="h-11 pr-11" value={formData.confirmPassword} onChange={(e) => handleInputChange("confirmPassword", e.target.value)} required />
-                        <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 border-t border-border pt-5 mt-6">
-                {currentStep > 1 && (
-                  <Button type="button" variant="outline" onClick={handleBack} className="h-12 rounded-xl px-5 font-medium" disabled={isLoading || signupStatus.type === "success"}>
-                    <ChevronLeft className="mr-1 h-4 w-4" /> Back
-                  </Button>
-                )}
-
-                {!isFinalStep ? (
-                  <Button type="button" onClick={handleNext} className="h-12 flex-1 rounded-xl bg-foreground text-base font-semibold text-background hover:bg-foreground/90" disabled={!validateCurrentStep()}>
-                    Next step <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="submit" className="h-12 flex-1 rounded-xl bg-primary text-base font-semibold hover:bg-primary-hover" disabled={isLoading || !validateCurrentStep() || signupStatus.type === "success"}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Processing…
-                      </>
-                    ) : (
-                      "Complete signup"
-                    )}
-                  </Button>
-                )}
               </div>
-            </form>
+            )}
+          </div>
+        )}
 
-            <div className="mt-7 text-center">
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/login" className="font-medium text-primary hover:underline underline-offset-4">
-                  Sign in instead
-                </Link>
-              </p>
+        {currentStep === 3 && accountType === "freelancer" && (
+          <div className="space-y-3">
+            <StepHeading title="Your expertise" description="Pick up to 10 skills. Agencies search and filter by these." />
+
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium text-foreground">Selected</span>
+              <span className="tabular-nums text-muted-foreground">{selectedSkills.length}/10</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex min-h-[52px] flex-wrap gap-1.5 rounded-md border border-border bg-surface p-2.5">
+              {selectedSkills.length === 0 && <span className="px-1 py-1 text-sm text-muted-foreground">No skills selected yet.</span>}
+              {selectedSkills.map((skill) => (
+                <span key={skill} className="inline-flex items-center gap-1 rounded-md bg-primary-soft px-2 py-1 text-xs font-medium text-primary">
+                  {skill}
+                  <button type="button" onClick={() => handleSkillToggle(skill)} aria-label={`Remove ${skill}`} className="hover:text-foreground">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
 
-        <div className="flex items-center justify-center gap-2 pb-10 text-muted-foreground">
-          <ShieldCheck className="h-4 w-4" />
-          <span className="text-xs font-medium uppercase tracking-wide">Secure platform certification</span>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input type="text" aria-label="Search skills" placeholder="Search skills (e.g. Web Development)" className="pl-9" value={skillSearchTerm} onChange={(e) => setSkillSearchTerm(e.target.value)} />
+            </div>
+
+            <div className="grid max-h-44 grid-cols-1 gap-1.5 overflow-y-auto rounded-md border border-border p-1.5 sm:grid-cols-2">
+              {filteredSkills.slice(0, 20).map((skill) => (
+                <button
+                  key={skill}
+                  type="button"
+                  onClick={() => handleSkillToggle(skill)}
+                  disabled={selectedSkills.length >= 10}
+                  className="rounded px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-surface-2 disabled:opacity-40"
+                >
+                  {skill}
+                </button>
+              ))}
+              {filteredSkills.length === 0 && <p className="col-span-full py-4 text-center text-sm text-muted-foreground">No skills match "{skillSearchTerm}".</p>}
+            </div>
+          </div>
+        )}
+
+        {isFinalStep && (
+          <div className="space-y-4">
+            <StepHeading title="Secure your account" description="Use at least 6 characters. A longer password is safer." />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <PasswordField id="password" label="Password" autoComplete="new-password" value={formData.password} onChange={(v) => handleInputChange("password", v)} shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />
+              <PasswordField
+                id="confirmPassword"
+                label="Confirm password"
+                autoComplete="new-password"
+                value={formData.confirmPassword}
+                onChange={(v) => handleInputChange("confirmPassword", v)}
+                shown={showConfirmPassword}
+                onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+              />
+            </div>
+            {formData.confirmPassword && formData.password !== formData.confirmPassword && <p className="text-sm text-destructive">The passwords don't match yet.</p>}
+          </div>
+        )}
+
+        <div className="flex gap-3 border-t border-border pt-5">
+          {currentStep > 1 && (
+            <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading || signupStatus.type === "success"}>
+              <ChevronLeft /> Back
+            </Button>
+          )}
+
+          {!isFinalStep ? (
+            <Button type="button" onClick={handleNext} className="flex-1" disabled={!validateCurrentStep()}>
+              Next step <ChevronRight />
+            </Button>
+          ) : (
+            <Button type="submit" className="flex-1" disabled={isLoading || !validateCurrentStep() || signupStatus.type === "success"}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin" /> Creating account…
+                </>
+              ) : (
+                "Create account"
+              )}
+            </Button>
+          )}
         </div>
+      </form>
+    </AuthShell>
+  )
+}
+
+function StepHeading({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="font-heading text-lg font-semibold text-foreground">{title}</h2>
+      <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
+    </div>
+  )
+}
+
+function PasswordField({
+  id,
+  label,
+  autoComplete,
+  value,
+  onChange,
+  shown,
+  onToggle,
+}: {
+  id: string
+  label: string
+  autoComplete: string
+  value: string
+  onChange: (v: string) => void
+  shown: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input id={id} type={shown ? "text" : "password"} autoComplete={autoComplete} className="pr-10" value={value} onChange={(e) => onChange(e.target.value)} required minLength={6} />
+        <button
+          type="button"
+          className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+          onClick={onToggle}
+          aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        >
+          {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
       </div>
     </div>
   )

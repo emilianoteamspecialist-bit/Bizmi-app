@@ -1,144 +1,88 @@
-import { Shield, CheckCircle, AlertTriangle, FileText } from "lucide-react"
+import { PageContainer } from "@/components/marketplace/primitives"
+
+type Section = { title: string; intro?: string; points: string[]; warning?: boolean }
+
+// Policy wording is the platform's own; only the presentation lives here.
+const SECTIONS: Section[] = [
+  {
+    title: "Single Account Rule",
+    points: [
+      "Each freelancer is permitted to maintain only one account on Bizimi.",
+      "Creating, attempting to create, or maintaining duplicate accounts is strictly prohibited.",
+      "If any freelancer is found with duplicate accounts, all related accounts will be permanently banned.",
+    ],
+  },
+  {
+    title: "Authenticity Requirement",
+    points: [
+      "Freelancers must provide accurate and truthful information when creating their profiles.",
+      "Misrepresentation of identity, skills, or credentials is not allowed.",
+      "All freelancers must be authentic and genuine individuals; impersonation of another person or entity will lead to account termination.",
+    ],
+  },
+  {
+    title: "Profile Image Policy",
+    points: [
+      "Every freelancer must upload a clear and real photo of themselves as their profile avatar.",
+      "Use of logos, cartoons, celebrities, AI-generated images, or any other non-personal images as a profile avatar is prohibited.",
+      "This ensures proper visibility, transparency, and trust between freelancers and clients.",
+    ],
+  },
+  {
+    title: "NIN Verification Requirement",
+    points: [
+      "To enhance security and trust, every freelancer is required to complete NIN (National Identification Number) verification within 30 days of creating an account.",
+      "Freelancers who fail to complete NIN verification within this timeframe will have their accounts suspended or permanently banned.",
+      "Any freelancer found to have provided false or invalid NIN information will be removed from the platform.",
+    ],
+  },
+  {
+    title: "Consequences of Violation",
+    warning: true,
+    intro: "Violation of any part of this policy will result in one or more of the following actions:",
+    points: [
+      "Immediate suspension of the freelancer's account.",
+      "Permanent ban from the Bizimi platform.",
+      "Loss of access to ongoing projects and withdrawal of pending payments (subject to Bizimi's Terms of Service).",
+    ],
+  },
+  {
+    title: "Right to Review",
+    points: [
+      "Bizimi reserves the right to review, investigate, and take action on any freelancer account suspected of violating this policy.",
+      "Decisions made by Bizimi regarding duplicate accounts, authenticity, and verification are final and binding.",
+    ],
+  },
+]
 
 export default function FreelancerPolicyPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <PageContainer width="narrow">
+      <article className="mx-auto max-w-2xl">
+        <header>
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Bizimi Freelancer Duplicates &amp; Verification Policy</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            At Bizimi, we are committed to maintaining a safe, authentic, and trustworthy platform for freelancers and clients.
+          </p>
+        </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <Shield className="h-16 w-16 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">
-              Bizimi Freelancer Duplicates & Verification Policy
-            </h1>
-            <p className="text-slate-600">
-              At Bizimi, we are committed to maintaining a safe, authentic, and trustworthy platform for freelancers and
-              clients.
-            </p>
-          </div>
-
-          {/* Policy Sections */}
-          <div className="space-y-8">
-            {/* Single Account Rule */}
-            <div className="border-l-4 border-primary pl-6">
-              <div className="flex items-center mb-3">
-                <CheckCircle className="h-6 w-6 text-primary mr-2" />
-                <h2 className="text-xl font-semibold text-slate-900">1. Single Account Rule</h2>
-              </div>
-              <ul className="space-y-2 text-slate-700">
-                <li>• Each freelancer is permitted to maintain only one account on Bizimi.</li>
-                <li>• Creating, attempting to create, or maintaining duplicate accounts is strictly prohibited.</li>
-                <li>
-                  • If any freelancer is found with duplicate accounts, all related accounts will be permanently banned.
-                </li>
+        <ol className="mt-6 divide-y divide-border rounded-lg border border-border bg-card">
+          {SECTIONS.map((section, i) => (
+            <li key={section.title} className="p-5">
+              <h2 className="flex items-baseline gap-2 font-heading text-base font-semibold text-foreground">
+                <span className={section.warning ? "text-destructive" : "text-muted-foreground"}>{i + 1}.</span>
+                {section.title}
+              </h2>
+              {section.intro && <p className="mt-2 text-sm text-foreground">{section.intro}</p>}
+              <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted-foreground marker:text-border">
+                {section.points.map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
               </ul>
-            </div>
-
-            {/* Authenticity Requirement */}
-            <div className="border-l-4 border-primary pl-6">
-              <div className="flex items-center mb-3">
-                <CheckCircle className="h-6 w-6 text-primary mr-2" />
-                <h2 className="text-xl font-semibold text-slate-900">2. Authenticity Requirement</h2>
-              </div>
-              <ul className="space-y-2 text-slate-700">
-                <li>• Freelancers must provide accurate and truthful information when creating their profiles.</li>
-                <li>• Misrepresentation of identity, skills, or credentials is not allowed.</li>
-                <li>
-                  • All freelancers must be authentic and genuine individuals; impersonation of another person or entity
-                  will lead to account termination.
-                </li>
-              </ul>
-            </div>
-
-            {/* Profile Image Policy */}
-            <div className="border-l-4 border-primary pl-6">
-              <div className="flex items-center mb-3">
-                <CheckCircle className="h-6 w-6 text-primary mr-2" />
-                <h2 className="text-xl font-semibold text-slate-900">3. Profile Image Policy</h2>
-              </div>
-              <ul className="space-y-2 text-slate-700">
-                <li>• Every freelancer must upload a clear and real photo of themselves as their profile avatar.</li>
-                <li>
-                  • Use of logos, cartoons, celebrities, AI-generated images, or any other non-personal images as a
-                  profile avatar is prohibited.
-                </li>
-                <li>• This ensures proper visibility, transparency, and trust between freelancers and clients.</li>
-              </ul>
-            </div>
-
-            {/* NIN Verification Requirement */}
-            <div className="border-l-4 border-primary pl-6">
-              <div className="flex items-center mb-3">
-                <CheckCircle className="h-6 w-6 text-primary mr-2" />
-                <h2 className="text-xl font-semibold text-slate-900">4. NIN Verification Requirement</h2>
-              </div>
-              <ul className="space-y-2 text-slate-700">
-                <li>
-                  • To enhance security and trust, every freelancer is required to complete NIN (National Identification
-                  Number) verification within 30 days of creating an account.
-                </li>
-                <li>
-                  • Freelancers who fail to complete NIN verification within this timeframe will have their accounts
-                  suspended or permanently banned.
-                </li>
-                <li>
-                  • Any freelancer found to have provided false or invalid NIN information will be removed from the
-                  platform.
-                </li>
-              </ul>
-            </div>
-
-            {/* Consequences of Violation */}
-            <div className="border-l-4 border-red-500 pl-6">
-              <div className="flex items-center mb-3">
-                <AlertTriangle className="h-6 w-6 text-red-500 mr-2" />
-                <h2 className="text-xl font-semibold text-slate-900">5. Consequences of Violation</h2>
-              </div>
-              <p className="text-slate-700 mb-2">
-                Violation of any part of this policy will result in one or more of the following actions:
-              </p>
-              <ul className="space-y-2 text-slate-700">
-                <li>• Immediate suspension of the freelancer's account.</li>
-                <li>• Permanent ban from the Bizimi platform.</li>
-                <li>
-                  • Loss of access to ongoing projects and withdrawal of pending payments (subject to Bizimi's Terms of
-                  Service).
-                </li>
-              </ul>
-            </div>
-
-            {/* Right to Review */}
-            <div className="border-l-4 border-primary pl-6">
-              <div className="flex items-center mb-3">
-                <FileText className="h-6 w-6 text-primary mr-2" />
-                <h2 className="text-xl font-semibold text-slate-900">6. Right to Review</h2>
-              </div>
-              <ul className="space-y-2 text-slate-700">
-                <li>
-                  • Bizimi reserves the right to review, investigate, and take action on any freelancer account
-                  suspected of violating this policy.
-                </li>
-                <li>
-                  • Decisions made by Bizimi regarding duplicate accounts, authenticity, and verification are final and
-                  binding.
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Approval Section */}
-          {/* <div className="mt-12 pt-8 border-t border-slate-200">
-            <div className="text-center">
-              <p className="text-slate-600 mb-2">Approved by:</p>
-              <p className="text-lg font-semibold text-primary">Emiliano & Mubarak</p>
-              <p className="text-slate-600">Founders, Bizimi</p>
-            </div>
-          </div> */}
-        </div>
-      </div>
-    </div>
+            </li>
+          ))}
+        </ol>
+      </article>
+    </PageContainer>
   )
 }

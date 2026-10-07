@@ -26,6 +26,26 @@ beforeEach(() => {
 })
 
 describe("Login", () => {
+  it("shows wrong credentials inline instead of a browser alert", async () => {
+    signInMock.mockResolvedValue({ data: { user: null }, error: { message: "Invalid login credentials" } })
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {})
+
+    const { default: Login } = await import("./Login")
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    )
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "a@b.com" } })
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong" } })
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/don't match/i)
+    expect(alertSpy).not.toHaveBeenCalled()
+    expect(navigateMock).not.toHaveBeenCalled()
+    alertSpy.mockRestore()
+  })
+
   it("navigates to the agency dashboard after a successful agency sign-in", async () => {
     signInMock.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null })
     singleMock.mockResolvedValue({ data: { account_type: "agency" }, error: null })
