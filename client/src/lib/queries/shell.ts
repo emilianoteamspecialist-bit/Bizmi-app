@@ -6,11 +6,13 @@ export type PortalRole = "agency" | "freelancer"
 export type ShellData = {
   avatar: string | null
   unreadCount: number
+  /** Freelancer credit balance; null in the agency portal. */
+  credits: number | null
   recentUnread: { id: string; message_text: string | null; created_at: string; conversation_id: string; sender_name: string }[]
 }
 
-// Avatar + unread messages for the portal sidebar and top bar. Shared by both
-// (same query key), refreshed every minute while a portal page is open.
+// Avatar, unread messages and credits for the marketplace header, refreshed
+// every minute while a portal page is open.
 export function useShellQuery(role: PortalRole) {
   return useQuery({
     queryKey: ["shell", role],

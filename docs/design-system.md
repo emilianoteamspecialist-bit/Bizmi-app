@@ -1,3 +1,5 @@
+> Describes the **legacy Next.js app**. The new React app (`client/`) uses `docs/design/marketplace-design-system.md`.
+
 
 # Freelancing Platform Color System
 **Brand Color:** `#f97316`

@@ -24,6 +24,18 @@ beforeEach(() => {
 })
 
 describe("Marketplace", () => {
+  it("starts from the header search query (?q=)", () => {
+    render(
+      <MemoryRouter initialEntries={["/freelancer/marketplace?q=flutter"]}>
+        <Routes>
+          <Route path="/freelancer/marketplace" element={<Marketplace />} />
+        </Routes>
+      </MemoryRouter>
+    )
+    expect(screen.getByRole("searchbox", { name: /search projects/i })).toHaveValue("flutter")
+    expect(mocks.jobs).toHaveBeenCalledWith(expect.objectContaining({ searchQuery: "flutter" }), true)
+  })
+
   it("renders jobs, current result count and the server bookmark state", () => {
     render(<Marketplace />, { wrapper: wrap })
     expect(screen.getByText("Build a storefront")).toBeInTheDocument()

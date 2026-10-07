@@ -372,7 +372,7 @@ userRouter.get(
     const role = req.query.role === "agency" ? "agency" : "freelancer"
     const supabase = req.supabase!
 
-    const [avatarRes, countRes, recentRes] = await Promise.all([
+    const [avatarRes, countRes, recentRes, credits] = await Promise.all([
       role === "agency"
         ? supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).maybeSingle()
         : supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).maybeSingle(),
@@ -384,6 +384,8 @@ userRouter.get(
         .eq("is_read", false)
         .order("created_at", { ascending: false })
         .limit(6),
+      // Freelancers spend credits to bid; the header shows the balance.
+      role === "freelancer" ? fetchCredits(supabase, userId) : Promise.resolve(null),
     ])
 
     const recent = (recentRes.data ?? []) as { id: string; message_text: string | null; created_at: string; sender_id: string; conversation_id: string }[]
@@ -397,6 +399,7 @@ userRouter.get(
     res.json({
       avatar: avatarRes.data ? resolveAvatar(avatarRes.data as any) : null,
       unreadCount: countRes.count ?? 0,
+      credits,
       recentUnread: recent.map((m) => ({
         id: m.id,
         message_text: m.message_text,

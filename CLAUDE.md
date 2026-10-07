@@ -87,7 +87,7 @@ This is the highest-stakes part of the codebase — see `docs/escrow-production-
 
 ## Conventions
 
-- Primary brand color `orange-500` (`#f97316`) — see `docs/design-system.md` for the full palette, button/card/badge patterns, and the "10% orange, 90% neutrals" rule.
+- New app (`client/`): follow `docs/design/marketplace-design-system.md` — brand `#EA580C`, neutral surfaces, 6px radii, borders over shadows, no fake trust signals (there is no ratings/reviews system). The legacy Next.js app still follows `docs/design-system.md` (`orange-500` / `#f97316`).
 - Reuse existing `components/ui/` (shadcn) components rather than building new primitives.
 - New data models: type in TypeScript, validate with Zod on forms.
 

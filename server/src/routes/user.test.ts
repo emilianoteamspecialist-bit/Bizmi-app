@@ -782,6 +782,7 @@ describe("GET /shell", () => {
 
     expect(res.status).toBe(200)
     expect(res.body.unreadCount).toBe(3)
+    expect(res.body.credits).toBeNull() // agencies don't use credits
     expect(res.body.recentUnread).toEqual([{ id: "m1", message_text: "Hi", created_at: "2026-01-01T00:00:00Z", conversation_id: "c1", sender_name: "Jane" }])
     expect(res.body.avatar).toBeTruthy()
     expect(calls.some((c) => c.table === "agency_image")).toBe(true)
@@ -792,7 +793,7 @@ describe("GET /shell", () => {
     const { fakeSupabase } = await import("../test/fakeSupabase.js")
     const { client, calls } = fakeSupabase((op) => (op.table === "messages" && op.columns === "*" ? { count: 0 } : { data: null }))
     const res = await request(appWith({ id: "user-1" }, client)).get("/shell?role=freelancer")
-    expect(res.body).toEqual({ avatar: null, unreadCount: 0, recentUnread: [] })
+    expect(res.body).toEqual({ avatar: null, unreadCount: 0, recentUnread: [], credits: 0 })
     expect(calls.some((c) => c.table === "freelancer_logos")).toBe(true)
   })
 })
