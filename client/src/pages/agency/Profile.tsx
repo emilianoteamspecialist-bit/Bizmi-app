@@ -130,7 +130,6 @@ export default function AgencyProfile() {
               )}
             </div>
             <div className="space-y-1 min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Agency profile</p>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground truncate">
                 {formData.company_name || formData.full_name || "New agency"}
               </h1>
@@ -164,7 +163,7 @@ export default function AgencyProfile() {
           </div>
           <div className="p-6 pt-0 space-y-6">
             <div className="space-y-2">
-              <Label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Agency bio / about</Label>
+              <Label className="text-sm font-medium text-foreground">About your agency</Label>
               <Textarea
                 rows={6}
                 className="min-h-[140px] resize-none"

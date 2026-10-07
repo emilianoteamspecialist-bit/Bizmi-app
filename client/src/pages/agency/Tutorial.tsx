@@ -111,8 +111,7 @@ export default function AgencyTutorial() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <header className="space-y-1 mb-8">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Documentation</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">How to use Bizimi</h1>
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">How to use Bizimi</h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
             A step-by-step guide to hiring on Bizimi as an agency — from posting a job to releasing payment.
           </p>
@@ -121,8 +120,8 @@ export default function AgencyTutorial() {
         <div className="grid lg:grid-cols-[220px_1fr] gap-8">
           {/* Table of contents */}
           <aside className="hidden lg:block">
-            <nav className="sticky top-20">
-              <p className="px-3 mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">On this page</p>
+            <nav className="sticky top-20" aria-labelledby="toc-heading">
+              <p id="toc-heading" className="mb-2 px-3 text-sm font-semibold text-foreground">On this page</p>
               <ul className="space-y-0.5">
                 {sections.map((s) => (
                   <li key={s.id}>

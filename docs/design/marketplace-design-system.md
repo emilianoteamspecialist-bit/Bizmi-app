@@ -65,3 +65,25 @@ Show at most the top one or two as badges; the rest are plain meta text.
 ## States
 
 Every data view handles loading (skeletons shaped like the content), empty (says what to do next), error (says what failed and how to retry), and missing fields (fall back gracefully — never print "undefined" or a broken image).
+
+## Shared components (client/src/components/marketplace)
+
+Reuse these before writing page-specific UI:
+
+| Component | Use |
+|---|---|
+| `MarketplaceHeader` | The only portal navigation (in `components/portal/PortalLayout`). |
+| `primitives`: `PageContainer`, `PageHeader`, `Panel`, `FactList`, `SkillTag`/`SkillList`, `TrustBadge`, `EmptyState`, `ErrorState`, `SkeletonBlock` | Page frame, titled panels, label/value lists, skills, trust signals and every loading/empty/error state. |
+| `JobCard` (+ `JobCardSkeleton`) | Any list of marketplace jobs. The whole card opens the job; save and apply are separate controls. |
+| `JobDetailsSheet` | Job details as a slide-over: brief on the left, budget/apply/client on the right. |
+| `useJobApplication` | The single apply flow (eligibility, proposal form, double-submit guard, optimistic "Applied"). Find Work, Saved jobs and the dashboard all use it. |
+| `FilterGroup` | Radio filter groups for sidebars (and the mobile filter sheet). |
+| `FreelancerCard` (+ skeleton, `FreelancerAvatar`, `isIdentityVerified`) | Talent search results and profile panels. |
+| `ProfileCompleteness` + `freelancerCompleteness` | The profile-strength checklist (profile page and dashboard). |
+| `components/shared/EscrowStatusBadge` | Escrow state everywhere money is shown. |
+
+Formatting lives in `lib/format.ts` (`formatNaira`, `formatBudgetRange`, `formatTimeAgo`, `formatMemberSince`); escrow amounts (kobo) use `formatKobo` from `lib/queries/escrow`.
+
+## What the redesign deliberately does not show
+
+Features in the brief that have no data or backend behind them are left out rather than faked: ratings and reviews, client spend and hire rate, response time, experience level and fixed/hourly on jobs, a professional headline, portfolio/work history/education/certifications, an "Interviewing" proposal stage, milestones, saving freelancers, and invite-to-job. Each needs a real feature first; the layouts leave room for them.

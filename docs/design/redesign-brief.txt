@@ -1,0 +1,833 @@
+# Bizimii Marketplace UI/UX Redesign
+
+Redesign the existing **Bizimii (bizimii.com)** frontend into a polished, trustworthy, market-validated freelance marketplace.
+
+Bizimii is a Nigerian freelance marketplace connecting clients with skilled freelancers. The current product already has functionality and routes. Your job is primarily to **redesign and improve the UI/UX**, not rebuild the application or unnecessarily change existing business logic.
+
+## Core Objective
+
+Make Bizimii feel like a mature marketplace in the same product category as Fiverr, Upwork, and Freelancer.
+
+Study and borrow their proven UX principles:
+
+- strong marketplace search
+- clear navigation
+- information-dense but readable layouts
+- strong freelancer identity
+- obvious trust/reputation signals
+- standardized cards
+- clear pricing/budget information
+- strong CTAs
+- excellent filtering
+- predictable marketplace interactions
+- clear client/freelancer workflows
+
+Do NOT directly clone any platform's visual design.
+
+Bizimii should feel like an established product with its own identity.
+
+---
+
+# 1. Design Direction
+
+The UI should feel:
+
+- Professional
+- Trustworthy
+- Modern
+- Marketplace-first
+- Clean
+- Fast
+- Mature
+- Slightly dense rather than excessively spacious
+
+Avoid the generic "AI-generated SaaS dashboard" aesthetic.
+
+Do NOT overuse:
+
+- huge rounded cards
+- excessive gradients
+- glassmorphism
+- giant headings
+- excessive whitespace
+- floating dashboard widgets
+- random shadows
+- excessive animations
+- pill-shaped everything
+
+Use conventional marketplace UI patterns when they are better.
+
+### Brand
+
+Primary brand color:
+
+`#EA580C`
+
+Use orange strategically for:
+
+- primary CTAs
+- active states
+- important highlights
+- links where appropriate
+- selected filters
+- brand accents
+
+Do NOT flood the interface with orange.
+
+The majority of the interface should use neutral whites, grays and near-black typography so the orange remains meaningful.
+
+---
+
+# 2. Global Navigation
+
+Create a marketplace-style desktop navbar.
+
+Left:
+
+Bizimii logo
+
+Primary navigation:
+
+- Find Work
+- Find Talent
+- My Jobs
+- Messages
+
+Center / prominent area:
+
+Marketplace search.
+
+Allow users to search for:
+
+"Search jobs, skills, or freelancers"
+
+Consider a search-type selector such as:
+
+Jobs | Freelancers
+
+Right:
+
+- Notifications
+- Messages
+- Saved
+- Profile avatar/dropdown
+- Post a Job
+
+The navigation should feel useful rather than decorative.
+
+Use a sticky header where appropriate.
+
+---
+
+# 3. Freelancer Marketplace
+
+Redesign freelancer discovery around marketplace browsing.
+
+Create professional freelancer cards containing:
+
+Avatar
+
+Full name
+
+Professional headline
+
+Example:
+
+"Flutter & Full-Stack Developer"
+
+Location
+
+Verification indicator
+
+Rating + review count
+
+Jobs completed
+
+Primary skills
+
+Hourly rate or starting price
+
+Availability where relevant
+
+Short bio/excerpt
+
+CTA:
+
+"View Profile"
+
+Secondary action:
+
+Save freelancer
+
+Example information hierarchy:
+
+[Avatar] Taiwo Etti        ★ 4.9 (27)
+         Full-Stack Developer
+
+Lagos, Nigeria • Verified
+
+Flutter • Next.js • Supabase • AI
+
+"I build production-ready web and mobile applications..."
+
+₦15,000/hr
+
+[View Profile]     ♡
+
+Keep cards compact enough that users can compare several freelancers without excessive scrolling.
+
+---
+
+# 4. Find Jobs
+
+This is one of the most important screens.
+
+Model the UX after mature job marketplaces.
+
+Desktop structure:
+
+LEFT SIDEBAR
+
+Filters:
+
+Category
+
+Experience level
+
+Budget
+
+Project type
+
+Duration
+
+Number of proposals
+
+Client verification
+
+Location
+
+Skills
+
+Date posted
+
+CENTER
+
+Search input
+
+Sort:
+
+- Most Relevant
+- Newest
+- Budget: High to Low
+
+Then job results.
+
+Job cards should show:
+
+Job title
+
+Posted time
+
+Budget
+
+Fixed-price / hourly
+
+Experience level
+
+Short description
+
+Skills
+
+Number of proposals
+
+Client verification
+
+Client rating
+
+Client spending/history where available
+
+Client location
+
+Save button
+
+Example:
+
+Build Flutter Marketplace Application
+
+Posted 2 hours ago
+
+₦300,000 – ₦500,000 • Fixed Price • Intermediate
+
+We're looking for an experienced Flutter developer to...
+
+Flutter  Firebase  REST API  Mobile Development
+
+Payment Verified
+★ 4.8
+12 jobs posted
+Lagos, Nigeria
+
+Proposals: 5–10
+
+♡ Save
+
+The entire card should be clickable while preserving explicit actions.
+
+Make scanning extremely easy.
+
+---
+
+# 5. Job Details
+
+Create a two-column layout.
+
+MAIN COLUMN
+
+Job title
+
+Posted information
+
+Description
+
+Project requirements
+
+Skills
+
+Attachments
+
+Activity on this job
+
+Client history/reviews
+
+RELATED SIDEBAR
+
+Budget
+
+Project type
+
+Experience level
+
+Project duration
+
+Proposal requirements
+
+Available credits
+
+Prominent:
+
+[Submit a Proposal]
+
+Secondary:
+
+[Save Job]
+
+Below that show client information:
+
+Payment verified
+
+Identity verified
+
+Rating
+
+Location
+
+Member since
+
+Jobs posted
+
+Hire rate
+
+Total spent
+
+Trust is extremely important here.
+
+---
+
+# 6. Freelancer Profile
+
+Make profiles resemble professional marketplace storefronts rather than social-media profiles.
+
+Top profile section:
+
+Avatar
+
+Name
+
+Verification
+
+Professional headline
+
+Location
+
+Availability
+
+Rating
+
+Jobs completed
+
+Success rate where available
+
+Hourly rate
+
+Primary CTA:
+
+[Hire / Invite to Job]
+
+Secondary:
+
+[Message]
+
+Then:
+
+Overview
+
+Skills
+
+Portfolio
+
+Work History
+
+Reviews
+
+Employment / Experience
+
+Education
+
+Certifications
+
+Use tabs where they improve navigation.
+
+The portfolio should be visually prominent.
+
+---
+
+# 7. Dashboard
+
+Do NOT make the dashboard a collection of random statistic cards.
+
+The dashboard should answer:
+
+"What should I do next?"
+
+For freelancers:
+
+Welcome header
+
+Profile completeness
+
+Available credits
+
+Active proposals
+
+Current contracts
+
+Recommended jobs
+
+Recent messages
+
+Earnings summary
+
+Action items
+
+Example:
+
+Good afternoon, Taiwo
+
+12 available credits
+
+Recommended Jobs
+────────────────────────
+
+Flutter Developer for Fintech App
+₦350k–₦500k
+Posted 32 mins ago
+Flutter • Supabase • REST API
+
+[View Job]
+
+Then:
+
+Active Proposals
+Current Contracts
+Recent Messages
+
+For clients:
+
+Active jobs
+
+New proposals
+
+Shortlisted freelancers
+
+Contracts
+
+Pending actions
+
+Recent messages
+
+Post another job
+
+---
+
+# 8. Proposals
+
+Make proposal management highly scannable.
+
+Tabs:
+
+Active
+Interviewing
+Accepted
+Archived
+
+Proposal rows/cards:
+
+Job title
+
+Client
+
+Bid
+
+Submitted date
+
+Status
+
+Last activity
+
+Actions
+
+Use restrained status indicators.
+
+Do not create enormous cards for simple information.
+
+---
+
+# 9. Messages
+
+Use a familiar marketplace messaging layout.
+
+Three-column desktop layout:
+
+LEFT
+Conversation list
+
+CENTER
+Active conversation
+
+RIGHT
+Context panel
+
+Context panel can show:
+
+Job
+
+Contract
+
+Budget
+
+Milestones
+
+Participant profile
+
+Relevant actions
+
+The messaging interface should feel like part of the marketplace rather than a generic chat application.
+
+---
+
+# 10. Workspace
+
+For `/workspace/[job_id]`, create a professional contract workspace.
+
+Sections:
+
+Overview
+
+Messages
+
+Milestones
+
+Files
+
+Deliverables
+
+Payments
+
+Contract Details
+
+Clearly display:
+
+Project status
+
+Client/freelancer
+
+Contract value
+
+Deadline
+
+Current milestone
+
+Payment status
+
+Important actions
+
+This should feel like the operational center of a real paid engagement.
+
+---
+
+# 11. Trust System
+
+Trust is particularly important for Bizimii.
+
+Create consistent UI patterns for:
+
+Identity Verified
+
+Payment Verified
+
+Completed Jobs
+
+Ratings
+
+Reviews
+
+Member Since
+
+Response Time
+
+Successful Contracts
+
+Use these signals throughout:
+
+job cards
+profiles
+proposal screens
+job details
+messages
+contracts
+
+Do not spam badges. Establish a hierarchy of trust signals.
+
+---
+
+# 12. Component System
+
+Create reusable components instead of page-specific duplicated UI.
+
+Examples:
+
+MarketplaceHeader
+MarketplaceSearch
+JobCard
+FreelancerCard
+ClientInfo
+TrustBadge
+RatingDisplay
+SkillTag
+BudgetDisplay
+FilterSidebar
+EmptyState
+ProposalCard
+ContractCard
+ProfileHeader
+SectionHeader
+Pagination
+SortDropdown
+SearchFilters
+
+Use consistent:
+
+spacing
+typography
+borders
+radii
+buttons
+input heights
+card structures
+
+Prefer subtle borders over heavy shadows.
+
+---
+
+# 13. Responsive Design
+
+Desktop should support information-dense marketplace layouts.
+
+Tablet should intelligently collapse sidebars.
+
+Mobile should prioritize:
+
+search
+filters
+job information
+primary CTA
+
+Filters should become a drawer/sheet on mobile.
+
+Do not simply shrink the desktop interface.
+
+---
+
+# 14. UX States
+
+Every important component must support:
+
+Loading
+
+Skeleton loading
+
+Empty
+
+Error
+
+Success
+
+Disabled
+
+Hover
+
+Focus
+
+Selected
+
+Mobile
+
+Long content
+
+Missing data
+
+Do not assume perfect data.
+
+---
+
+# 15. Accessibility
+
+Maintain:
+
+WCAG-friendly contrast
+
+Keyboard navigation
+
+Visible focus states
+
+Semantic HTML
+
+Accessible form labels
+
+Appropriate ARIA attributes
+
+Minimum practical touch targets
+
+Do not sacrifice accessibility for aesthetics.
+
+---
+
+# 16. Existing Application
+
+Before modifying code:
+
+1. Inspect the current project structure.
+2. Identify the framework and component architecture.
+3. Identify existing reusable components.
+4. Identify current routes.
+5. Identify existing backend/API/Supabase integrations.
+6. Identify authentication and authorization logic.
+7. Identify existing responsive behavior.
+
+Preserve working functionality.
+
+Do NOT:
+
+- replace the existing stack unnecessarily
+- rewrite backend logic
+- modify database schemas without a real requirement
+- break Supabase integrations
+- remove working features
+- invent fake backend functionality
+
+Refactor frontend architecture where necessary.
+
+---
+
+# 17. Routes to Prioritize
+
+Prioritize redesigning:
+
+`/dashboard`
+
+`/freelancer/profile`
+
+`/freelancer/proposals`
+
+`/funded-jobs`
+
+`/saved-jobs`
+
+`/messages`
+
+`/workspace/[job_id]`
+
+Also ensure related job discovery, freelancer discovery, job details and proposal flows visually belong to the same design system.
+
+---
+
+# 18. Marketplace Principle
+
+At every design decision ask:
+
+"Would this help someone decide who to hire, what job to apply for, whether they can trust the other person, or what action they should take next?"
+
+If not, question whether the UI element needs to exist.
+
+Prioritize:
+
+Discovery → Evaluation → Trust → Action → Transaction
+
+over decoration.
+
+---
+
+# 19. Implementation Strategy
+
+Do not redesign everything blindly in one pass.
+
+First:
+
+Audit the current UI.
+
+Then establish:
+
+Typography
+Colors
+Spacing
+Buttons
+Inputs
+Cards
+Navigation
+Marketplace layout primitives
+
+Then progressively redesign:
+
+1. Global navigation
+2. Job discovery
+3. Job details
+4. Freelancer discovery
+5. Freelancer profiles
+6. Dashboard
+7. Proposals
+8. Messages
+9. Workspace
+10. Secondary pages
+
+Reuse components aggressively.
+
+After each major page, verify:
+
+Desktop
+Tablet
+Mobile
+Loading states
+Empty states
+Existing functionality
+
+The finished product should look like a credible freelance marketplace that could realistically compete in the Nigerian market—not a template, hackathon project, or generic SaaS dashboard.

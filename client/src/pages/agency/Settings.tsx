@@ -152,8 +152,7 @@ export default function AgencySettings() {
     <div className="min-h-screen bg-surface pb-20">
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <header className="space-y-1 mb-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Account</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Settings</h1>
           <p className="text-sm text-muted-foreground">Manage your account settings and preferences.</p>
         </header>
 

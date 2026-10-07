@@ -53,8 +53,7 @@ export default function AgencyPosts() {
       <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20">
         <div className="mx-auto max-w-6xl space-y-8">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hiring desk</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Job posts</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Job posts</h1>
             <p className="text-sm text-muted-foreground">Track your listings and review incoming proposals.</p>
           </header>
 

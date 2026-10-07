@@ -210,8 +210,7 @@ export default function FundedJobs() {
     <div className="min-h-screen bg-surface pb-20">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <header className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Earnings</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Funded jobs</h1>
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Funded jobs</h1>
           <p className="text-sm text-muted-foreground">Jobs agencies have paid into escrow for you, and your payouts.</p>
         </header>
 

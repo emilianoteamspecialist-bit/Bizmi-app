@@ -42,8 +42,7 @@ export default function Identity() {
     <div className="min-h-screen bg-surface pb-20">
       <div className="mx-auto max-w-xl px-4 sm:px-6 py-8 sm:py-12 space-y-6">
         <header className="space-y-1 text-center">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Verification</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Identity verification</h1>
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Identity verification</h1>
           <p className="text-sm text-muted-foreground">A verified badge helps agencies trust and hire you faster.</p>
         </header>
 
