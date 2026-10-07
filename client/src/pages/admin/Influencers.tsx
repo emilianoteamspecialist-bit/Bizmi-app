@@ -27,7 +27,7 @@ function SettingsForm({
   const [fee, setFee] = useState(String(platformFeePct))
 
   return (
-    <section className="rounded-xl border border-border bg-card p-6">
+    <section className="rounded-lg border border-border bg-card p-6">
       <h2 className="text-base font-semibold text-foreground">Program settings</h2>
       <p className="mt-1 text-sm text-muted-foreground">Commission is this % of Bizimi&apos;s platform fee. Changes apply to future qualifying events only.</p>
       <div className="mt-4 flex flex-col sm:flex-row sm:items-end gap-3">
@@ -79,7 +79,7 @@ export default function AdminInfluencers() {
 
   if (influencersQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <AdminSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading…</div>
       </div>
@@ -87,19 +87,18 @@ export default function AdminInfluencers() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Influencers</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Influencers</h1>
             <p className="text-sm text-muted-foreground">Referral performance, user acquisition, and payouts.</p>
           </header>
 
           <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {tiles.map((t) => (
-              <div key={t.label} className="rounded-xl border border-border bg-card p-4">
+              <div key={t.label} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground">{t.label}</p>
                   <t.icon className="h-4 w-4 text-muted-foreground" />
@@ -116,7 +115,7 @@ export default function AdminInfluencers() {
             isSaving={updateSettings.isPending}
           />
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">All influencers ({influencers.length})</h2>
             </div>
@@ -125,7 +124,7 @@ export default function AdminInfluencers() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                  <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
                     <tr>
                       <th className="px-5 py-3">Influencer</th>
                       <th className="px-5 py-3">Code</th>

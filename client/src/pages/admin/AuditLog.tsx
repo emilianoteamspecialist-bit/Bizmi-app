@@ -35,7 +35,7 @@ export default function AdminAuditLog() {
 
   if (auditQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <AdminSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading audit log…</div>
       </div>
@@ -43,20 +43,19 @@ export default function AdminAuditLog() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
             <header className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Audit log</h1>
+              <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Audit log</h1>
               <p className="text-sm text-muted-foreground">A record of consequential admin actions (money movement, account changes).</p>
             </header>
             <Input placeholder="Search action, admin, target…" value={search} onChange={(e) => setSearch(e.target.value)} className="md:max-w-xs" />
           </div>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">Recent actions ({logs.length})</h2>
             </div>

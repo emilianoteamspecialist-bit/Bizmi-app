@@ -3,11 +3,11 @@ import { formatKobo, useAdminAnalyticsQuery } from "@/lib/queries/escrow"
 
 function Table({ title, testId, head, rows }: { title: string; testId: string; head: string[]; rows: (string | number)[][] }) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden" data-testid={testId}>
+    <div className="rounded-lg border border-border bg-card overflow-hidden" data-testid={testId}>
       <h2 className="px-5 py-4 border-b border-border text-base font-semibold text-foreground">{title}</h2>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+          <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
             <tr>
               {head.map((h) => (
                 <th key={h} className="px-5 py-3">
@@ -46,13 +46,12 @@ export default function AdminAnalytics() {
   const data = analyticsQuery.data
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Analytics</h1>
             <p className="text-sm text-muted-foreground">Top earners (successful payouts, after fees) and top funders (money paid into escrow).</p>
           </header>
           {analyticsQuery.isLoading ? (

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Users, Briefcase, UserPlus, Shield, MoreVertical } from "lucide-react"
+import { Users, Briefcase, UserPlus, MoreVertical } from "lucide-react"
 import AdminSidebar from "@/components/AdminSidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -43,11 +43,11 @@ export default function AdminDashboard() {
     )
 
     if (filtered.length === 0) {
-      return <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">No {type === "all" ? "users" : `${type}s`} found</div>
+      return <div className="rounded-lg border border-border bg-card py-12 text-center text-sm text-muted-foreground">No {type === "all" ? "users" : `${type}s`} found</div>
     }
 
     return (
-      <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+      <div className="rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
         {filtered.map((user) => (
           <div key={user.id} className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-surface/60">
             <div className="flex items-center gap-3 min-w-0">
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label={`Actions for ${user.full_name || user.email}`}>
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
 
   if (usersQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <AdminSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading dashboard…</div>
       </div>
@@ -99,23 +99,20 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-foreground">
-              <Shield className="h-3.5 w-3.5 text-primary" /> Admin console
-            </span>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+              <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Dashboard</h1>
               <p className="text-sm text-muted-foreground">Overview of platform activity.</p>
             </div>
           </header>
 
           <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {tiles.map((t) => (
-              <div key={t.label} data-testid={t.testId} className="rounded-xl border border-border bg-card p-4">
+              <div key={t.label} data-testid={t.testId} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground">{t.label}</p>
                   <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.tile}`}>

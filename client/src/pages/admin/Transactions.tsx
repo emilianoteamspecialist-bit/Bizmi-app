@@ -84,13 +84,12 @@ export default function AdminTransactions() {
   )
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Transactions</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Transactions</h1>
             <p className="text-sm text-muted-foreground">
               Every escrow on the platform, its payouts and its audit trail. Money only moves through the escrow state machine, so this view is read-only.
             </p>
@@ -110,21 +109,21 @@ export default function AdminTransactions() {
                   ["Paid out", totals?.paid_out_kobo],
                   ["Platform fees earned", totals?.fees_kobo],
                 ].map(([label, value]) => (
-                  <div key={label as string} className="rounded-xl border border-border bg-card p-4">
+                  <div key={label as string} className="rounded-lg border border-border bg-card p-4">
                     <p className="text-xs font-medium text-muted-foreground">{label}</p>
                     <p className="mt-2 text-xl font-semibold tracking-tight text-foreground tabular-nums">{formatKobo(value as number)}</p>
                   </div>
                 ))}
               </section>
 
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="px-5 py-4 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-foreground">Escrows</h2>
                   <Input placeholder="Search job, party, reference, status…" value={search} onChange={(e) => setSearch(e.target.value)} className="md:max-w-xs" />
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                    <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
                       <tr>
                         <th className="px-5 py-3">Job</th>
                         <th className="px-5 py-3">Agency</th>

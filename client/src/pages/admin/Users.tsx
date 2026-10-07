@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MoreVertical } from "lucide-react"
@@ -35,10 +34,10 @@ export default function AdminUsers() {
 
   function UserTable({ users, type }: { users: AdminUser[]; type: string }) {
     if (users.length === 0) {
-      return <div className="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">No {type === "all" ? "users" : `${type}s`} found</div>
+      return <div className="rounded-lg border border-border bg-card py-12 text-center text-sm text-muted-foreground">No {type === "all" ? "users" : `${type}s`} found</div>
     }
     return (
-      <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+      <div className="rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
         {users.map((user) => (
           <div key={user.id} data-testid={`user-row-${user.id}`} className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-surface/60">
             <div className="flex items-center gap-3 min-w-0">
@@ -47,9 +46,7 @@ export default function AdminUsers() {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <Link to={`/admin/users/${user.id}`} className="text-sm font-medium text-foreground truncate hover:text-primary hover:underline">
-                    {user.full_name || "No name"}
-                  </Link>
+                  <p className="truncate text-sm font-medium text-foreground">{user.full_name || "No name"}</p>
                   <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary-soft text-primary capitalize">
                     {user.account_type}
                   </span>
@@ -63,14 +60,11 @@ export default function AdminUsers() {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label={`Actions for ${user.full_name || user.email}`}>
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to={`/admin/users/${user.id}`}>View details</Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleSetDisabled(user.id, true)}
                   disabled={updatingUserId === user.id}
@@ -91,7 +85,7 @@ export default function AdminUsers() {
 
   if (usersQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <AdminSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading users…</div>
       </div>
@@ -99,13 +93,12 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">User management</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">User management</h1>
             <p className="text-sm text-muted-foreground">Manage agencies and freelancers.</p>
           </header>
 

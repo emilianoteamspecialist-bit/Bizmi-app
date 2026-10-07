@@ -36,7 +36,7 @@ describe("InfluencerSidebar", () => {
   it("signs out and navigates to /login when Logout is clicked", async () => {
     const user = userEvent.setup()
     renderSidebar()
-    await user.click(screen.getByRole("button", { name: /logout/i }))
+    await user.click(screen.getByRole("button", { name: /log out/i }))
     expect(signOutMock).toHaveBeenCalledOnce()
     expect(navigateMock).toHaveBeenCalledWith("/login")
   })

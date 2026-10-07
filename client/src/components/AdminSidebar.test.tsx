@@ -27,8 +27,8 @@ describe("AdminSidebar", () => {
     const { default: AdminSidebar } = await import("./AdminSidebar")
     render(<MemoryRouter initialEntries={["/admin/users"]}><AdminSidebar /></MemoryRouter>)
 
-    expect(screen.getByRole("link", { name: "Users" })).toHaveClass("bg-primary")
-    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveClass("bg-primary")
+    expect(screen.getByRole("link", { name: "Users" })).toHaveAttribute("aria-current", "page")
+    expect(screen.getByRole("link", { name: "Dashboard" })).not.toHaveAttribute("aria-current")
   })
 
   it("signs out and navigates to /admin/login on logout", async () => {
@@ -37,7 +37,7 @@ describe("AdminSidebar", () => {
     const { default: AdminSidebar } = await import("./AdminSidebar")
     render(<MemoryRouter><AdminSidebar /></MemoryRouter>)
 
-    await user.click(screen.getByRole("button", { name: /logout/i }))
+    await user.click(screen.getByRole("button", { name: /log out/i }))
 
     expect(signOutMock).toHaveBeenCalled()
     expect(navigateMock).toHaveBeenCalledWith("/admin/login")
