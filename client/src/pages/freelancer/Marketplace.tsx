@@ -1,23 +1,78 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Navigate, useSearchParams } from "react-router-dom"
-import { Search, Bookmark, BookmarkCheck, Briefcase, ChevronDown, Loader2, MapPin, Sparkles, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Link, Navigate, useSearchParams } from "react-router-dom"
+import { Briefcase, Loader2, Search, ShieldAlert, SlidersHorizontal } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useDashboardQuery } from "@/lib/queries/user"
 import { useMarketplaceQuery } from "@/lib/queries/marketplace"
 import { useToggleBookmarkMutation } from "@/lib/queries/jobs"
-import { useSubmitProposalMutation } from "@/lib/queries/proposals"
+import { ALL_CATEGORIES, getSkillsForCategory, type Category } from "@/lib/categories"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Modal } from "@/components/shared/modal"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
+import { JobCard, JobCardSkeleton, type MarketplaceJob } from "@/components/marketplace/JobCard"
+import { JobDetailsSheet } from "@/components/marketplace/JobDetailsSheet"
+import { FilterGroup } from "@/components/marketplace/FilterGroup"
+import { useJobApplication } from "@/components/marketplace/useJobApplication"
+import { EmptyState, ErrorState, PageContainer, PageHeader } from "@/components/marketplace/primitives"
 
-type Job = any
+type Filters = { category: string; jobType: string; maxCredits: string; posted: string }
+const NO_FILTERS: Filters = { category: "", jobType: "", maxCredits: "", posted: "" }
 
-function money(value: number | null) { return value == null ? "Negotiable" : `₦${value.toLocaleString()}` }
-function relativeDate(value: string) {
-  const days = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 86400000))
-  return days === 0 ? "today" : `${days}d ago`
+const POSTED_DAYS: Record<string, number> = { "1": 1, "7": 7, "30": 30 }
+
+function fromDateFor(posted: string): string | undefined {
+  const days = POSTED_DAYS[posted]
+  return days ? new Date(Date.now() - days * 86400000).toISOString() : undefined
+}
+
+function JobFilters({ filters, onChange }: { filters: Filters; onChange: (next: Filters) => void }) {
+  const set = (key: keyof Filters) => (value: string) => onChange({ ...filters, [key]: value })
+  return (
+    <div className="space-y-4">
+      <FilterGroup
+        legend="Category"
+        name="category"
+        value={filters.category}
+        onChange={set("category")}
+        options={[{ value: "", label: "All categories" }, ...ALL_CATEGORIES.map((c) => ({ value: c, label: c }))]}
+      />
+      <FilterGroup
+        legend="Work type"
+        name="jobType"
+        value={filters.jobType}
+        onChange={set("jobType")}
+        options={[
+          { value: "", label: "Any" },
+          { value: "Remote", label: "Remote" },
+          { value: "Hybrid", label: "Hybrid" },
+          { value: "On-site", label: "On-site" },
+        ]}
+      />
+      <FilterGroup
+        legend="Credits to apply"
+        name="maxCredits"
+        value={filters.maxCredits}
+        onChange={set("maxCredits")}
+        options={[
+          { value: "", label: "Any" },
+          { value: "5", label: "5 or fewer" },
+          { value: "10", label: "10 or fewer" },
+        ]}
+      />
+      <FilterGroup
+        legend="Date posted"
+        name="posted"
+        value={filters.posted}
+        onChange={set("posted")}
+        options={[
+          { value: "", label: "Any time" },
+          { value: "1", label: "Last 24 hours" },
+          { value: "7", label: "Last 7 days" },
+          { value: "30", label: "Last 30 days" },
+        ]}
+      />
+    </div>
+  )
 }
 
 export default function Marketplace() {
@@ -27,60 +82,186 @@ export default function Marketplace() {
   // ?q= comes from the marketplace header search.
   const [searchParams] = useSearchParams()
   const urlQuery = searchParams.get("q") ?? ""
-  const [params, setParams] = useState({ searchQuery: urlQuery, jobType: "", maxCredits: undefined as number | undefined, categorySkills: undefined as string[] | undefined, fromDate: undefined as string | undefined })
+  const [searchQuery, setSearchQuery] = useState(urlQuery)
   const [draftSearch, setDraftSearch] = useState(urlQuery)
   useEffect(() => {
     setDraftSearch(urlQuery)
-    setParams((current) => (current.searchQuery === urlQuery ? current : { ...current, searchQuery: urlQuery }))
+    setSearchQuery(urlQuery)
   }, [urlQuery])
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [bookmarkOverrides, setBookmarkOverrides] = useState<Record<string, boolean>>({})
-  const [proposal, setProposal] = useState({ proposal_text: "", timeline: "", budget: "" })
-  const [showFilters, setShowFilters] = useState(false)
-  const submittingRef = useRef(false)
-  const [applied, setApplied] = useState<Set<string>>(new Set())
+
+  const params = {
+    searchQuery,
+    jobType: filters.jobType,
+    maxCredits: filters.maxCredits ? Number(filters.maxCredits) : undefined,
+    categorySkills: filters.category ? [...getSkillsForCategory(filters.category as Category)] : undefined,
+    fromDate: fromDateFor(filters.posted),
+  }
   const query = useMarketplaceQuery(params, isFreelancer)
   const bookmark = useToggleBookmarkMutation()
-  const submit = useSubmitProposalMutation()
+  const application = useJobApplication({ credits: dashboard.data?.credits ?? 0, verified: !!dashboard.data?.isVerified })
 
   if (profile && profile.account_type !== "freelancer") return <Navigate to="/" replace />
-  if (query.isError && !query.data) return <MarketplaceShell><div className="py-20 text-center"><p className="font-semibold">Couldn't load projects</p><p className="text-sm text-muted-foreground">Please try refreshing the page.</p></div></MarketplaceShell>
 
-  const jobs = query.data?.pages.flatMap((page) => page.jobs) ?? []
+  const jobs: MarketplaceJob[] = query.data?.pages.flatMap((page) => page.jobs) ?? []
   const total = query.data?.pages[0]?.totalCount ?? jobs.length
-  const credits = dashboard.data?.credits ?? 0
   const verified = !!dashboard.data?.isVerified
-  const apply = (job: Job) => {
-    if (!verified || credits < job.credit_cost) return
-    setSelectedJob(job); setProposal({ proposal_text: "", timeline: "", budget: "" })
-  }
-  const submitProposal = () => {
-    if (!selectedJob || submittingRef.current || !proposal.proposal_text || !proposal.timeline || !proposal.budget) return
-    submittingRef.current = true
-    const submittedJobId = selectedJob.id
-    setJobsApplied(submittedJobId)
-    submit.mutateAsync({ jobId: selectedJob.id, ...proposal, creditCost: selectedJob.credit_cost }).then((result) => {
-      submittingRef.current = false
-      if (result.success) setSelectedJob(null)
-      else setApplied((current) => { const next = new Set(current); next.delete(submittedJobId); return next })
-    }).catch(() => { submittingRef.current = false; setApplied((current) => { const next = new Set(current); next.delete(submittedJobId); return next }) })
-  }
-  const setJobsApplied = (id: string) => setApplied((current) => new Set(current).add(id))
+  const activeFilterCount = Object.values(filters).filter(Boolean).length
 
-  return <MarketplaceShell>
-    <header className="space-y-1"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Marketplace</p><h1 className="text-2xl font-semibold">Find projects</h1><p className="text-sm text-muted-foreground">Browse open briefs from agencies and file your proposal.</p></header>
-    <form className="rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row gap-2" onSubmit={(event) => { event.preventDefault(); setParams((current) => ({ ...current, searchQuery: draftSearch })) }}>
-      <div className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Search projects" role="searchbox" value={draftSearch} onChange={(e) => setDraftSearch(e.target.value)} placeholder="Search projects, skills, agencies…" className="pl-9" /></div>
-      <Button type="submit">Search</Button><Button type="button" variant="outline" onClick={() => setShowFilters((value) => !value)}><ChevronDown className="mr-2 h-4 w-4" />Filters</Button>
-    </form>
-    {showFilters && <div className="rounded-xl border border-border bg-card p-4 flex flex-wrap gap-3"><Select value={params.jobType || "all"} onValueChange={(value) => setParams((current) => ({ ...current, jobType: value === "all" ? "" : value }))}><SelectTrigger className="w-44"><SelectValue placeholder="Job type" /></SelectTrigger><SelectContent><SelectItem value="all">All job types</SelectItem><SelectItem value="Remote">Remote</SelectItem><SelectItem value="Hybrid">Hybrid</SelectItem><SelectItem value="On-site">On-site</SelectItem></SelectContent></Select><Select value={params.maxCredits ? String(params.maxCredits) : "all"} onValueChange={(value) => setParams((current) => ({ ...current, maxCredits: value === "all" ? undefined : Number(value) }))}><SelectTrigger className="w-44"><SelectValue placeholder="Bid cost" /></SelectTrigger><SelectContent><SelectItem value="all">Any bid cost</SelectItem><SelectItem value="5">Up to 5 credits</SelectItem><SelectItem value="10">Up to 10 credits</SelectItem></SelectContent></Select><Button type="button" variant="ghost" onClick={() => setParams({ searchQuery: "", jobType: "", maxCredits: undefined, categorySkills: undefined, fromDate: undefined })}>Clear filters</Button></div>}
-    <div className="flex items-center justify-between"><p className="text-sm">{total === 1 ? "1 project found" : `${total} projects found`}</p><p className="text-xs text-muted-foreground">{query.isFetching ? "Updating…" : "Fresh briefs"}</p></div>
-    {query.isFetchNextPageError && <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm flex justify-between items-center"><span>Couldn't load more projects.</span><Button variant="outline" size="sm" onClick={() => query.fetchNextPage()}>Retry load more</Button></div>}
-    {query.isLoading && !query.data ? <div className="py-16 text-center text-muted-foreground">Loading projects…</div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{jobs.map((job) => { const isApplied = job.has_applied || applied.has(job.id); const isBookmarked = bookmarkOverrides[job.id] ?? !!job.is_bookmarked; const canApply = verified && credits >= job.credit_cost && !isApplied; return <article key={job.id} className="rounded-xl border border-border bg-card overflow-hidden flex flex-col"><div className="p-5 space-y-4 flex-1"><div className="flex justify-between gap-3"><div><p className="text-xs text-muted-foreground">{job.agency_info?.company_name || job.agency_info?.full_name || "Agency"}</p><h2 className="mt-1 text-lg font-semibold">{job.title}</h2></div><button aria-label={isBookmarked ? "Remove from saved" : "Save"} className="text-muted-foreground hover:text-primary" onClick={() => { setBookmarkOverrides((current) => ({ ...current, [job.id]: !isBookmarked })); bookmark.mutate({ jobId: job.id, isBookmarked }) }}>{isBookmarked ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}</button></div><p className="text-sm text-muted-foreground line-clamp-3">{job.description}</p><div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"><span>{money(job.budget_min)} – {money(job.budget_max)}</span><span><MapPin className="inline h-3 w-3" /> {job.location || "Remote"}</span><span>{relativeDate(job.created_at)}</span></div><div className="flex flex-wrap gap-1.5">{(job.skills || []).slice(0, 5).map((skill: string) => <span key={skill} className="rounded bg-surface px-2 py-1 text-[11px]">{skill}</span>)}</div></div><div className="border-t border-border p-4 flex items-center justify-between gap-3"><span className="text-xs text-muted-foreground">{job.credit_cost} credits · {job.proposal_count ?? 0} bids</span><Button disabled={!canApply} variant={isApplied ? "outline" : "default"} aria-label={isApplied ? "Applied" : !verified ? "Verify identity to apply" : credits < job.credit_cost ? "Insufficient credits" : "Apply"} onClick={() => apply(job)}>{isApplied ? "Applied" : "Apply"}</Button></div></article> })}</div>}
-    {jobs.length === 0 && <div className="rounded-xl border border-border bg-card py-16 text-center"><Briefcase className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-3 font-semibold">No projects match</p><p className="text-sm text-muted-foreground">Try a different search or clear your filters.</p></div>}
-    {query.hasNextPage && <div className="flex justify-center"><Button variant="outline" disabled={query.isFetchingNextPage} onClick={() => query.fetchNextPage()}>{query.isFetchingNextPage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Load more</Button></div>}
-    <Modal isOpen={!!selectedJob} onClose={() => setSelectedJob(null)} title="Send a proposal" description={selectedJob ? `${selectedJob.title} · ${selectedJob.credit_cost} credits` : undefined}><form onSubmit={(event) => { event.preventDefault(); submitProposal() }} className="space-y-4"><Textarea aria-label="Your proposal" value={proposal.proposal_text} onChange={(e) => setProposal((current) => ({ ...current, proposal_text: e.target.value }))} placeholder="Tell the agency how you will deliver this brief" /><Input aria-label="Timeline" value={proposal.timeline} onChange={(e) => setProposal((current) => ({ ...current, timeline: e.target.value }))} placeholder="Timeline" /><Input aria-label="Your budget (₦)" value={proposal.budget} onChange={(e) => setProposal((current) => ({ ...current, budget: e.target.value }))} placeholder="Your budget (₦)" /><Button type="submit" disabled={submit.isPending || !proposal.proposal_text || !proposal.timeline || !proposal.budget} className="w-full">{submit.isPending ? "Sending…" : "Send proposal"}</Button></form></Modal>
-  </MarketplaceShell>
+  const isSaved = (job: MarketplaceJob) => bookmarkOverrides[job.id] ?? !!job.is_bookmarked
+  const toggleSave = (job: MarketplaceJob) => {
+    const current = isSaved(job)
+    setBookmarkOverrides((o) => ({ ...o, [job.id]: !current }))
+    bookmark.mutate({ jobId: job.id, isBookmarked: current })
+  }
+  return (
+    <PageContainer>
+      <PageHeader title="Find work" description="Open projects from agencies, newest first." />
+
+      {dashboard.data && !verified && (
+        <div className="mt-5 flex flex-col gap-3 rounded-lg border border-warning/40 bg-warning/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2 text-sm text-foreground">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden />
+            Verify your identity to start sending proposals.
+          </p>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/freelancer/identity">Verify identity</Link>
+          </Button>
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="hidden lg:block" aria-label="Filters">
+          <div className="sticky top-20 rounded-lg border border-border bg-card p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">Filters</h2>
+              {activeFilterCount > 0 && (
+                <button onClick={() => setFilters(NO_FILTERS)} className="text-xs font-medium text-primary hover:underline">
+                  Clear all
+                </button>
+              )}
+            </div>
+            <JobFilters filters={filters} onChange={setFilters} />
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-4">
+          <form
+            role="search"
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setSearchQuery(draftSearch)
+            }}
+          >
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input
+                aria-label="Search projects"
+                role="searchbox"
+                value={draftSearch}
+                onChange={(e) => setDraftSearch(e.target.value)}
+                placeholder="Search by title, skill or keyword"
+                className="pl-9"
+              />
+            </div>
+            <Button type="submit">Search</Button>
+            <Button type="button" variant="outline" className="lg:hidden" onClick={() => setFiltersOpen(true)} aria-label="Filters">
+              <SlidersHorizontal />
+              {activeFilterCount > 0 && <span className="tabular-nums">{activeFilterCount}</span>}
+            </Button>
+          </form>
+
+          <div className="flex items-center justify-between text-sm">
+            <p className="text-foreground" aria-live="polite">
+              {total === 1 ? "1 project found" : `${total} projects found`}
+            </p>
+            <p className="text-xs text-muted-foreground">{query.isFetching && !query.isLoading ? "Updating…" : "Newest first"}</p>
+          </div>
+
+          {query.isError && !query.data ? (
+            <ErrorState title="Couldn't load projects" description="Please try refreshing the page." onRetry={() => query.refetch()} />
+          ) : query.isLoading && !query.data ? (
+            <div className="space-y-3" aria-label="Loading projects">
+              {[1, 2, 3].map((i) => (
+                <JobCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : jobs.length === 0 ? (
+            <EmptyState
+              icon={<Briefcase className="h-5 w-5" />}
+              title="No projects match"
+              description="Try a different search or clear your filters."
+              action={
+                activeFilterCount > 0 || searchQuery ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFilters(NO_FILTERS)
+                      setDraftSearch("")
+                      setSearchQuery("")
+                    }}
+                  >
+                    Clear search and filters
+                  </Button>
+                ) : undefined
+              }
+            />
+          ) : (
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <JobCard key={job.id} job={job} onOpen={application.openJob} saved={isSaved(job)} onToggleSave={toggleSave} action={application.cardAction(job)} />
+              ))}
+            </div>
+          )}
+
+          {query.isFetchNextPageError && (
+            <div role="alert" className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <span>Couldn't load more projects.</span>
+              <Button variant="outline" size="sm" onClick={() => query.fetchNextPage()}>
+                Retry load more
+              </Button>
+            </div>
+          )}
+          {query.hasNextPage && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" disabled={query.isFetchingNextPage} onClick={() => query.fetchNextPage()}>
+                {query.isFetchingNextPage && <Loader2 className="animate-spin" />}
+                Load more
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent side="left" className="w-80 overflow-y-auto">
+          <SheetTitle className="mb-4 text-base font-semibold">Filters</SheetTitle>
+          <JobFilters filters={filters} onChange={setFilters} />
+          <div className="mt-6 flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setFilters(NO_FILTERS)}>
+              Clear
+            </Button>
+            <Button className="flex-1" onClick={() => setFiltersOpen(false)}>
+              Show results
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <JobDetailsSheet
+        job={application.selectedJob}
+        open={!!application.selectedJob}
+        onOpenChange={(open) => !open && application.closeJob()}
+        saved={application.selectedJob ? isSaved(application.selectedJob) : false}
+        onToggleSave={toggleSave}
+        cta={application.selectedJob ? application.detailsCta(application.selectedJob) : null}
+      >
+        {application.proposalForm}
+      </JobDetailsSheet>
+    </PageContainer>
+  )
 }
-
-function MarketplaceShell({ children }: { children: React.ReactNode }) { return <div className="min-h-screen bg-surface pb-20"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">{children}</div></div> }
