@@ -360,6 +360,54 @@ userRouter.post(
   })
 )
 
+// GET /api/user/shell?role=agency|freelancer -- what the portal sidebar and
+// top bar need on every page: the caller's avatar, unread-message count and
+// latest unread messages (with sender names). `role` is the portal being
+// viewed (the legacy shell derives it from the URL), and only picks which
+// avatar table to read; every query is the caller's own via RLS.
+userRouter.get(
+  "/shell",
+  asyncHandler(async (req, res) => {
+    const userId = req.user!.id
+    const role = req.query.role === "agency" ? "agency" : "freelancer"
+    const supabase = req.supabase!
+
+    const [avatarRes, countRes, recentRes] = await Promise.all([
+      role === "agency"
+        ? supabase.from("agency_image").select("image_path, image_data").eq("agency_id", userId).maybeSingle()
+        : supabase.from("freelancer_logos").select("logo_path, logo_data").eq("freelancer_id", userId).maybeSingle(),
+      supabase.from("messages").select("*", { count: "exact", head: true }).eq("receiver_id", userId).eq("is_read", false),
+      supabase
+        .from("messages")
+        .select("id, message_text, created_at, sender_id, conversation_id")
+        .eq("receiver_id", userId)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ])
+
+    const recent = (recentRes.data ?? []) as { id: string; message_text: string | null; created_at: string; sender_id: string; conversation_id: string }[]
+    const senderIds = [...new Set(recent.map((m) => m.sender_id).filter(Boolean))]
+    const senders: Record<string, { full_name: string | null; company_name: string | null }> = {}
+    if (senderIds.length) {
+      const { data } = await supabase.from("profiles").select("id, full_name, company_name").in("id", senderIds)
+      for (const p of data ?? []) senders[p.id] = p
+    }
+
+    res.json({
+      avatar: avatarRes.data ? resolveAvatar(avatarRes.data as any) : null,
+      unreadCount: countRes.count ?? 0,
+      recentUnread: recent.map((m) => ({
+        id: m.id,
+        message_text: m.message_text,
+        created_at: m.created_at,
+        conversation_id: m.conversation_id,
+        sender_name: senders[m.sender_id]?.company_name || senders[m.sender_id]?.full_name || "Someone",
+      })),
+    })
+  })
+)
+
 userRouter.get(
   "/agency-image",
   asyncHandler(async (req, res) => {
