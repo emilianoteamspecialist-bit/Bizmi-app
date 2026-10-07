@@ -24,6 +24,22 @@ beforeEach(() => {
 })
 
 describe("Marketplace", () => {
+  it("keeps the Date posted cutoff stable across re-renders (no refetch loop)", () => {
+    const { rerender } = render(<Marketplace />, { wrapper: wrap })
+    fireEvent.click(within(screen.getByRole("complementary", { name: "Filters" })).getByLabelText("Last 7 days"))
+    const first = mocks.jobs.mock.calls.at(-1)![0].fromDate
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 5000)
+    rerender(<Marketplace />)
+    expect(mocks.jobs.mock.calls.at(-1)![0].fromDate).toBe(first)
+    vi.restoreAllMocks()
+  })
+
+  it("never reports fewer projects than it shows", () => {
+    query = { ...query, data: { pages: [{ jobs: [job, { ...job, id: "j2", title: "Logo design" }], totalCount: 1 }] } }
+    render(<Marketplace />, { wrapper: wrap })
+    expect(screen.getByText("2 projects found")).toBeInTheDocument()
+  })
+
   it("applies sidebar filters to the jobs query", () => {
     render(<Marketplace />, { wrapper: wrap })
     const filters = screen.getByRole("complementary", { name: "Filters" })

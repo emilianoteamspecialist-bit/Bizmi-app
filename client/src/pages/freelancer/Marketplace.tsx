@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link, Navigate, useSearchParams } from "react-router-dom"
 import { Briefcase, Loader2, Search, ShieldAlert, SlidersHorizontal } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
@@ -92,12 +92,15 @@ export default function Marketplace() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [bookmarkOverrides, setBookmarkOverrides] = useState<Record<string, boolean>>({})
 
+  // fromDate is fixed when the filter is chosen: recomputing it from
+  // Date.now() each render changed the query key and refetched endlessly.
+  const fromDate = useMemo(() => fromDateFor(filters.posted), [filters.posted])
   const params = {
     searchQuery,
     jobType: filters.jobType,
     maxCredits: filters.maxCredits ? Number(filters.maxCredits) : undefined,
     categorySkills: filters.category ? [...getSkillsForCategory(filters.category as Category)] : undefined,
-    fromDate: fromDateFor(filters.posted),
+    fromDate,
   }
   const query = useMarketplaceQuery(params, isFreelancer)
   const bookmark = useToggleBookmarkMutation()
@@ -106,7 +109,8 @@ export default function Marketplace() {
   if (profile && profile.account_type !== "freelancer") return <Navigate to="/" replace />
 
   const jobs: MarketplaceJob[] = query.data?.pages.flatMap((page) => page.jobs) ?? []
-  const total = query.data?.pages[0]?.totalCount ?? jobs.length
+  // Never show fewer than are on screen (guards against a stale RPC total).
+  const total = Math.max(query.data?.pages[0]?.totalCount ?? 0, jobs.length)
   const verified = !!dashboard.data?.isVerified
   const activeFilterCount = Object.values(filters).filter(Boolean).length
 

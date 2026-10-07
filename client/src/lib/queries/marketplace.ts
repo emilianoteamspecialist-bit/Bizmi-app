@@ -37,7 +37,9 @@ export function useMarketplaceQuery(params: MarketplaceParams, enabled = true) {
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       const loaded = pages.reduce((total, page) => total + page.jobs.length, 0)
-      return loaded < lastPage.totalCount ? loaded : undefined
+      // A full page means there may be more, even if total_count is stale
+      // (the RPC reported 1 for every query before its window-count fix).
+      return loaded < lastPage.totalCount || lastPage.jobs.length === PAGE_SIZE ? loaded : undefined
     },
     placeholderData: keepPreviousData,
     enabled,
