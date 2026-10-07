@@ -15,9 +15,11 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 24.6 95% 53.1%;
+    /* Brand orange #EA580C (hover #C2410C). Reserve it for CTAs, active and
+       selected states -- see docs/design/marketplace-design-system.md. */
+    --primary: 20.5 90.2% 48.2%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 20.1 89.1% 48.4%;
+    --primary-hover: 17.5 88.3% 40.4%;
     --primary-soft: 33 100% 96.5%;
     --primary-border: 32 98% 83.3%;
     --oxblood: 358 50% 28%;
@@ -41,12 +43,13 @@
     --rule: 220 13% 85%;
     --divider: 215 14% 83%;
     --input: 220 13% 91%;
-    --ring: 24.6 95% 53.1%;
-    --radius-sm: 0.5rem;
-    --radius: 0.75rem;
-    --radius-lg: 1.25rem;
-    --radius-xl: 1.5rem;
-    --radius-2xl: 2rem;
+    --ring: 20.5 90.2% 48.2%;
+    /* Tight, conventional radii: cards read as cards, not pills. */
+    --radius-sm: 0.25rem;
+    --radius: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.625rem;
+    --radius-2xl: 0.75rem;
   }
 
   * { @apply border-border; }

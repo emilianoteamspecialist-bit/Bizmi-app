@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Navigate } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Navigate, useSearchParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,8 +24,15 @@ function trustBadge(verificationStatus: string | null, jobsCompleted: number) {
 
 export default function FindFreelancers() {
   const { profile } = useAuth()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [searchBoxValue, setSearchBoxValue] = useState("")
+  // ?q= comes from the marketplace header search.
+  const [searchParams] = useSearchParams()
+  const urlQuery = searchParams.get("q") ?? ""
+  const [searchTerm, setSearchTerm] = useState(urlQuery)
+  const [searchBoxValue, setSearchBoxValue] = useState(urlQuery)
+  useEffect(() => {
+    setSearchTerm(urlQuery)
+    setSearchBoxValue(urlQuery)
+  }, [urlQuery])
   const [showFilterModal, setShowFilterModal] = useState(false)
   const [selectedFreelancer, setSelectedFreelancer] = useState<FreelancerSearchResult | null>(null)
   const [filters, setFilters] = useState({ category: "" as Category | "", keywords: "", trustLevel: "" })

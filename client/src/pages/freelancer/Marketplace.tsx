@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react"
-import { Navigate } from "react-router-dom"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Navigate, useSearchParams } from "react-router-dom"
 import { Search, Bookmark, BookmarkCheck, Briefcase, ChevronDown, Loader2, MapPin, Sparkles, X } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useDashboardQuery } from "@/lib/queries/user"
@@ -24,8 +24,15 @@ export default function Marketplace() {
   const { profile } = useAuth()
   const isFreelancer = !profile || profile.account_type === "freelancer"
   const dashboard = useDashboardQuery(isFreelancer)
-  const [params, setParams] = useState({ searchQuery: "", jobType: "", maxCredits: undefined as number | undefined, categorySkills: undefined as string[] | undefined, fromDate: undefined as string | undefined })
-  const [draftSearch, setDraftSearch] = useState("")
+  // ?q= comes from the marketplace header search.
+  const [searchParams] = useSearchParams()
+  const urlQuery = searchParams.get("q") ?? ""
+  const [params, setParams] = useState({ searchQuery: urlQuery, jobType: "", maxCredits: undefined as number | undefined, categorySkills: undefined as string[] | undefined, fromDate: undefined as string | undefined })
+  const [draftSearch, setDraftSearch] = useState(urlQuery)
+  useEffect(() => {
+    setDraftSearch(urlQuery)
+    setParams((current) => (current.searchQuery === urlQuery ? current : { ...current, searchQuery: urlQuery }))
+  }, [urlQuery])
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [bookmarkOverrides, setBookmarkOverrides] = useState<Record<string, boolean>>({})
   const [proposal, setProposal] = useState({ proposal_text: "", timeline: "", budget: "" })
