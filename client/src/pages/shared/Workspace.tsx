@@ -1,11 +1,13 @@
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { CheckCircle, ExternalLink, Loader2, MessageSquare, Send } from "lucide-react"
+import { Check, CheckCircle, ExternalLink, Loader2, MessageSquare, Send, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import EscrowStatusBadge from "@/components/shared/EscrowStatusBadge"
+import { ErrorState, FactList, PageContainer, Panel, SkeletonBlock } from "@/components/marketplace/primitives"
+import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 import {
   formatKobo,
@@ -15,6 +17,7 @@ import {
   useSubmitWorkMutation,
   useWorkspaceQuery,
   type Submission,
+  type Workspace as WorkspaceData,
 } from "@/lib/queries/escrow"
 
 const SUBMISSION_STATUS_LABEL: Record<Submission["status"], string> = {
@@ -165,6 +168,43 @@ function Comments({ submission, jobId, canRequestChanges }: { submission: Submis
   )
 }
 
+const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : null)
+
+/** The engagement's money trail, in order. */
+function PaymentTimeline({ data }: { data: WorkspaceData }) {
+  const { escrow, submission } = data
+  const steps = [
+    { label: "Paid into escrow", date: escrow.funded_at, done: !!escrow.funded_at || escrow.status !== "awaiting" },
+    { label: "Work submitted", date: submission?.submitted_at, done: !!submission && submission.status !== "draft" },
+    { label: "Approved and released", date: escrow.released_at, done: ["released", "paid_out"].includes(escrow.status) },
+    { label: "Paid out to freelancer", date: escrow.paid_out_at, done: escrow.status === "paid_out" },
+  ]
+  return (
+    <ol className="space-y-3" aria-label="Payment progress">
+      {steps.map((step, i) => (
+        <li key={step.label} className="flex gap-3">
+          <span
+            className={cn(
+              "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold",
+              step.done ? "border-success bg-success text-white" : "border-border text-muted-foreground"
+            )}
+            aria-hidden
+          >
+            {step.done ? <Check className="h-3 w-3" /> : i + 1}
+          </span>
+          <div className="min-w-0">
+            <p className={cn("text-sm", step.done ? "font-medium text-foreground" : "text-muted-foreground")}>
+              {step.label}
+              <span className="sr-only">{step.done ? " (done)" : " (not yet)"}</span>
+            </p>
+            {step.done && fmtDate(step.date) && <p className="text-xs text-muted-foreground">{fmtDate(step.date)}</p>}
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
 export default function Workspace() {
   const { jobId = "" } = useParams()
   const workspaceQuery = useWorkspaceQuery(jobId)
@@ -172,23 +212,33 @@ export default function Workspace() {
   const [approveError, setApproveError] = useState("")
 
   if (workspaceQuery.isLoading) {
-    return <div className="min-h-screen bg-surface flex items-center justify-center text-sm text-muted-foreground">Loading workspace…</div>
+    return (
+      <PageContainer>
+        <div className="space-y-4" aria-label="Loading workspace">
+          <SkeletonBlock className="h-8 w-80" />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <SkeletonBlock className="h-72" />
+            <SkeletonBlock className="h-72" />
+          </div>
+        </div>
+      </PageContainer>
+    )
   }
   if (workspaceQuery.isError || !workspaceQuery.data) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <p className="text-sm font-semibold text-foreground">Workspace not available</p>
-          <p className="text-sm text-muted-foreground">Only the agency and freelancer on a funded job can open its workspace.</p>
-        </div>
-      </div>
+      <PageContainer width="narrow">
+        <ErrorState title="Workspace not available" description="Only the agency and freelancer on a funded job can open its workspace." />
+      </PageContainer>
     )
   }
 
-  const { role, job, escrow, submission } = workspaceQuery.data
+  const data = workspaceQuery.data
+  const { role, job, escrow, submission } = data
   const isFreelancer = role === "freelancer"
   const canSubmit = isFreelancer && escrow.status === "funded" && submission?.status !== "approved" && submission?.status !== "submitted"
   const canReview = !isFreelancer && escrow.status === "funded" && submission?.status === "submitted"
+  const otherParty = isFreelancer ? data.parties?.agency_name : data.parties?.freelancer_name
+  const home = isFreelancer ? { to: "/freelancer/funded-jobs", label: "My jobs" } : { to: "/agency/wallet", label: "Payments" }
 
   const handleApprove = () => {
     if (!submission) return
@@ -198,53 +248,117 @@ export default function Workspace() {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <header className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Workspace</p>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{job?.title ?? "Job"}</h1>
-            <EscrowStatusBadge status={escrow.status} />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {formatKobo(escrow.amount_kobo)} held in escrow ·{" "}
-            <Link to={isFreelancer ? "/freelancer/funded-jobs" : "/agency/wallet"} className="text-primary hover:underline">
-              {isFreelancer ? "Funded jobs" : "Wallet"}
-            </Link>
-          </p>
-        </header>
+    <PageContainer>
+      <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
+        <Link to={home.to} className="hover:text-foreground hover:underline">
+          {home.label}
+        </Link>
+        <span className="mx-1.5" aria-hidden>
+          /
+        </span>
+        <span className="text-foreground">Workspace</span>
+      </nav>
 
-        <section className="rounded-xl border border-border bg-card p-5 space-y-4" aria-labelledby="delivery-heading">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="delivery-heading" className="text-sm font-semibold text-foreground">Delivery</h2>
-            {submission && <span className="text-xs text-muted-foreground">{SUBMISSION_STATUS_LABEL[submission.status]}</span>}
-          </div>
-
-          {escrow.status === "disputed" && <p className="text-sm text-destructive">This job is in dispute; delivery and approval are paused.</p>}
-          {(escrow.status === "released" || escrow.status === "paid_out") && (
-            <p className="text-sm text-success flex items-center gap-1.5">
-              <CheckCircle className="h-4 w-4" /> Work approved and payment released.
-            </p>
-          )}
-
-          {submission && <SubmissionView submission={submission} />}
-          {!submission && !canSubmit && <p className="text-sm text-muted-foreground">No work has been submitted yet.</p>}
-          {canSubmit && <SubmitWorkForm jobId={jobId} existing={submission} />}
-
-          {canReview && (
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
-              <Button onClick={handleApprove} disabled={approve.isPending} className="gap-1.5">
-                {approve.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-                Approve & release payment
-              </Button>
-              <p className="text-xs text-muted-foreground">Not right yet? Use "Request changes" below.</p>
-              {approveError && <p className="w-full text-sm text-destructive">{approveError}</p>}
-            </div>
-          )}
-        </section>
-
-        {submission && <Comments submission={submission} jobId={jobId} canRequestChanges={canReview} />}
+      <div className="mt-2 min-w-0">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">{job?.title ?? "Job"}</h1>
+          <EscrowStatusBadge status={escrow.status} />
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {isFreelancer ? "Client" : "Freelancer"}: <span className="font-medium text-foreground">{otherParty ?? "—"}</span> ·{" "}
+          <span className="tabular-nums">{formatKobo(escrow.amount_kobo)}</span> held in escrow
+        </p>
       </div>
-    </div>
+
+      {escrow.status === "disputed" && (
+        <div role="status" className="mt-4 flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2 text-sm text-foreground">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden />
+            This job is in dispute. Delivery and approval are paused until it's resolved.
+          </p>
+          {data.open_dispute_id && (
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/disputes/${data.open_dispute_id}`}>Open dispute room</Link>
+            </Button>
+          )}
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-5">
+          <section className="rounded-lg border border-border bg-card" aria-labelledby="delivery-heading">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+              <h2 id="delivery-heading" className="text-sm font-semibold text-foreground">
+                Deliverables
+              </h2>
+              {submission && <span className="text-xs text-muted-foreground">{SUBMISSION_STATUS_LABEL[submission.status]}</span>}
+            </div>
+            <div className="space-y-4 p-4">
+              {(escrow.status === "released" || escrow.status === "paid_out") && (
+                <p className="flex items-center gap-1.5 text-sm text-success">
+                  <CheckCircle className="h-4 w-4" /> Work approved and payment released.
+                </p>
+              )}
+              {submission && <SubmissionView submission={submission} />}
+              {!submission && !canSubmit && (
+                <p className="text-sm text-muted-foreground">{isFreelancer ? "Nothing to submit right now." : "No work has been submitted yet."}</p>
+              )}
+              {canSubmit && <SubmitWorkForm jobId={jobId} existing={submission} />}
+              {canReview && (
+                <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                  <Button onClick={handleApprove} disabled={approve.isPending}>
+                    {approve.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle />}
+                    Approve & release payment
+                  </Button>
+                  <p className="text-xs text-muted-foreground">Not right yet? Use "Request changes" in the feedback below.</p>
+                  {approveError && <p className="w-full text-sm text-destructive">{approveError}</p>}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {submission && <Comments submission={submission} jobId={jobId} canRequestChanges={canReview} />}
+        </div>
+
+        <aside className="space-y-5" aria-label="Contract details">
+          <Panel title="Contract">
+            <FactList
+              items={[
+                { label: "Contract value", value: formatKobo(escrow.amount_kobo) },
+                { label: "Client", value: data.parties?.agency_name ?? "—" },
+                { label: "Freelancer", value: data.parties?.freelancer_name ?? "—" },
+                ...(job?.duration ? [{ label: "Duration", value: job.duration }] : []),
+              ]}
+            />
+          </Panel>
+          <Panel title="Payment">
+            <PaymentTimeline data={data} />
+            <p className="mt-4 text-xs text-muted-foreground">Money stays in escrow until the client approves the work.</p>
+          </Panel>
+          <Panel title="Actions" bodyClassName="space-y-2">
+            <Button asChild variant="outline" className="w-full">
+              <Link to={`/${role}/messages`}>
+                <MessageSquare /> Message {isFreelancer ? "client" : "freelancer"}
+              </Link>
+            </Button>
+            {data.open_dispute_id ? (
+              <Button asChild variant="ghost" className="w-full">
+                <Link to={`/disputes/${data.open_dispute_id}`}>View dispute</Link>
+              </Button>
+            ) : (
+              escrow.status === "funded" && (
+                <p className="text-xs text-muted-foreground">
+                  Problem with this job? You can open a dispute from{" "}
+                  <Link to={home.to} className="font-medium text-primary hover:underline">
+                    {home.label}
+                  </Link>
+                  .
+                </p>
+              )
+            )}
+          </Panel>
+        </aside>
+      </div>
+    </PageContainer>
   )
 }
