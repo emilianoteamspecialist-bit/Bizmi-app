@@ -18,6 +18,13 @@ vi.mock("../../lib/queries/jobs", () => ({
 }))
 
 vi.mock("./ProposalsModal", () => ({ default: () => null }))
+vi.mock("@/lib/supabase", () => ({ supabase: {} }))
+const escrowsMock = vi.fn()
+vi.mock("@/lib/queries/escrow", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/queries/escrow")>("@/lib/queries/escrow")
+  return { ...actual, useMyEscrowsQuery: () => escrowsMock() }
+})
+vi.mock("@/lib/queries/shell", () => ({ useShellQuery: () => ({ data: { avatar: null, unreadCount: 0, recentUnread: [], credits: null } }) }))
 
 import AgencyDashboard from "./Dashboard"
 
@@ -36,9 +43,27 @@ beforeEach(() => {
   vi.clearAllMocks()
   useAuthMock.mockReturnValue({ user: { id: "agency-1" }, profile: { company_name: "Acme Co", account_type: "agency" } })
   useUpdateJobStatusMutationMock.mockReturnValue({ mutate: vi.fn(), isPending: false })
+  escrowsMock.mockReturnValue({ data: { escrows: [] } })
 })
 
 describe("AgencyDashboard", () => {
+  it("surfaces submitted work and unpaid checkouts as action items", () => {
+    useAgencyJobsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { jobs: [] } })
+    escrowsMock.mockReturnValue({
+      data: {
+        escrows: [
+          { id: "e1", job_id: "job-1", role: "agency", status_v2: "funded", submission_status: "submitted", job_title: "Landing page", freelancer_name: "Jane", amount_kobo: 100, open_dispute_id: null },
+          { id: "e2", job_id: "job-2", role: "agency", status_v2: "awaiting", job_title: "Logo", amount_kobo: 100, open_dispute_id: null },
+        ],
+      },
+    })
+    renderDashboard()
+    const actions = screen.getByRole("region", { name: "Action items" })
+    expect(actions).toHaveTextContent("Jane submitted work for Landing page.")
+    expect(screen.getAllByRole("link", { name: "Review work" })[0]).toHaveAttribute("href", "/workspace/job-1")
+    expect(screen.getByRole("link", { name: "Complete payment" })).toHaveAttribute("href", "/agency/wallet")
+  })
+
   it("opens the post-job composer when arriving with ?post=true (sidebar's Post a job)", async () => {
     useAgencyJobsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { jobs: [] } })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -58,7 +83,7 @@ describe("AgencyDashboard", () => {
     expect(screen.getByTestId("agency-dashboard-skeleton")).toBeInTheDocument()
   })
 
-  it("renders stat tiles and the jobs list once data loads", async () => {
+  it("greets the agency and lists its jobs once data loads", async () => {
     useAgencyJobsQueryMock.mockReturnValue({
       isLoading: false,
       data: {
@@ -86,7 +111,7 @@ describe("AgencyDashboard", () => {
     renderDashboard()
 
     await waitFor(() => expect(screen.getByText("Build a landing page")).toBeInTheDocument())
-    expect(screen.getByText("Acme Co")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Acme Co")
   })
 
   it("shows the empty state and a Post a job button when there are no jobs", async () => {

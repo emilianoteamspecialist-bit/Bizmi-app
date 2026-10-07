@@ -1,399 +1,283 @@
 import { useMemo, useState } from "react"
-import { useNavigate, Navigate } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
+import { Briefcase, Coins, MessageSquare, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Reveal } from "@/components/shared/reveal"
-import { Modal } from "@/components/shared/modal"
-import { StatBadge } from "@/components/shared/stat-badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useAuth } from "@/contexts/AuthContext"
 import { useJobsQuery, useToggleBookmarkMutation } from "@/lib/queries/jobs"
 import { useDashboardQuery } from "@/lib/queries/user"
-import { useSubmitProposalMutation } from "@/lib/queries/proposals"
-import { getAvatarUrl } from "@/lib/avatar"
-import { ALL_CATEGORIES, getSkillsForCategory, type Category } from "@/lib/categories"
-import {
-  MapPin,
-  Search,
-  Send,
-  Loader2,
-  CheckCircle,
-  Bookmark,
-  BadgeCheck,
-  Briefcase,
-  CreditCard,
-} from "lucide-react"
+import { useMyProposalsQuery } from "@/lib/queries/proposals"
+import { formatKobo, useMyEscrowsQuery } from "@/lib/queries/escrow"
+import { useShellQuery } from "@/lib/queries/shell"
+import { formatTimeAgo } from "@/lib/format"
+import EscrowStatusBadge from "@/components/shared/EscrowStatusBadge"
+import { JobCard, JobCardSkeleton, type MarketplaceJob } from "@/components/marketplace/JobCard"
+import { JobDetailsSheet } from "@/components/marketplace/JobDetailsSheet"
+import { useJobApplication } from "@/components/marketplace/useJobApplication"
+import { EmptyState, ErrorState, PageContainer, Panel, SkeletonBlock } from "@/components/marketplace/primitives"
+import { ProfileCompleteness, freelancerCompleteness } from "@/components/marketplace/ProfileCompleteness"
 
-function transformJob(job: any) {
-  return {
-    ...job,
-    budget: `₦ ${(job.budget_min ?? 0).toLocaleString()} - ₦ ${(job.budget_max ?? 0).toLocaleString()}`,
-    isBookmarked: !!job.is_bookmarked,
-    agencyInfo: {
-      ...job.agency_info,
-      name: job.agency_info?.company_name || job.agency_info?.full_name || "Unknown Agency",
-      logo: getAvatarUrl(job.agency_info?.logo_path),
-    },
-  }
+const PROPOSAL_STATUS: Record<string, { label: string; className: string }> = {
+  pending: { label: "Pending", className: "text-warning" },
+  accepted: { label: "Accepted", className: "text-success" },
+  rejected: { label: "Not selected", className: "text-muted-foreground" },
+}
+
+function greeting() {
+  const hour = new Date().getHours()
+  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
   const { profile } = useAuth()
-
-  const [selectedJob, setSelectedJob] = useState<any>(null)
-  const [showFilterModal, setShowFilterModal] = useState(false)
-  const [showPlaceBidModal, setShowPlaceBidModal] = useState(false)
-  const [showAgencyModal, setShowAgencyModal] = useState(false)
-  const [selectedAgency, setSelectedAgency] = useState<any>(null)
-  const [filters, setFilters] = useState({ keywords: "", category: "" })
-  const [bidData, setBidData] = useState({ proposal: "", timeline: "", budget: "" })
-
-  const jobsParams = useMemo(
-    () => ({
-      searchQuery: filters.keywords,
-      limit: 6,
-      categorySkills: filters.category ? (getSkillsForCategory(filters.category as Category) as unknown as string[]) : undefined,
-    }),
-    [filters]
-  )
-
   const dashboardQuery = useDashboardQuery()
+  const profileData: any = dashboardQuery.data?.profile ?? profile
+  const skills: string[] = Array.isArray(profileData?.skills) ? profileData.skills : []
+  const jobsParams = useMemo(() => ({ limit: 5, categorySkills: skills.length ? skills : undefined }), [skills.join("|")])
   const jobsQuery = useJobsQuery(jobsParams)
-  const toggleBookmark = useToggleBookmarkMutation()
-  const submitProposal = useSubmitProposalMutation()
-
-  const isLoading = dashboardQuery.isLoading || jobsQuery.isLoading
-
-  if (isLoading) {
-    return (
-      <div data-testid="dashboard-skeleton" className="min-h-screen bg-surface pb-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-pulse">
-          <div className="space-y-2">
-            <div className="h-3 w-24 bg-foreground/5 rounded" />
-            <div className="h-7 w-64 bg-foreground/5 rounded" />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-card border border-border rounded-xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (dashboardQuery.isError || jobsQuery.isError) {
-    return (
-      <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <p className="text-sm font-semibold text-foreground">Couldn't load your dashboard</p>
-          <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
-        </div>
-      </div>
-    )
-  }
+  const proposalsQuery = useMyProposalsQuery("")
+  const escrowsQuery = useMyEscrowsQuery()
+  const shell = useShellQuery("freelancer")
+  const bookmark = useToggleBookmarkMutation()
+  const credits = dashboardQuery.data?.credits ?? 0
+  const verified = !!dashboardQuery.data?.isVerified
+  const application = useJobApplication({ credits, verified })
+  const [bookmarkOverrides, setBookmarkOverrides] = useState<Record<string, boolean>>({})
 
   if (profile && profile.account_type !== "freelancer") {
     return <Navigate to="/" replace />
   }
 
-  const dashboardData = dashboardQuery.data
-  const profileData = dashboardData?.profile ?? profile
-  const creditBalance = dashboardData?.credits ?? 0
-  const totalBalance = dashboardData?.balance ?? 0
-  const isNINVerified = !!dashboardData?.isVerified
-  const jobs = (jobsQuery.data?.jobs ?? []).map(transformJob)
-
-  const greeting = (() => {
-    const hour = new Date().getHours()
-    if (hour < 12) return "Good morning"
-    if (hour < 17) return "Good afternoon"
-    return "Good evening"
-  })()
-  const firstName = profileData?.full_name?.split(" ")[0] || "there"
-  const openBriefs = jobs.length
-
-  const profileFields: { key: string; label: string }[] = [
-    { key: "full_name", label: "display name" },
-    { key: "bio", label: "a professional bio" },
-    { key: "skills", label: "your skills" },
-    { key: "location", label: "your location" },
-    { key: "hourly_rate", label: "an hourly rate" },
-    { key: "experience_level", label: "experience level" },
-  ]
-  const completedFields = profileFields.filter((f) => {
-    const v = (profileData as any)?.[f.key]
-    return Array.isArray(v) ? v.length > 0 : !!v
-  })
-  const profileCompletion = Math.round((completedFields.length / profileFields.length) * 100)
-  const missing = profileFields.filter((f) => !completedFields.find((c) => c.key === f.key))
-
-  const handleJobAction = (job: any, action: "bookmark" | "view" | "apply") => {
-    if (action === "view") {
-      setSelectedAgency(job.agencyInfo)
-      setShowAgencyModal(true)
-    } else if (action === "apply") {
-      if (!isNINVerified) {
-        alert("Please verify your identity (NIN) before placing a bid.")
-        return
-      }
-      if (creditBalance < job.credit_cost) {
-        alert(`Insufficient credits! You need ${job.credit_cost} credits.`)
-        return
-      }
-      setSelectedJob(job)
-      setShowPlaceBidModal(true)
-    } else if (action === "bookmark") {
-      toggleBookmark.mutate(
-        { jobId: job.id, isBookmarked: !!job.isBookmarked },
-        { onError: () => alert("Couldn't update bookmark. Please try again.") }
-      )
-    }
-  }
-
-  const applyFilters = () => setShowFilterModal(false)
-  const resetFilters = () => setFilters({ keywords: "", category: "" })
-
-  const submitBid = () => {
-    if (!selectedJob) return
-    submitProposal.mutate(
-      {
-        jobId: selectedJob.id,
-        proposal_text: bidData.proposal,
-        timeline: bidData.timeline,
-        budget: bidData.budget,
-        creditCost: selectedJob.credit_cost,
-      },
-      {
-        onSuccess: (result) => {
-          if (!result.success) {
-            alert(result.error === "Unauthorized" ? "You must be signed in to submit a proposal." : `Error submitting proposal: ${result.error}`)
-            return
-          }
-          alert(result.alreadySubmitted ? "You have already submitted a proposal for this job." : `Proposal submitted! ${selectedJob.credit_cost} credits deducted.`)
-          setShowPlaceBidModal(false)
-          setBidData({ proposal: "", timeline: "", budget: "" })
-        },
-        onError: () => alert("Error submitting proposal. Please try again."),
-      }
+  if (dashboardQuery.isLoading || jobsQuery.isLoading) {
+    return (
+      <PageContainer>
+        <div data-testid="dashboard-skeleton" className="space-y-6" aria-label="Loading your dashboard">
+          <SkeletonBlock className="h-8 w-72" />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-3">
+              <JobCardSkeleton />
+              <JobCardSkeleton />
+            </div>
+            <SkeletonBlock className="h-64" />
+          </div>
+        </div>
+      </PageContainer>
     )
   }
 
+  if (dashboardQuery.isError || jobsQuery.isError) {
+    return (
+      <PageContainer>
+        <ErrorState title="Couldn't load your dashboard" description="Please try refreshing the page." />
+      </PageContainer>
+    )
+  }
+
+  const jobs: MarketplaceJob[] = jobsQuery.data?.jobs ?? []
+  const firstName = profileData?.full_name?.split(" ")[0] || "there"
+  const proposals = (proposalsQuery.data?.pages.flatMap((p) => p.proposals) ?? []).slice(0, 5)
+  const escrows = (escrowsQuery.data?.escrows ?? []).filter((e) => e.role === "freelancer")
+  const contracts = escrows.filter((e) => e.status_v2 === "funded" || e.status_v2 === "disputed")
+  const awaitingPayout = escrows.filter((e) => e.status_v2 === "released").reduce((t, e) => t + Number(e.amount_kobo || 0), 0)
+  const paidOut = escrows
+    .filter((e) => e.status_v2 === "paid_out")
+    .reduce((t, e) => t + Number(e.latest_payout?.net_amount_kobo ?? e.amount_kobo ?? 0), 0)
+  const unread = shell.data?.recentUnread ?? []
+
+  const isSaved = (job: MarketplaceJob) => bookmarkOverrides[job.id] ?? !!job.is_bookmarked
+  const toggleSave = (job: MarketplaceJob) => {
+    const current = isSaved(job)
+    setBookmarkOverrides((o) => ({ ...o, [job.id]: !current }))
+    bookmark.mutate({ jobId: job.id, isBookmarked: current })
+  }
+
+  const completeness = freelancerCompleteness({
+    hasPhoto: !!shell.data?.avatar,
+    bio: profileData?.bio,
+    skills,
+    hourlyRate: profileData?.hourly_rate,
+    location: profileData?.location,
+    identityVerified: verified,
+  })
+
+  // "What should I do next?" -- the few things blocking work or pay.
+  const actions: { key: string; text: string; to: string; cta: string }[] = []
+  if (!verified) actions.push({ key: "verify", text: "Verify your identity so agencies can hire you.", to: "/freelancer/identity", cta: "Verify identity" })
+  if (credits < 5) actions.push({ key: "credits", text: `You have ${credits} credits — most jobs need 5 or more to apply.`, to: "/freelancer/bizpal", cta: "Buy credits" })
+  const released = escrows.filter((e) => e.status_v2 === "released" && e.latest_payout?.status !== "processing")
+  if (released.length) actions.push({ key: "payout", text: `${released.length === 1 ? "A job has" : `${released.length} jobs have`} been approved — withdraw your earnings.`, to: "/freelancer/funded-jobs", cta: "Withdraw" })
+  const changes = contracts.filter((e) => e.submission_status === "changes_requested")
+  if (changes.length) actions.push({ key: "changes", text: `An agency asked for changes on ${changes[0].job_title ?? "a job"}.`, to: `/workspace/${changes[0].job_id}`, cta: "Open workspace" })
+
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div className="space-y-1 min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {greeting}, {firstName}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {openBriefs > 0 ? `${openBriefs} ${openBriefs === 1 ? "brief" : "briefs"} match your stack` : "Let's find your next brief"}
-            </h1>
-            <p className="text-sm text-muted-foreground">Find projects, file proposals, and track your standing.</p>
-          </div>
-        </header>
-
-        <Reveal>
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <button onClick={() => navigate("/freelancer/profile")} className="text-left rounded-xl border border-border bg-card p-4 hover:border-foreground/20 transition-colors">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">Profile</p>
-                <BadgeCheck className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">
-                {profileCompletion}
-                <span className="text-lg text-muted-foreground">%</span>
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">{profileCompletion === 100 ? "Hire-ready" : `${missing.length} field${missing.length !== 1 ? "s" : ""} to go`}</p>
-            </button>
-
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">Credits</p>
-                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-              </div>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{creditBalance}</p>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">Escrow</p>
-              </div>
-              <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">₦{totalBalance.toLocaleString()}</p>
-            </div>
-
-            <div className="rounded-xl border border-primary/30 bg-card p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">Open briefs</p>
-                <Briefcase className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{openBriefs}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Matched to you</p>
-            </div>
-          </section>
-        </Reveal>
-
-        <Reveal delay={0.08}>
-          <section className="space-y-3">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-sm font-semibold text-foreground">
-                Matched to your stack <span className="font-normal text-muted-foreground">· {jobs.length}</span>
-              </h2>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowFilterModal(true)}>
-                <Search className="h-3.5 w-3.5" /> Refine
-              </Button>
-            </div>
-
-            {jobs.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
-                <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <Briefcase className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-sm font-semibold text-foreground">No briefs match yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">Add a few more skills to your profile so we can match you to the right work.</p>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
-                {jobs.map((job) => (
-                  <div key={job.id} className="p-4 sm:p-5 transition-colors hover:bg-surface/60">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <h3 className="text-sm font-semibold text-foreground">{job.title}</h3>
-                          {job.has_applied && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-success/10 text-success">
-                              <CheckCircle className="h-3 w-3" /> Applied
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Avatar className="h-4 w-4 rounded-sm">
-                            <AvatarImage src={job.agencyInfo?.logo} className="object-cover" />
-                            <AvatarFallback className="rounded-sm bg-foreground text-white text-[8px] font-semibold">
-                              {job.agencyInfo?.name?.[0]?.toUpperCase() ?? "A"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="truncate">{job.agencyInfo?.name}</span>
-                        </div>
-                        {job.description && <p className="text-sm text-muted-foreground line-clamp-1 max-w-2xl">{job.description}</p>}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground tabular-nums">{job.budget}</span>
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {job.location || "Remote"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Button variant="ghost" size="sm" onClick={() => handleJobAction(job, "view")}>Agency</Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleJobAction(job, "bookmark")} aria-label={job.isBookmarked ? "Saved" : "Save"}>
-                          <Bookmark className={`h-4 w-4 ${job.isBookmarked ? "fill-primary text-primary" : ""}`} />
-                        </Button>
-                        <Button size="sm" onClick={() => handleJobAction(job, "apply")} disabled={job.has_applied}>
-                          {job.has_applied ? "Applied" : "Quick apply"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </Reveal>
+    <PageContainer>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+          {greeting()}, {firstName}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {contracts.length > 0
+            ? `You have ${contracts.length} active ${contracts.length === 1 ? "contract" : "contracts"}.`
+            : "Find a job that fits your skills and send a proposal."}
+        </p>
       </div>
 
-      <Modal isOpen={showFilterModal} onClose={() => setShowFilterModal(false)} title="Refine Market" maxWidth="md">
-        <div className="space-y-6">
-          <div className="space-y-2.5">
-            <Label className="eyebrow">Contextual Keywords</Label>
-            <Input placeholder="Skills, companies, or titles..." value={filters.keywords} onChange={(e) => setFilters({ ...filters, keywords: e.target.value })} />
-          </div>
-          <div className="space-y-2.5">
-            <Label className="eyebrow">Professional Field</Label>
-            <Select value={filters.category} onValueChange={(v) => setFilters({ ...filters, category: v })}>
-              <SelectTrigger className="bg-surface">
-                <SelectValue placeholder="All Specializations" />
-              </SelectTrigger>
-              <SelectContent>
-                {ALL_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-4 pt-6">
-            <Button variant="ghost" className="flex-1" onClick={resetFilters}>Reset</Button>
-            <Button className="flex-1" onClick={applyFilters}>Update Results</Button>
-          </div>
-        </div>
-      </Modal>
-
-      <Sheet open={showPlaceBidModal} onOpenChange={setShowPlaceBidModal}>
-        <SheetContent className="sm:max-w-xl p-0">
-          <div className="flex flex-col h-full">
-            <SheetHeader className="p-10 border-b border-border">
-              <SheetTitle className="text-2xl font-bold font-heading">Submit Proposal</SheetTitle>
-              <SheetDescription>Explain why you&rsquo;re the best fit for this project.</SheetDescription>
-            </SheetHeader>
-            <div className="flex-1 overflow-y-auto p-10 space-y-10">
-              {selectedJob && (
-                <div className="p-8 bg-surface rounded-lg border border-border space-y-5">
-                  <StatBadge variant="success">Verified Listing</StatBadge>
-                  <h4 className="font-bold font-heading text-foreground text-2xl leading-tight">{selectedJob.title}</h4>
-                </div>
-              )}
-              <div className="space-y-10">
-                <div className="space-y-4">
-                  <Label className="eyebrow">Professional Pitch</Label>
-                  <Textarea className="min-h-[250px] p-6" value={bidData.proposal} onChange={(e) => setBidData({ ...bidData, proposal: e.target.value })} />
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <Label className="eyebrow">Execution Timeline</Label>
-                    <Input value={bidData.timeline} onChange={(e) => setBidData({ ...bidData, timeline: e.target.value })} />
-                  </div>
-                  <div className="space-y-4">
-                    <Label className="eyebrow">Project Fee (₦)</Label>
-                    <Input value={bidData.budget} onChange={(e) => setBidData({ ...bidData, budget: e.target.value })} className="font-bold" />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-10 border-t border-border bg-surface/50">
-              <Button size="lg" className="w-full h-16 text-lg" onClick={submitBid} disabled={submitProposal.isPending || !bidData.proposal || !bidData.timeline || !bidData.budget}>
-                {submitProposal.isPending ? <Loader2 className="animate-spin mr-2" /> : <Send className="mr-2 h-5 w-5" />}
-                Launch Proposal
+      {actions.length > 0 && (
+        <section aria-label="Action items" className="mt-5 divide-y divide-border rounded-lg border border-border bg-card">
+          {actions.map((a) => (
+            <div key={a.key} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-start gap-2 text-sm text-foreground">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                {a.text}
+              </p>
+              <Button asChild size="sm" variant="outline" className="shrink-0">
+                <Link to={a.to}>{a.cta}</Link>
               </Button>
             </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+          ))}
+        </section>
+      )}
 
-      <Modal isOpen={showAgencyModal} onClose={() => setShowAgencyModal(false)} srLabel="Agency details" maxWidth="2xl">
-        {selectedAgency && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-6">
-              <Avatar className="h-20 w-20 rounded-lg">
-                <AvatarImage src={selectedAgency.logo} />
-                <AvatarFallback className="bg-slate-900 text-white text-2xl font-black">{selectedAgency.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <h3 className="text-2xl font-bold font-heading text-foreground">{selectedAgency.name}</h3>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-6">
+          <section aria-labelledby="recommended-heading" className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h2 id="recommended-heading" className="text-base font-semibold text-foreground">
+                {skills.length ? "Jobs matching your skills" : "Recent jobs"}
+              </h2>
+              <Link to="/freelancer/marketplace" className="text-sm font-medium text-primary hover:underline">
+                See all jobs
+              </Link>
             </div>
-            <div className="pt-6 border-t border-border flex justify-end">
-              <Button variant="outline" onClick={() => setShowAgencyModal(false)}>Close</Button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
+            {jobs.length === 0 ? (
+              <EmptyState
+                icon={<Briefcase className="h-5 w-5" />}
+                title="No matching jobs right now"
+                description="New briefs are posted daily. Browse everything on Find Work."
+                action={
+                  <Button asChild size="sm">
+                    <Link to="/freelancer/marketplace">Find work</Link>
+                  </Button>
+                }
+              />
+            ) : (
+              jobs.map((job) => <JobCard key={job.id} job={job} onOpen={application.openJob} saved={isSaved(job)} onToggleSave={toggleSave} action={application.cardAction(job)} />)
+            )}
+          </section>
+
+          <Panel title="Current contracts" action={<Link to="/freelancer/funded-jobs" className="text-sm font-medium text-primary hover:underline">My jobs</Link>} bodyClassName="p-0">
+            {contracts.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground">No active contracts. When an agency funds a job you've won, it appears here.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {contracts.map((c) => (
+                  <li key={c.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">{c.job_title ?? "Job"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.agency_name ?? "Agency"} · <span className="tabular-nums">{formatKobo(c.amount_kobo)}</span> in escrow
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      <EscrowStatusBadge status={c.status_v2} />
+                      <Link to={`/workspace/${c.job_id}`} className="text-sm font-medium text-primary hover:underline">
+                        Workspace
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel title="Active proposals" action={<Link to="/freelancer/proposals" className="text-sm font-medium text-primary hover:underline">All proposals</Link>} bodyClassName="p-0">
+            {proposals.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-muted-foreground">You haven't sent any proposals yet.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {proposals.map((p) => {
+                  const st = PROPOSAL_STATUS[p.status] ?? { label: p.status, className: "text-muted-foreground" }
+                  return (
+                    <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">{p.job_title ?? "Job"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.agency_name ?? "Agency"} · sent {formatTimeAgo(p.created_at)}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 text-xs font-medium ${st.className}`}>{st.label}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </Panel>
+        </div>
+
+        <aside className="space-y-5" aria-label="Your account">
+          <Panel title="Credits">
+            <p className="flex items-baseline gap-2">
+              <span className="font-heading text-2xl font-semibold tabular-nums text-foreground">{credits}</span>
+              <span className="text-sm text-muted-foreground">available</span>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Each proposal uses the job's credit cost.</p>
+            <Button asChild variant="outline" size="sm" className="mt-3 w-full">
+              <Link to="/freelancer/bizpal">
+                <Coins /> Buy credits
+              </Link>
+            </Button>
+          </Panel>
+
+          <Panel title="Earnings">
+            <dl className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Paid out</dt>
+                <dd className="font-semibold tabular-nums text-foreground">{formatKobo(paidOut)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Approved, ready to withdraw</dt>
+                <dd className="font-semibold tabular-nums text-foreground">{formatKobo(awaitingPayout)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">In escrow</dt>
+                <dd className="font-semibold tabular-nums text-foreground">{formatKobo(contracts.reduce((t, e) => t + Number(e.amount_kobo || 0), 0))}</dd>
+              </div>
+            </dl>
+          </Panel>
+
+          <Panel title="Unread messages" action={<Link to="/freelancer/messages" className="text-sm font-medium text-primary hover:underline">Open</Link>} bodyClassName="p-0">
+            {unread.length === 0 ? (
+              <p className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
+                <MessageSquare className="h-4 w-4" aria-hidden /> You're all caught up.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {unread.slice(0, 4).map((m) => (
+                  <li key={m.id}>
+                    <Link to={`/freelancer/messages?conversationId=${m.conversation_id}`} className="block px-4 py-2.5 hover:bg-surface-2">
+                      <p className="truncate text-sm font-medium text-foreground">{m.sender_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{m.message_text}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <ProfileCompleteness items={completeness} />
+        </aside>
+      </div>
+
+      <JobDetailsSheet
+        job={application.selectedJob}
+        open={!!application.selectedJob}
+        onOpenChange={(open) => !open && application.closeJob()}
+        saved={application.selectedJob ? isSaved(application.selectedJob) : false}
+        onToggleSave={toggleSave}
+        cta={application.selectedJob ? application.detailsCta(application.selectedJob) : null}
+      >
+        {application.proposalForm}
+      </JobDetailsSheet>
+    </PageContainer>
   )
 }
+
