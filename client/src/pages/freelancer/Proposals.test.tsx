@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor, fireEvent } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 
 const useMyProposalsQueryMock = vi.fn()
@@ -84,7 +84,12 @@ describe("Proposals", () => {
     expect(screen.getByText("Design a logo")).toBeInTheDocument()
     expect(screen.getByText("Acme Co")).toBeInTheDocument()
     expect(screen.getByText("Beta Inc")).toBeInTheDocument()
-    expect(screen.getByText("Accepted")).toBeInTheDocument()
+    expect(within(screen.getByRole("tabpanel")).getByText("Accepted")).toBeInTheDocument()
+
+    // Tabs filter the rows by status.
+    fireEvent.click(screen.getByRole("tab", { name: /^Accepted/ }))
+    expect(screen.getByText("Build a landing page")).toBeInTheDocument()
+    expect(screen.queryByText("Design a logo")).not.toBeInTheDocument()
   })
 
   it("keeps the search input visible while re-searching (isLoading true with a search term)", async () => {
