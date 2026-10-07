@@ -37,7 +37,7 @@ export default function AdminJobs() {
 
   function JobTable({ rows, removedView }: { rows: AdminJobRow[]; removedView: boolean }) {
     return (
-      <div className="rounded-xl border border-border bg-card overflow-x-auto">
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
         {rows.length === 0 ? (
           <div className="p-12 text-center text-sm text-muted-foreground">No jobs.</div>
         ) : (
@@ -90,7 +90,7 @@ export default function AdminJobs() {
 
   if (jobsQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <AdminSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading jobs…</div>
       </div>
@@ -98,14 +98,13 @@ export default function AdminJobs() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
             <header className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">Job moderation</h1>
+              <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Job moderation</h1>
               <p className="text-sm text-muted-foreground">Remove fraudulent or policy-violating job postings from the marketplace.</p>
             </header>
             <Input placeholder="Search title or agency…" value={search} onChange={(e) => setSearch(e.target.value)} className="md:max-w-xs" />

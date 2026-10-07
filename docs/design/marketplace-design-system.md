@@ -81,6 +81,9 @@ Reuse these before writing page-specific UI:
 | `FreelancerCard` (+ skeleton, `FreelancerAvatar`, `isIdentityVerified`) | Talent search results and profile panels. |
 | `ProfileCompleteness` + `freelancerCompleteness` | The profile-strength checklist (profile page and dashboard). |
 | `components/shared/EscrowStatusBadge` | Escrow state everywhere money is shown. |
+| `AuthShell` (+ `AuthLogo`, `FormMessage`) | Frame for signed-out pages (sign in, sign up, password reset, admin sign in) and inline form errors/confirmations. No browser `alert()`s anywhere. |
+| `components/console/ConsoleHeader` | Top bar for the admin console and influencer program: logo, area label, sections as a sideways-scrolling tab row. Used via `AdminSidebar` / `InfluencerSidebar` (names kept for their importers). |
+| Server `lib/trustSignals` | Identity-verified and jobs-completed for any set of freelancers; shared by talent search and Review bids so both always agree. |
 
 Formatting lives in `lib/format.ts` (`formatNaira`, `formatBudgetRange`, `formatTimeAgo`, `formatMemberSince`); escrow amounts (kobo) use `formatKobo` from `lib/queries/escrow`.
 

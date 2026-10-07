@@ -36,7 +36,7 @@ export default function AdminCredits() {
 
   if (creditsQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <AdminSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading…</div>
       </div>
@@ -44,35 +44,34 @@ export default function AdminCredits() {
   }
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Credits &amp; users</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Credits &amp; users</h1>
             <p className="text-sm text-muted-foreground">Manage platform credits and registered freelancers.</p>
           </header>
 
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-xs font-medium text-muted-foreground">Total credits purchased</p>
               <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums" data-testid="total-credits-value">{totalCredits.toLocaleString()}</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-lg border border-border bg-card p-4">
               <p className="text-xs font-medium text-muted-foreground">Total freelancers</p>
               <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{freelancers.length}</p>
             </div>
           </section>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden" data-testid="transactions-table">
+          <div className="rounded-lg border border-border bg-card overflow-hidden" data-testid="transactions-table">
             <div className="px-5 py-4 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-foreground">Recent transactions</h2>
               <Input placeholder="Search transactions…" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="md:max-w-xs" />
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
                   <tr>
                     <th className="px-5 py-3">Freelancer</th>
                     <th className="px-5 py-3">Amount</th>
@@ -113,13 +112,13 @@ export default function AdminCredits() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">Registered freelancers</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
                   <tr>
                     <th className="px-5 py-3">Name</th>
                     <th className="px-5 py-3">Account type</th>

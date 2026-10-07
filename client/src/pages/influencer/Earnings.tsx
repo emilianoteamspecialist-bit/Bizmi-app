@@ -16,7 +16,7 @@ export default function InfluencerEarnings() {
 
   if (meQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <InfluencerSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading…</div>
       </div>
@@ -25,7 +25,7 @@ export default function InfluencerEarnings() {
 
   if (meQuery.isError || !meQuery.data) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <InfluencerSidebar />
         <div className="flex-1 flex items-center justify-center text-center px-6">
           <div className="space-y-2">
@@ -46,26 +46,25 @@ export default function InfluencerEarnings() {
   ]
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <InfluencerSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Influencer</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Earnings</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Earnings</h1>
             <p className="text-sm text-muted-foreground">Your commission earnings and payout history. Payouts are processed by the Bizimi team.</p>
           </header>
 
           <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {cards.map((c) => (
-              <div key={c.label} className={`rounded-xl border bg-card p-4 ${c.accent}`}>
+              <div key={c.label} className={`rounded-lg border bg-card p-4 ${c.accent}`}>
                 <p className="text-xs font-medium text-muted-foreground">{c.label}</p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums">{c.value}</p>
               </div>
             ))}
           </section>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">Payout history</h2>
             </div>
@@ -74,7 +73,7 @@ export default function InfluencerEarnings() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                  <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
                     <tr>
                       <th className="px-5 py-3">Amount</th>
                       <th className="px-5 py-3">Status</th>

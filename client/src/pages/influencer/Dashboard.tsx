@@ -27,7 +27,7 @@ export default function InfluencerDashboard() {
 
   if (meQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <InfluencerSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading…</div>
       </div>
@@ -36,7 +36,7 @@ export default function InfluencerDashboard() {
 
   if (meQuery.isError || !meQuery.data) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <InfluencerSidebar />
         <div className="flex-1 flex items-center justify-center text-center px-6">
           <div className="space-y-2">
@@ -83,17 +83,16 @@ export default function InfluencerDashboard() {
   ]
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <InfluencerSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Influencer</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Dashboard</h1>
             <p className="text-sm text-muted-foreground">Share your link, refer new users, and earn when they complete their first transaction.</p>
           </header>
 
-          <section className="rounded-2xl border border-border bg-card p-6">
+          <section className="rounded-lg border border-border bg-card p-6">
             <div className="flex items-center gap-2">
               <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <Link2 className="h-5 w-5" />
@@ -106,7 +105,7 @@ export default function InfluencerDashboard() {
 
             {referralLink ? (
               <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 min-w-0 flex items-center rounded-xl border border-border bg-surface-2 px-3 h-11">
+                <div className="flex-1 min-w-0 flex items-center rounded-lg border border-border bg-surface-2 px-3 h-11">
                   <span className="truncate text-sm text-foreground font-mono">{referralLink}</span>
                 </div>
                 <div className="flex gap-2">
@@ -121,7 +120,7 @@ export default function InfluencerDashboard() {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 rounded-xl border border-dashed border-border bg-surface-2 px-4 py-5 text-sm text-muted-foreground">
+              <div className="mt-4 rounded-lg border border-dashed border-border bg-surface-2 px-4 py-5 text-sm text-muted-foreground">
                 Your referral link is being set up. Once your influencer profile is ready, your unique link will appear here.
               </div>
             )}
@@ -129,7 +128,7 @@ export default function InfluencerDashboard() {
 
           <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {tiles.map((t) => (
-              <div key={t.label} className="rounded-xl border border-border bg-card p-4">
+              <div key={t.label} className="rounded-lg border border-border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground">{t.label}</p>
                   <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${t.tile}`}>
@@ -142,19 +141,19 @@ export default function InfluencerDashboard() {
           </section>
 
           <div className="grid lg:grid-cols-3 gap-6 items-start">
-            <div className="rounded-2xl border border-primary/30 bg-card p-5 lg:col-span-1">
+            <div className="rounded-lg border border-primary/30 bg-card p-5 lg:col-span-1">
               <p className="text-xs font-medium text-muted-foreground">Unpaid balance</p>
               <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{naira(totals.unpaidNaira)}</p>
               <p className="mt-3 text-xs text-muted-foreground leading-relaxed">Earnings you've made that haven't been paid out yet. Payouts are processed manually by the Bizimi team.</p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card overflow-hidden lg:col-span-2">
+            <div className="rounded-lg border border-border bg-card overflow-hidden lg:col-span-2">
               <div className="px-5 py-4 border-b border-border">
                 <h2 className="text-base font-semibold text-foreground">Recent referrals</h2>
               </div>
               {referrals.length === 0 ? (
                 <div className="px-5 py-12 text-center">
-                  <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="mx-auto h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                     <Users className="h-5 w-5" />
                   </div>
                   <p className="mt-4 text-sm font-medium text-foreground">No referrals yet</p>

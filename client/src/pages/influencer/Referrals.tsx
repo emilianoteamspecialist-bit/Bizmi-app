@@ -23,7 +23,7 @@ export default function InfluencerReferrals() {
 
   if (meQuery.isLoading) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <InfluencerSidebar />
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">Loading…</div>
       </div>
@@ -32,7 +32,7 @@ export default function InfluencerReferrals() {
 
   if (meQuery.isError || !meQuery.data) {
     return (
-      <div className="flex h-screen bg-surface">
+      <div className="flex h-screen flex-col bg-surface">
         <InfluencerSidebar />
         <div className="flex-1 flex items-center justify-center text-center px-6">
           <div className="space-y-2">
@@ -47,17 +47,16 @@ export default function InfluencerReferrals() {
   const { referrals } = meQuery.data
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <InfluencerSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Influencer</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Referrals</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Referrals</h1>
             <p className="text-sm text-muted-foreground">Everyone who signed up through your link, and where they stand.</p>
           </header>
 
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <h2 className="text-base font-semibold text-foreground">All referrals ({referrals.length})</h2>
             </div>
@@ -66,7 +65,7 @@ export default function InfluencerReferrals() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-surface-2 text-[11px] uppercase tracking-wide font-medium text-muted-foreground border-b border-border">
+                  <thead className="bg-surface-2 text-xs font-medium text-muted-foreground border-b border-border">
                     <tr>
                       <th className="px-5 py-3">User type</th>
                       <th className="px-5 py-3">Status</th>

@@ -42,13 +42,12 @@ export default function AdminDisputes() {
   const messagesByDispute = disputesQuery.data?.messagesByDispute ?? {}
 
   return (
-    <div className="flex h-screen bg-surface">
+    <div className="flex h-screen flex-col bg-surface">
       <AdminSidebar />
       <div className="flex-1 overflow-auto">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
           <header className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dispute resolution</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Dispute resolution</h1>
             <p className="text-sm text-muted-foreground">Review the conversation, then release the escrow to the freelancer or refund the agency.</p>
           </header>
 
@@ -57,14 +56,14 @@ export default function AdminDisputes() {
           ) : disputesQuery.isError ? (
             <p className="text-sm text-destructive">Couldn't load disputes.</p>
           ) : disputes.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">No disputes found.</div>
+            <div className="rounded-lg border border-border bg-card p-12 text-center text-sm text-muted-foreground">No disputes found.</div>
           ) : (
             <div className="space-y-4">
               {disputes.map((d) => {
                 const messages = messagesByDispute[d.id] ?? []
                 const isOpen = expanded.has(d.id)
                 return (
-                  <div key={d.id} className="rounded-xl border border-border bg-card overflow-hidden" data-testid={`dispute-${d.id}`}>
+                  <div key={d.id} className="rounded-lg border border-border bg-card overflow-hidden" data-testid={`dispute-${d.id}`}>
                     <div className="px-5 py-4 border-b border-border space-y-2">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                         <h3 className="text-base font-semibold text-foreground flex items-center gap-2 flex-wrap">

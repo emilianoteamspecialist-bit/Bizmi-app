@@ -149,7 +149,7 @@ describe("messages routes", () => {
 describe("admin login route", () => {
   it("renders the admin login page at /admin/login without requiring auth", async () => {
     renderAt("/admin/login")
-    await screen.findByText(/admin portal/i)
+    await screen.findByRole("heading", { name: /admin sign in/i })
   })
 })
 
