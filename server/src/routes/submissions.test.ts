@@ -148,6 +148,24 @@ describe("POST /:id/approve", () => {
     expect(callsTo(s.calls, "jobs", "update")[0].payload).toEqual({ status: "closed", payout_status: "completed" })
   })
 
+  it("qualifies a pending influencer referral for either party on release", async () => {
+    const user = fakeSupabase(() => ({ data: submission("submitted") }))
+    const s = useService((op) => {
+      if (op.table === "escrow_deposits" && op.action === "select") return { data: escrow("funded") }
+      if (op.table === "escrow_deposits" && op.action === "update") return { data: { id: "esc-1" } }
+      if (op.table === "jobs" && op.action === "select") return { data: { payout_status: null } }
+      if (op.table === "referrals" && op.action === "select") return { data: [{ id: "ref-1", influencer_id: "inf-1" }] }
+      if (op.table === "referrals" && op.action === "update") return { data: { id: "ref-1" } }
+      return {}
+    })
+
+    await request(appWith({ id: "agency-1" }, user.client)).post("/sub-1/approve")
+
+    const [lookup] = callsTo(s.calls, "referrals", "select")
+    expect(lookup.filters).toContainEqual(["in", "referred_user_id", ["free-1", "agency-1"]])
+    expect(callsTo(s.calls, "referrals", "update")[0].payload).toMatchObject({ status: "qualified", qualifying_job_id: "job-1" })
+  })
+
   it("never reopens a payout that has already started", async () => {
     const user = fakeSupabase(() => ({ data: submission("submitted") }))
     const s = useService((op) => {
