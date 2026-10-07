@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, AlertCircle, Clock, ShieldCheck, ShieldX, BadgeCheck, Lock } from "lucide-react"
 import { useVerificationQuery, useSubmitVerificationMutation } from "../../lib/queries/verification"
+import { PageContainer, SkeletonBlock } from "@/components/marketplace/primitives"
 
 export default function Identity() {
   const verificationQuery = useVerificationQuery()
@@ -13,9 +14,12 @@ export default function Identity() {
 
   if (verificationQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <PageContainer width="narrow">
+        <div className="mx-auto max-w-xl space-y-4" aria-label="Loading verification">
+          <SkeletonBlock className="h-8 w-64" />
+          <SkeletonBlock className="h-64" />
+        </div>
+      </PageContainer>
     )
   }
 
@@ -39,47 +43,47 @@ export default function Identity() {
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="mx-auto max-w-xl px-4 sm:px-6 py-8 sm:py-12 space-y-6">
-        <header className="space-y-1 text-center">
+    <PageContainer width="narrow">
+      <div className="mx-auto max-w-xl space-y-6">
+        <header className="space-y-1">
           <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Identity verification</h1>
-          <p className="text-sm text-muted-foreground">A verified badge helps agencies trust and hire you faster.</p>
+          <p className="text-sm text-muted-foreground">Agencies see a verified badge on your profile and bids once your NIN is confirmed.</p>
         </header>
 
         {verification?.status === "verified" ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
-            <div className="mx-auto h-16 w-16 rounded-full bg-success/10 text-success flex items-center justify-center ring-8 ring-success/5">
-              <ShieldCheck className="h-8 w-8" />
+          <div className="rounded-lg border border-border bg-card p-6 text-center sm:p-8">
+            <div className="mx-auto h-12 w-12 rounded-full bg-success/10 text-success flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6" />
             </div>
             <h2 className="mt-5 text-lg font-semibold text-foreground">Identity verified</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              You&apos;re all set — bid and get hired with a verified badge on your profile.
+              You're all set. Your profile and bids now show the verified badge.
             </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-4 py-2">
+            <div className="mt-5 inline-flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-1.5">
               <BadgeCheck className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium text-foreground tabular-nums">NIN {verification.nin}</span>
             </div>
           </div>
         ) : verification && !isRejected ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
-            <div className="mx-auto h-16 w-16 rounded-full bg-warning/10 text-warning flex items-center justify-center ring-8 ring-warning/5">
-              <Clock className="h-8 w-8" />
+          <div className="rounded-lg border border-border bg-card p-6 text-center sm:p-8">
+            <div className="mx-auto h-12 w-12 rounded-full bg-warning/10 text-warning flex items-center justify-center">
+              <Clock className="h-6 w-6" />
             </div>
             <h2 className="mt-5 text-lg font-semibold text-foreground">Verification in progress</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              We&apos;re confirming your details — this usually takes a moment.
+              We're confirming your NIN with the verification service. This page updates when it's done.
             </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-border bg-surface-2 px-4 py-2">
+            <div className="mt-5 inline-flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-1.5">
               <Loader2 className="h-4 w-4 text-warning animate-spin shrink-0" />
               <span className="text-sm font-medium text-foreground tabular-nums">NIN {verification.nin}</span>
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="rounded-lg border border-border bg-card p-6 text-center sm:p-8">
             {isRejected ? (
               <>
-                <div className="mx-auto h-14 w-14 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center">
-                  <ShieldX className="h-7 w-7" />
+                <div className="mx-auto h-12 w-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+                  <ShieldX className="h-6 w-6" />
                 </div>
                 <h2 className="mt-5 text-lg font-semibold text-foreground">Verification unsuccessful</h2>
                 <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
@@ -89,8 +93,8 @@ export default function Identity() {
               </>
             ) : (
               <>
-                <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
-                  <ShieldCheck className="h-7 w-7" />
+                <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <ShieldCheck className="h-6 w-6" />
                 </div>
                 <h2 className="mt-5 text-lg font-semibold text-foreground">Verify your identity</h2>
                 <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
@@ -130,7 +134,7 @@ export default function Identity() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full h-11" disabled={submitVerification.isPending || nin.length !== 11}>
+              <Button type="submit" className="w-full" disabled={submitVerification.isPending || nin.length !== 11}>
                 {submitVerification.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -145,11 +149,11 @@ export default function Identity() {
             </form>
 
             <p className="mt-5 inline-flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-              <Lock className="h-3 w-3" /> Your NIN is encrypted and never shared.
+              <Lock className="h-3 w-3" /> Your NIN is only used to confirm who you are. Agencies never see it.
             </p>
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }

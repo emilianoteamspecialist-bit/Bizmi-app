@@ -1,12 +1,14 @@
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+import { ExternalLink, Loader2 } from "lucide-react"
 import { useVerifyCreditsMutation } from "@/lib/queries/credits"
 
-const CREDITS_RATE = 50 // ₦50 per credit
+export const CREDITS_RATE = 50 // ₦50 per credit
+// Paystack payment page for credits; the reference it returns is verified below.
+const PAYSTACK_PAY_URL = "https://paystack.shop/pay/m7uebavu00"
 const MIN_AMOUNT = 500 // ₦500 minimum (10 credits)
 
 export default function TopUpCreditsModal({
@@ -65,72 +67,97 @@ export default function TopUpCreditsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-[95vw] max-w-md sm:max-w-lg mx-auto p-4 sm:p-6">
+      <DialogContent className="w-[95vw] max-w-md p-5 sm:p-6">
         <DialogHeader>
-          <DialogTitle>Top up credits</DialogTitle>
+          <DialogTitle className="font-heading">Top up credits</DialogTitle>
+          <DialogDescription>
+            Pay on Paystack, then enter the amount and reference here. Credits are added once Paystack confirms the payment.
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleVerify} noValidate className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="amount-paid">Amount Paid (₦)</Label>
-            <Input
-              id="amount-paid"
-              type="number"
-              min={MIN_AMOUNT}
-              step="0.01"
-              value={amountPaid}
-              onChange={(e) => setAmountPaid(e.target.value)}
-              placeholder={`Minimum ₦${MIN_AMOUNT.toLocaleString()}`}
-              disabled={verify.isPending}
-              required
-            />
-            <p className="text-xs text-muted-foreground">Rate: 10 credits = ₦500 · Minimum: ₦{MIN_AMOUNT.toLocaleString()}</p>
-          </div>
-
-          {amount >= MIN_AMOUNT && (
-            <div className="p-3 bg-primary/10 rounded-lg border border-border text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Amount Paid:</span>
-                <span className="font-medium">₦{amount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between mt-2 pt-2 border-t border-border">
-                <span className="font-medium text-primary">Total Credits:</span>
-                <span className="font-bold text-primary">{totalCredits} credits</span>
-              </div>
+        <ol className="space-y-5">
+          <li className="flex gap-3">
+            <Step n={1} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">Pay on Paystack</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                ₦{CREDITS_RATE} per credit · minimum ₦{MIN_AMOUNT.toLocaleString()} ({MIN_AMOUNT / CREDITS_RATE} credits)
+              </p>
+              <Button asChild variant="outline" size="sm" className="mt-2">
+                <a href={PAYSTACK_PAY_URL} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink /> Open Paystack
+                </a>
+              </Button>
             </div>
-          )}
+          </li>
+          <li className="flex gap-3">
+            <Step n={2} />
+            <form onSubmit={handleVerify} noValidate className="min-w-0 flex-1 space-y-4">
+              <p className="text-sm font-medium text-foreground">Confirm your payment</p>
+              <div className="space-y-1.5">
+                <Label htmlFor="amount-paid">Amount paid (₦)</Label>
+                <Input
+                  id="amount-paid"
+                  type="number"
+                  inputMode="numeric"
+                  min={MIN_AMOUNT}
+                  step="0.01"
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(e.target.value)}
+                  placeholder={`Minimum ₦${MIN_AMOUNT.toLocaleString()}`}
+                  disabled={verify.isPending}
+                  required
+                />
+                {amount >= MIN_AMOUNT && (
+                  <p className="text-xs text-muted-foreground">
+                    You'll get <span className="font-semibold text-foreground">{totalCredits} credits</span>
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="payment-reference">Payment reference</Label>
+                <Input
+                  id="payment-reference"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="From your Paystack receipt"
+                  disabled={verify.isPending}
+                  required
+                />
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="payment-reference">Payment Reference ID</Label>
-            <Input
-              id="payment-reference"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder="Enter your payment reference ID"
-              disabled={verify.isPending}
-              required
-            />
-            <p className="text-xs text-muted-foreground">Enter the reference ID from your payment confirmation</p>
-          </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={verify.isPending} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={verify.isPending} className="flex-1">
-              {verify.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
-                </>
-              ) : (
-                "Verify Payment"
+              {error && (
+                <p role="alert" className="text-sm text-destructive">
+                  {error}
+                </p>
               )}
-            </Button>
-          </div>
-        </form>
+
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" onClick={handleClose} disabled={verify.isPending} className="flex-1">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={verify.isPending} className="flex-1">
+                  {verify.isPending ? (
+                    <>
+                      <Loader2 className="animate-spin" /> Verifying...
+                    </>
+                  ) : (
+                    "Verify payment"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </li>
+        </ol>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function Step({ n }: { n: number }) {
+  return (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground" aria-hidden>
+      {n}
+    </span>
   )
 }

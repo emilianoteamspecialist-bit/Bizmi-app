@@ -1,41 +1,34 @@
-import { useMemo, useState } from "react"
-import { Navigate } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { Link, Navigate } from "react-router-dom"
+import { Coins, Filter, Mail, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Coins, Filter, X, Mail, ArrowRight, Wallet } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useDashboardQuery } from "@/lib/queries/user"
 import { useCreditsHistoryQuery, type CreditPurchase } from "@/lib/queries/credits"
-import TopUpCreditsModal from "./TopUpCreditsModal"
+import { formatNaira } from "@/lib/format"
+import { cn } from "@/lib/utils"
+import { EmptyState, PageContainer, PageHeader, Panel, SkeletonBlock } from "@/components/marketplace/primitives"
+import TopUpCreditsModal, { CREDITS_RATE } from "./TopUpCreditsModal"
 
-const PAYOUT_STEPS = [
-  "An agency funds a job.",
-  "You click Verify to verify the payment.",
-  "You click Confirm to confirm the job.",
-  "You deliver the work successfully.",
-  "The agency clicks Job done on their side.",
-  "The Payout button becomes visible.",
-  "Click Payout, enter your correct bank details, and withdraw.",
+const CREDIT_FACTS = [
+  "You spend credits to send a bid. Each job shows its cost, between 5 and 20 credits.",
+  `Credits cost ₦${CREDITS_RATE} each. The smallest top-up is 10 credits (₦${(CREDITS_RATE * 10).toLocaleString()}).`,
+  "Credits pay for bids only. What you earn from a job is held in escrow and paid out from My jobs.",
 ]
 
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", currencyDisplay: "symbol" })
-    .format(amount)
-    .replace(/NGN/, "₦")
-}
-
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  return new Date(dateString).toLocaleDateString("en-NG", { year: "numeric", month: "short", day: "numeric" })
 }
 
 function statusClass(status: string) {
-  if (status === "completed") return "bg-success/10 text-success"
-  if (status === "pending") return "bg-warning/10 text-warning"
-  return "bg-destructive/10 text-destructive"
+  if (status === "completed") return "text-success"
+  if (status === "pending") return "text-warning"
+  return "text-destructive"
 }
 
+/** The freelancer's credits: balance, top-up, and every purchase and spend. */
 export default function Bizpal() {
   const { profile } = useAuth()
   const dashboard = useDashboardQuery()
@@ -51,18 +44,18 @@ export default function Bizpal() {
 
   if (dashboard.isLoading || history.isLoading) {
     return (
-      <div data-testid="bizpal-skeleton" className="min-h-screen bg-surface">
-        <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-foreground/5 rounded w-1/4" />
-            <div className="h-32 bg-card border border-border rounded-xl sm:max-w-sm" />
-            <div className="grid lg:grid-cols-2 gap-6">
-              <div className="h-64 bg-card border border-border rounded-xl" />
-              <div className="h-64 bg-card border border-border rounded-xl" />
+      <PageContainer>
+        <div data-testid="bizpal-skeleton" className="space-y-6" aria-label="Loading credits">
+          <SkeletonBlock className="h-8 w-48" />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-5">
+              <SkeletonBlock className="h-32" />
+              <SkeletonBlock className="h-64" />
             </div>
+            <SkeletonBlock className="h-64" />
           </div>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
@@ -70,13 +63,9 @@ export default function Bizpal() {
   const purchases: CreditPurchase[] = history.data?.purchases ?? []
 
   const filteredPurchases = purchases.filter((purchase) => {
-    if (!fromDate && !toDate) return true
     const purchaseDate = new Date(purchase.created_at)
-    const from = fromDate ? new Date(fromDate) : null
-    const to = toDate ? new Date(toDate) : null
-    if (from && to) return purchaseDate >= from && purchaseDate <= to
-    if (from) return purchaseDate >= from
-    if (to) return purchaseDate <= to
+    if (fromDate && purchaseDate < new Date(fromDate)) return false
+    if (toDate && purchaseDate > new Date(toDate)) return false
     return true
   })
 
@@ -86,185 +75,123 @@ export default function Bizpal() {
     setShowDateFilter(false)
   }
 
-  const handleSubmitQuery = () => {
-    window.location.href = "mailto:contact@bizimii.com?subject=Bizpal Query&body=Hello, I have a query regarding..."
-  }
-
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-          <div className="space-y-1">
-            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Bizpal</h1>
-            <p className="text-sm text-muted-foreground">Manage your payments and credits.</p>
-          </div>
-          <Button
-            onClick={() => window.open("https://paystack.shop/pay/m7uebavu00", "_blank")}
-            className="h-10 px-4 rounded-lg shrink-0 w-full sm:w-auto"
-          >
-            Buy credits
-          </Button>
-        </header>
+    <PageContainer>
+      <PageHeader title="Credits" description="Your balance, top-ups and the credits you've spent on bids." />
 
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-aubergine via-ink to-ink p-6 sm:p-8 text-white shadow-lg shadow-aubergine/20 mb-6">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/30 blur-3xl" aria-hidden />
-          <div className="pointer-events-none absolute right-10 -bottom-6 opacity-[0.06]" aria-hidden>
-            <Coins className="h-32 w-32" />
-          </div>
-          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-5">
+          <section aria-label="Balance" className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
-                  <Coins className="h-4 w-4 text-primary" />
-                </div>
-                <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/60">Available credits</p>
-              </div>
-              <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums">{currentCredits.toLocaleString()}</p>
-              <p className="mt-1 text-xs text-white/50">≈ ₦{(currentCredits * 50).toLocaleString()} · ₦50 per credit</p>
+              <p className="text-sm text-muted-foreground">Available credits</p>
+              <p className="mt-1 font-heading text-4xl font-semibold tabular-nums tracking-tight text-foreground">{currentCredits.toLocaleString()}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Enough for {Math.floor(currentCredits / 5)} bid{Math.floor(currentCredits / 5) === 1 ? "" : "s"} on a 5-credit job
+              </p>
             </div>
-            <div className="flex flex-col gap-2 sm:items-end">
-              <Button onClick={() => setShowTopUpModal(true)} className="bg-primary text-white hover:bg-primary-hover sm:px-8">
-                Top up credits
+            <Button onClick={() => setShowTopUpModal(true)} className="sm:px-6">
+              <Coins /> Top up credits
+            </Button>
+          </section>
+
+          <Panel
+            title="History"
+            action={
+              <Button onClick={() => setShowDateFilter(!showDateFilter)} variant="ghost" size="sm" aria-expanded={showDateFilter}>
+                <Filter /> Filter
               </Button>
-              <p className="text-[11px] text-white/40">Min: 10 credits (₦500)</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="rounded-xl border border-border bg-card shadow-none">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                  <Coins className="h-5 w-5 text-primary" />
-                  Credits Purchase History
-                </CardTitle>
-                <Button onClick={() => setShowDateFilter(!showDateFilter)} variant="outline" size="sm" className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filter
-                </Button>
-              </div>
-
-              {showDateFilter && (
-                <div className="mt-4 p-4 bg-surface-2 rounded-lg border border-border">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="flex-1">
-                      <Label htmlFor="fromDate" className="text-sm font-medium">
-                        From Date
-                      </Label>
-                      <Input id="fromDate" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="mt-1" />
-                    </div>
-                    <div className="flex-1">
-                      <Label htmlFor="toDate" className="text-sm font-medium">
-                        To Date
-                      </Label>
-                      <Input id="toDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="mt-1" />
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={clearDateFilter} variant="outline" size="sm" className="flex items-center gap-2 bg-transparent">
-                        <X className="h-4 w-4" />
-                        Clear
-                      </Button>
-                    </div>
+            }
+          >
+            {showDateFilter && (
+              <div className="mb-4 rounded-md border border-border bg-surface p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                  <div className="flex-1">
+                    <Label htmlFor="fromDate" className="text-xs font-medium">
+                      From date
+                    </Label>
+                    <Input id="fromDate" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="mt-1" />
                   </div>
-                  {(fromDate || toDate) && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Showing {filteredPurchases.length} of {purchases.length} purchases
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardHeader>
-            <CardContent>
-              {filteredPurchases.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                    <Coins className="h-5 w-5" />
+                  <div className="flex-1">
+                    <Label htmlFor="toDate" className="text-xs font-medium">
+                      To date
+                    </Label>
+                    <Input id="toDate" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="mt-1" />
                   </div>
-                  <h3 className="mt-4 text-sm font-semibold text-foreground">
-                    {purchases.length === 0 ? "No credits purchased yet" : "No purchases found"}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-                    {purchases.length === 0
-                      ? "Purchase credits to access premium features and services."
-                      : "Try adjusting your date filter to see more results."}
-                  </p>
-                  {purchases.length === 0 && <p className="mt-2 text-xs text-muted-foreground">Rate: 10 credits = ₦500 (₦50 per credit)</p>}
-                </div>
-              ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {filteredPurchases.map((purchase) => (
-                    <div
-                      key={purchase.id}
-                      className="flex items-center justify-between gap-3 p-4 border border-border rounded-lg transition-colors hover:bg-surface/60"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Coins className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-medium text-foreground truncate">
-                            {purchase.credits_amount > 0 ? "Credits purchase" : "Credits used (job bid)"}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">{Math.abs(purchase.credits_amount).toLocaleString()} credits</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(purchase.created_at)}</p>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className={`text-sm font-semibold tabular-nums ${purchase.credits_amount > 0 ? "text-foreground" : "text-destructive"}`}>
-                          {purchase.credits_amount > 0 ? formatCurrency(purchase.amount) : `${purchase.credits_amount} credits`}
-                        </p>
-                        <span className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${statusClass(purchase.status)}`}>
-                          {purchase.status === "completed" ? "Completed" : purchase.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="rounded-xl border border-border bg-card shadow-none">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <Wallet className="h-5 w-5 text-primary" />
-                How payout works
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <ol className="relative">
-                  {PAYOUT_STEPS.map((step, i) => (
-                    <li key={i} className="relative flex gap-4 pb-5 last:pb-0">
-                      {i < PAYOUT_STEPS.length - 1 && (
-                        <span className="absolute left-4 top-8 bottom-0 w-px -translate-x-1/2 bg-border" aria-hidden />
-                      )}
-                      <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary text-xs font-semibold tabular-nums">
-                        {i + 1}
-                      </span>
-                      <p className="pt-1.5 text-sm text-foreground">{step}</p>
-                    </li>
-                  ))}
-                </ol>
-
-                <div className="pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Have questions about failed transactions or need support? Contact us directly.
-                  </p>
-                  <Button onClick={handleSubmitQuery} className="w-full gap-2">
-                    <Mail className="h-4 w-4" />
-                    Submit query
-                    <ArrowRight className="h-4 w-4" />
+                  <Button onClick={clearDateFilter} variant="outline" size="sm">
+                    <X /> Clear
                   </Button>
                 </div>
+                {(fromDate || toDate) && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Showing {filteredPurchases.length} of {purchases.length}
+                  </p>
+                )}
               </div>
-            </CardContent>
-          </Card>
+            )}
+
+            {filteredPurchases.length === 0 ? (
+              purchases.length === 0 ? (
+                <EmptyState
+                  className="border-0 py-8"
+                  icon={<Coins className="h-5 w-5" />}
+                  title="No credits purchased yet"
+                  description="Top up to start bidding on jobs."
+                />
+              ) : (
+                <EmptyState className="border-0 py-8" title="No purchases found" description="Try a wider date range." />
+              )
+            ) : (
+              <ul className="-my-2 max-h-96 divide-y divide-border overflow-y-auto">
+                {filteredPurchases.map((purchase) => {
+                  const isSpend = purchase.credits_amount < 0
+                  return (
+                    <li key={purchase.id} className="flex items-center justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">{isSpend ? "Credits used (job bid)" : "Credits purchase"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="tabular-nums">{Math.abs(purchase.credits_amount).toLocaleString()} credits</span> · {formatDate(purchase.created_at)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className={cn("text-sm font-semibold tabular-nums", isSpend ? "text-muted-foreground" : "text-foreground")}>
+                          {isSpend ? `${purchase.credits_amount} credits` : formatNaira(purchase.amount)}
+                        </p>
+                        <p className={cn("text-[11px] font-medium capitalize", statusClass(purchase.status))}>{purchase.status}</p>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </Panel>
         </div>
+
+        <aside className="space-y-5" aria-label="About credits">
+          <Panel title="How credits work">
+            <ul className="space-y-3 text-sm text-foreground">
+              {CREDIT_FACTS.map((fact) => (
+                <li key={fact} className="flex gap-2">
+                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-muted-foreground" aria-hidden />
+                  {fact}
+                </li>
+              ))}
+            </ul>
+            <Button asChild variant="outline" className="mt-4 w-full">
+              <Link to="/freelancer/funded-jobs">Go to my jobs and payouts</Link>
+            </Button>
+          </Panel>
+          <Panel title="Payment problem?">
+            <p className="text-sm text-muted-foreground">If a top-up didn't arrive or a payment failed, email us with your payment reference.</p>
+            <Button asChild variant="ghost" className="mt-3 w-full">
+              <a href="mailto:contact@bizimii.com?subject=Bizpal%20query">
+                <Mail /> Email support
+              </a>
+            </Button>
+          </Panel>
+        </aside>
       </div>
 
       <TopUpCreditsModal isOpen={showTopUpModal} onClose={() => setShowTopUpModal(false)} onSuccess={() => setShowTopUpModal(false)} />
-    </div>
+    </PageContainer>
   )
 }
