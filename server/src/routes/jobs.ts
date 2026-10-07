@@ -85,23 +85,48 @@ jobsRouter.get(
       agencyJobCounts[agencyId as string] = count || 0
     }
 
-    const jobs = (savedJobsData || []).map((item: any) => {
+    // Which of these the caller has already applied to (same as GET /).
+    const savedJobIds = (savedJobsData || []).map((item: any) => item.jobs?.id).filter(Boolean)
+    let appliedSet = new Set<string>()
+    if (savedJobIds.length > 0) {
+      const { data: applied } = await supabase.from("proposals").select("job_id").eq("freelancer_id", user.id).in("job_id", savedJobIds)
+      appliedSet = new Set((applied || []).map((p: any) => p.job_id))
+    }
+
+    // Missing profile fields stay null: never invent agency details (no
+    // placeholder location/size/bio/"member since"), they read as real facts.
+    const jobs = (savedJobsData || []).filter((item: any) => item.jobs).map((item: any) => {
       const job = item.jobs
       const profile = profilesById[job?.agency_id] || null
+      const proposalCount = job.proposals?.[0]?.count || 0
       return {
         ...job,
         savedAt: new Date(item.created_at).toLocaleDateString(),
         budget: `₦ ${job.budget_min?.toLocaleString()} - ₦ ${job.budget_max?.toLocaleString()}`,
         postedDate: new Date(job.created_at).toLocaleDateString(),
-        proposals: job.proposals?.[0]?.count || 0,
+        proposals: proposalCount,
+        proposal_count: proposalCount,
         isBookmarked: true,
+        is_bookmarked: true,
+        has_applied: appliedSet.has(job.id),
+        // Same shape as get_jobs_with_details' agency_info, for the shared job card.
+        agency_info: profile
+          ? {
+              full_name: profile.full_name ?? null,
+              company_name: profile.company_name ?? null,
+              location: profile.location ?? null,
+              created_at: profile.created_at ?? null,
+              bio: profile.bio ?? null,
+              total_jobs: agencyJobCounts[job?.agency_id] ?? null,
+            }
+          : null,
         agencyInfo: {
           id: profile?.id,
-          name: profile?.company_name || profile?.full_name || "Unknown Agency",
-          location: profile?.location || "Nigeria",
-          employees: profile?.company_size || "10-50",
-          description: profile?.bio || "Professional agency providing quality services.",
-          memberSince: profile?.created_at ? new Date(profile.created_at).getFullYear().toString() : "2020",
+          name: profile?.company_name || profile?.full_name || "Agency",
+          location: profile?.location ?? null,
+          employees: profile?.company_size ?? null,
+          description: profile?.bio ?? null,
+          memberSince: profile?.created_at ? new Date(profile.created_at).getFullYear().toString() : null,
           phone: profile?.phone,
           website: profile?.website,
           email: profile?.email,

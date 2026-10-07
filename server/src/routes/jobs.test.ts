@@ -60,14 +60,41 @@ describe("GET /saved", () => {
         if (table === "jobs") {
           return { select: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ count: 4 }) })) }
         }
+        if (table === "proposals") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ in: vi.fn().mockResolvedValue({ data: [{ job_id: "job-1" }] }) })) })) }
+        }
         throw new Error(`unexpected table ${table}`)
       }),
     }
     const res = await request(appWith({ id: "freelancer-1" }, supabase)).get("/saved")
 
     expect(res.body.jobs[0]).toEqual(
-      expect.objectContaining({ id: "job-1", isBookmarked: true, agencyInfo: expect.objectContaining({ name: "Acme", totalJobs: 4 }) })
+      expect.objectContaining({
+        id: "job-1",
+        isBookmarked: true,
+        has_applied: true,
+        proposal_count: 3,
+        agencyInfo: expect.objectContaining({ name: "Acme", totalJobs: 4 }),
+        agency_info: expect.objectContaining({ company_name: "Acme", total_jobs: 4 }),
+      })
     )
+  })
+
+  it("never invents agency details the profile doesn't have", async () => {
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "saved_jobs") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ order: vi.fn().mockResolvedValue({ data: [{ created_at: "2026-01-01T00:00:00Z", jobs: { id: "job-1", agency_id: "agency-1", created_at: "2026-01-01T00:00:00Z", proposals: [] } }], error: null }) })) })) }
+        }
+        if (table === "profiles") return { select: vi.fn(() => ({ in: vi.fn().mockResolvedValue({ data: [{ id: "agency-1", company_name: "Acme" }] }) })) }
+        if (table === "jobs") return { select: vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ count: 1 }) })) }
+        if (table === "proposals") return { select: vi.fn(() => ({ eq: vi.fn(() => ({ in: vi.fn().mockResolvedValue({ data: [] }) })) })) }
+        throw new Error(`unexpected table ${table}`)
+      }),
+    }
+    const res = await request(appWith({ id: "freelancer-1" }, supabase)).get("/saved")
+    expect(res.body.jobs[0].agencyInfo).toEqual(expect.objectContaining({ location: null, employees: null, description: null, memberSince: null }))
+    expect(res.body.jobs[0].has_applied).toBe(false)
   })
 })
 

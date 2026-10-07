@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import Marketplace from "./Marketplace"
 
@@ -24,6 +24,35 @@ beforeEach(() => {
 })
 
 describe("Marketplace", () => {
+  it("applies sidebar filters to the jobs query", () => {
+    render(<Marketplace />, { wrapper: wrap })
+    const filters = screen.getByRole("complementary", { name: "Filters" })
+    fireEvent.click(within(filters).getByLabelText("Hybrid"))
+    expect(mocks.jobs).toHaveBeenLastCalledWith(expect.objectContaining({ jobType: "Hybrid" }), true)
+    fireEvent.click(within(filters).getByLabelText("Last 7 days"))
+    const last = mocks.jobs.mock.calls.at(-1)![0]
+    expect(typeof last.fromDate).toBe("string")
+    fireEvent.click(within(filters).getByRole("button", { name: /clear all/i }))
+    expect(mocks.jobs).toHaveBeenLastCalledWith(expect.objectContaining({ jobType: "", fromDate: undefined }), true)
+  })
+
+  it("opens job details from the card and offers Submit a proposal when eligible", () => {
+    render(<Marketplace />, { wrapper: wrap })
+    fireEvent.click(screen.getByRole("button", { name: "Build a storefront" }))
+    const dialog = screen.getByRole("dialog")
+    expect(within(dialog).getByText("A detailed brief")).toBeInTheDocument()
+    expect(within(dialog).getByText("Acme")).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole("button", { name: /submit a proposal/i }))
+    expect(within(dialog).getByLabelText("Your proposal")).toBeInTheDocument()
+  })
+
+  it("points an unverified freelancer to identity verification from job details", () => {
+    mocks.dashboard.mockReturnValue({ data: { credits: 20, isVerified: false } })
+    render(<Marketplace />, { wrapper: wrap })
+    fireEvent.click(screen.getByRole("button", { name: "Build a storefront" }))
+    expect(within(screen.getByRole("dialog")).getByRole("link", { name: /verify identity to apply/i })).toHaveAttribute("href", "/freelancer/identity")
+  })
+
   it("starts from the header search query (?q=)", () => {
     render(
       <MemoryRouter initialEntries={["/freelancer/marketplace?q=flutter"]}>
