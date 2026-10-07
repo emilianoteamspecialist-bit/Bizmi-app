@@ -81,7 +81,7 @@ Reuse these before writing page-specific UI:
 | `FreelancerCard` (+ skeleton, `FreelancerAvatar`, `isIdentityVerified`) | Talent search results and profile panels. |
 | `ProfileCompleteness` + `freelancerCompleteness` | The profile-strength checklist (profile page and dashboard). |
 | `components/shared/EscrowStatusBadge` | Escrow state everywhere money is shown. |
-| `AuthShell` (+ `AuthLogo`, `FormMessage`) | Frame for signed-out pages (sign in, sign up, password reset, admin sign in) and inline form errors/confirmations. No browser `alert()`s anywhere. |
+| `AuthShell` (+ `AuthLogo`, `FormMessage`) | Frame for signed-out pages (sign in, sign up, password reset, admin sign in) and inline form errors/confirmations. Use it instead of browser `alert()` (a few older pages, e.g. agency Profile/Settings and admin Users/Disputes, still use alerts). |
 | `components/console/ConsoleHeader` | Top bar for the admin console and influencer program: logo, area label, sections as a sideways-scrolling tab row. Used via `AdminSidebar` / `InfluencerSidebar` (names kept for their importers). |
 | Server `lib/trustSignals` | Identity-verified and jobs-completed for any set of freelancers; shared by talent search and Review bids so both always agree. |
 
