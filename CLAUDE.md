@@ -26,7 +26,7 @@ pnpm start    # start production server
 pnpm lint     # next lint
 ```
 
-The root Next.js app has no automated test suite. The `test-*.js` files at the repo root are ad hoc, one-off scripts for manually querying Supabase during development (they load `.env.local` directly) — not a real test harness. Don't treat them as CI-relevant, and don't extend the pattern for new tests.
+The root Next.js app has no automated test suite. The `scripts/dev-queries/test-*.js` files are ad hoc, one-off scripts for manually querying Supabase during development (they load `.env.local` directly) — not a real test harness. Don't treat them as CI-relevant, and don't extend the pattern for new tests.
 
 The new `client/` and `server/` apps (see "React + Node migration" below) each have a real Vitest suite and their own `package-lock.json` (npm, not pnpm — run `npm ci` inside each):
 
@@ -87,7 +87,7 @@ This is the highest-stakes part of the codebase — see `docs/escrow-production-
 
 ## Conventions
 
-- Primary brand color `orange-500` (`#f97316`) — see `design-system.md` for the full palette, button/card/badge patterns, and the "10% orange, 90% neutrals" rule.
+- Primary brand color `orange-500` (`#f97316`) — see `docs/design-system.md` for the full palette, button/card/badge patterns, and the "10% orange, 90% neutrals" rule.
 - Reuse existing `components/ui/` (shadcn) components rather than building new primitives.
 - New data models: type in TypeScript, validate with Zod on forms.
 
