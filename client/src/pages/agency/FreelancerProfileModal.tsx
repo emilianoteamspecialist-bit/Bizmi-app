@@ -1,21 +1,16 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MapPin, ShieldCheck, X } from "lucide-react"
+import { MapPin } from "lucide-react"
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { getCategoriesForSkills } from "@/lib/categories"
+import { formatMemberSince } from "@/lib/format"
 import type { FreelancerSearchResult } from "@/lib/queries/freelancers"
+import { FreelancerAvatar, isIdentityVerified, jobsCompletedLabel } from "@/components/marketplace/FreelancerCard"
+import { FactList, Panel, SkillList, TrustBadge } from "@/components/marketplace/primitives"
 
-function trustBadge(verificationStatus: string | null, jobsCompleted: number) {
-  if (verificationStatus === "verified" && jobsCompleted >= 5) {
-    return { label: "Fully Verified", className: "bg-success/10 text-success" }
-  }
-  if (verificationStatus === "verified") {
-    return { label: "Verified", className: "bg-primary/10 text-primary" }
-  }
-  return { label: "New", className: "bg-muted text-muted-foreground" }
-}
-
+/**
+ * A freelancer's profile as a storefront panel opened from talent search:
+ * who they are and why to trust them up top, then overview and skills. Only
+ * data Bizimi actually has is shown (no ratings or reviews exist yet).
+ */
 export default function FreelancerProfileModal({
   freelancer,
   isOpen,
@@ -26,89 +21,63 @@ export default function FreelancerProfileModal({
   onClose: () => void
 }) {
   if (!isOpen || !freelancer) return null
-
-  const badge = trustBadge(freelancer.verification_status, freelancer.jobs_completed)
-  const categories = getCategoriesForSkills(freelancer.skills)
+  const verified = isIdentityVerified(freelancer)
+  const categories = getCategoriesForSkills(freelancer.skills ?? [])
+  const memberSince = formatMemberSince(freelancer.created_at)
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={freelancer.logo || undefined} alt={freelancer.full_name} />
-                <AvatarFallback className="text-lg font-semibold bg-primary text-white">
-                  {freelancer.full_name?.charAt(0).toUpperCase() || "F"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-center gap-2">
-                  <CardTitle className="text-xl">{freelancer.full_name}</CardTitle>
-                  <Badge className={`text-xs border-0 ${badge.className}`}>
-                    {badge.label !== "New" && <ShieldCheck className="h-3 w-3 mr-1" />}
-                    {badge.label}
-                  </Badge>
-                </div>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full overflow-y-auto bg-surface p-0 sm:max-w-2xl">
+        <div className="border-b border-border bg-card px-5 py-6 pr-12 sm:px-8">
+          <div className="flex items-start gap-4">
+            <FreelancerAvatar freelancer={freelancer} size="lg" />
+            <div className="min-w-0">
+              <SheetTitle className="font-heading text-xl font-semibold text-foreground">{freelancer.full_name || "Freelancer"}</SheetTitle>
+              <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                 {freelancer.location && (
-                  <p className="text-sm text-muted-foreground flex items-center mt-1">
-                    <MapPin className="h-3 w-3 mr-1" />
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" aria-hidden />
                     {freelancer.location}
-                  </p>
+                  </span>
                 )}
+                {memberSince && <span>{memberSince}</span>}
+              </SheetDescription>
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                {verified ? <TrustBadge kind="identity" /> : <span className="text-xs text-muted-foreground">Identity not yet verified</span>}
               </div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {freelancer.bio && (
-            <div>
-              <h4 className="font-semibold mb-2">About</h4>
-              <p className="text-sm text-muted-foreground">{freelancer.bio}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-semibold mb-1">Jobs Completed</h4>
-              <p className="text-sm text-muted-foreground">{freelancer.jobs_completed}</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">Member Since</h4>
-              <p className="text-sm text-muted-foreground">{new Date(freelancer.created_at).getFullYear()}</p>
             </div>
           </div>
+        </div>
 
-          {freelancer.skills.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Skills</h4>
-              <div className="flex flex-wrap gap-2">
-                {freelancer.skills.map((skill) => (
-                  <Badge key={skill} variant="secondary">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="space-y-5 px-5 py-5 sm:px-8">
+          <Panel title="Track record">
+            <FactList
+              items={[
+                { label: "Jobs completed on Bizimi", value: Number(freelancer.jobs_completed) || 0 },
+                { label: "Identity", value: verified ? "Verified" : "Not verified" },
+              ]}
+            />
+            <p className="mt-3 text-xs text-muted-foreground">{jobsCompletedLabel(freelancer.jobs_completed)} through Bizimi escrow.</p>
+          </Panel>
 
-          {categories.length > 0 && (
-            <div>
-              <h4 className="font-semibold mb-2">Categories</h4>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <Badge key={cat} variant="outline">
-                    {cat}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          <Panel title="About">
+            {freelancer.bio ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{freelancer.bio}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">This freelancer hasn't written a bio yet.</p>
+            )}
+          </Panel>
+
+          <Panel title="Skills">
+            {freelancer.skills?.length ? <SkillList skills={freelancer.skills} max={30} /> : <p className="text-sm text-muted-foreground">No skills listed.</p>}
+            {categories.length > 0 && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Works in <span className="font-medium text-foreground">{categories.join(", ")}</span>
+              </p>
+            )}
+          </Panel>
+        </div>
+      </SheetContent>
+    </Sheet>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -46,6 +46,23 @@ beforeEach(() => {
 })
 
 describe("FindFreelancers", () => {
+  it("filters to identity-verified freelancers from the sidebar", async () => {
+    useFindFreelancersQueryMock.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      data: { pages: [{ freelancers: [oneFreelancer, { ...oneFreelancer, id: "f-2", full_name: "Sam New", verification_status: null, jobs_completed: 0 }], hasMore: false }] },
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    })
+    const user = userEvent.setup()
+    renderPage()
+    expect(screen.getByText("Sam New")).toBeInTheDocument()
+    await user.click(within(screen.getByRole("complementary", { name: "Filters" })).getByLabelText("Identity verified"))
+    expect(screen.queryByText("Sam New")).not.toBeInTheDocument()
+    expect(screen.getByText("Jane Doe")).toBeInTheDocument()
+  })
+
   it("redirects home when the signed-in user's account_type isn't agency", async () => {
     useAuthMock.mockReturnValue({ profile: { account_type: "freelancer" } })
     useFindFreelancersQueryMock.mockReturnValue({ isLoading: false, isError: false, data: undefined, fetchNextPage: vi.fn(), hasNextPage: false, isFetchingNextPage: false })

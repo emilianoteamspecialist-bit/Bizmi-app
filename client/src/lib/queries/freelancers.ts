@@ -10,6 +10,9 @@ export type FreelancerSearchResult = {
   created_at: string
   logo: string | null
   verification_status: string | null
+  /** From freelancer_verification (the external KYC service's record). */
+  identity_verified?: boolean
+  /** Escrows released or paid out to this freelancer. */
   jobs_completed: number
 }
 
