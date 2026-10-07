@@ -14,8 +14,8 @@ const config: Config = {
       fontFamily: {
         sans: ["Inter", "sans-serif"],
         heading: ["Sora", "sans-serif"],
-        display: ["ui-serif", "Georgia", "serif"],
-        bricolage: ["ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Instrument Serif", "ui-serif", "Georgia", "serif"],
+        bricolage: ["Bricolage Grotesque", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -59,6 +59,8 @@ const config: Config = {
         sm: "var(--radius-sm)",
       },
       keyframes: {
+        "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },
+        "accordion-up": { from: { height: "var(--radix-accordion-content-height)" }, to: { height: "0" } },
         marquee: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
         "fade-up": {
           "0%": { opacity: "0", transform: "translateY(8px)" },
@@ -66,6 +68,8 @@ const config: Config = {
         },
       },
       animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
         marquee: "marquee 40s linear infinite",
         "fade-up": "fade-up 0.6s ease-out both",
       },
