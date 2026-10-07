@@ -1,5 +1,7 @@
 import { Router } from "express"
 import { asyncHandler } from "../lib/http.js"
+import { createServiceClient } from "../lib/supabase.js"
+import { getFreelancerTrust } from "../lib/trustSignals.js"
 
 const jobsRouter = Router()
 
@@ -283,7 +285,15 @@ jobsRouter.get(
       return
     }
 
-    res.json({ proposals: data || [] })
+    // Same trust signals as talent search, so agencies compare bidders on facts.
+    const trust = await getFreelancerTrust(createServiceClient(), (data || []).map((p: any) => p.freelancer_id))
+    res.json({
+      proposals: (data || []).map((p: any) => ({
+        ...p,
+        identity_verified: trust.get(p.freelancer_id)?.identity_verified ?? false,
+        jobs_completed: trust.get(p.freelancer_id)?.jobs_completed ?? 0,
+      })),
+    })
   })
 )
 

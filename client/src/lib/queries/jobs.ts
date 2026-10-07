@@ -151,6 +151,9 @@ export type JobProposal = {
     phone: string | null
     website: string | null
   } | null
+  /** Server-derived trust signals (see server lib/trustSignals). */
+  identity_verified?: boolean
+  jobs_completed?: number
 }
 
 export function useJobProposalsQuery(jobId: string | undefined, enabled: boolean) {

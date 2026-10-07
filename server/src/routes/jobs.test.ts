@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from "vitest"
 import express from "express"
 import request from "supertest"
+import { fakeSupabase } from "../test/fakeSupabase.js"
+
+let service = fakeSupabase(() => ({}))
+vi.mock("../lib/supabase.js", () => ({ createServiceClient: () => service.client }))
+
 import jobsRouter from "./jobs.js"
 
 function appWith(user: { id: string }, supabase: any) {
@@ -237,6 +242,31 @@ describe("GET /:jobId/proposals", () => {
       phone: null,
       website: null,
     })
+  })
+
+  it("attaches trust signals from verification and completed escrows, not self-reported data", async () => {
+    service = fakeSupabase((op) => {
+      if (op.table === "freelancer_verification") return { data: [{ freelancer_id: "freelancer-1", status: "verified" }] }
+      if (op.table === "escrow_deposits") return { data: [{ freelancer_id: "freelancer-1" }, { freelancer_id: "freelancer-1" }] }
+    })
+    const proposal = (id: string, freelancer_id: string) => ({ id, freelancer_id, status: "pending", profiles: null })
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "jobs") {
+          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { id: "job-1", agency_id: "agency-1" }, error: null }) })) })) }
+        }
+        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ order: vi.fn().mockResolvedValue({ data: [proposal("p1", "freelancer-1"), proposal("p2", "freelancer-2")], error: null }) })) })) }
+      }),
+    }
+
+    const res = await request(appWith({ id: "agency-1" }, supabase)).get("/job-1/proposals")
+
+    expect(res.body.proposals.map((p: any) => [p.id, p.identity_verified, p.jobs_completed])).toEqual([
+      ["p1", true, 2],
+      ["p2", false, 0],
+    ])
+    const escrowQuery = service.calls.find((c) => c.table === "escrow_deposits")!
+    expect(escrowQuery.filters).toContainEqual(["in", "status_v2", ["released", "paid_out"]])
   })
 
   it("returns 403 when the caller does not own the job", async () => {
