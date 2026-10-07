@@ -24,6 +24,14 @@ beforeEach(() => {
 })
 
 describe("TopUpCreditsModal", () => {
+  it("starts with the Paystack payment link, opened in a new tab", () => {
+    renderModal()
+    const link = screen.getByRole("link", { name: /open paystack/i })
+    expect(link).toHaveAttribute("href", expect.stringContaining("paystack"))
+    expect(link).toHaveAttribute("target", "_blank")
+    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"))
+  })
+
   it("shows a validation error when the amount is below the minimum", async () => {
     const user = userEvent.setup()
     renderModal()

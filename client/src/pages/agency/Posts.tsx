@@ -69,7 +69,7 @@ export default function AgencyPosts() {
 
   return (
     <PageContainer>
-      <PageHeader title="Job posts" description="Every job you've posted, with its bids one click away." actions={postButton} />
+      <PageHeader title="My jobs" description="Every job you've posted, with its bids one click away." actions={postButton} />
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div role="tablist" aria-label="Filter by status" className="flex flex-wrap gap-1">

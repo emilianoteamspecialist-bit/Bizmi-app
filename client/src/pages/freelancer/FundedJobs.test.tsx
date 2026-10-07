@@ -77,7 +77,9 @@ describe("FundedJobs", () => {
     expect(screen.getByText("Landing page")).toBeInTheDocument()
     expect(screen.queryByText("Unpaid")).not.toBeInTheDocument()
     expect(screen.queryByText("As agency")).not.toBeInTheDocument()
-    expect(screen.getByText("₦50,000")).toBeInTheDocument()
+    expect(within(screen.getByTestId("escrow-e1")).getByText("₦50,000")).toBeInTheDocument()
+    // Summary: e1 is held in escrow.
+    expect(screen.getByText("Held in escrow").nextElementSibling).toHaveTextContent("₦50,000")
   })
 
   it("offers a workspace link and dispute for a funded job, and opens a dispute into the dispute room", () => {

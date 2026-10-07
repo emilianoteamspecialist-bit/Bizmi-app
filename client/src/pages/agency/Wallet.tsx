@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import EscrowStatusBadge from "@/components/shared/EscrowStatusBadge"
+import { EmptyState, ErrorState, PageContainer, PageHeader, SkeletonBlock } from "@/components/marketplace/primitives"
+import { formatTimeAgo } from "@/lib/format"
 import {
   DISPUTE_TYPE_LABELS,
   formatKobo,
@@ -78,113 +80,116 @@ export default function Wallet() {
 
   const sum = (pred: (e: MyEscrow) => boolean) => escrows.filter(pred).reduce((t, e) => t + (Number(e.amount_kobo) || 0), 0)
   const tiles = [
-    { label: "In escrow", value: sum((e) => e.status_v2 === "funded" || e.status_v2 === "disputed") },
-    { label: "Released", value: sum((e) => e.status_v2 === "released") },
-    { label: "Paid out", value: sum((e) => e.status_v2 === "paid_out") },
-    { label: "Refunded", value: sum((e) => e.status_v2 === "refunded") },
+    { label: "In escrow", value: sum((e) => e.status_v2 === "funded" || e.status_v2 === "disputed"), hint: "Held until you approve the work" },
+    { label: "Released", value: sum((e) => e.status_v2 === "released"), hint: "Approved, awaiting payout" },
+    { label: "Paid out", value: sum((e) => e.status_v2 === "paid_out"), hint: "Paid to freelancers" },
+    { label: "Refunded", value: sum((e) => e.status_v2 === "refunded"), hint: "Returned to you" },
   ]
 
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <header className="space-y-1">
-          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Wallet</h1>
-          <p className="text-sm text-muted-foreground">Money you've placed in escrow and where it stands. Fund a job from an accepted proposal.</p>
-        </header>
+    <PageContainer>
+      <PageHeader title="Payments" description="Money you've paid into escrow and where it stands. You fund a job from a hired freelancer's bid." />
 
-        {escrowsQuery.isLoading ? (
-          <div data-testid="wallet-loading" className="h-32 rounded-xl border border-border bg-card animate-pulse" />
-        ) : escrowsQuery.isError ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center">
-            <p className="text-sm font-semibold text-foreground">Couldn't load your wallet</p>
-            <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
-          </div>
-        ) : (
-          <>
-            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {tiles.map((t) => (
-                <div key={t.label} className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs font-medium text-muted-foreground">{t.label}</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground tabular-nums" data-testid={`wallet-${t.label}`}>
-                    {formatKobo(t.value)}
-                  </p>
-                </div>
-              ))}
-            </section>
-
-            {escrows.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
-                <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <WalletIcon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-sm font-semibold text-foreground">Nothing in escrow yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Accept a proposal and choose "Fund job" to pay into escrow.</p>
+      {escrowsQuery.isLoading ? (
+        <div data-testid="wallet-loading" className="mt-6 space-y-3" aria-label="Loading payments">
+          <SkeletonBlock className="h-20" />
+          <SkeletonBlock className="h-40" />
+        </div>
+      ) : escrowsQuery.isError ? (
+        <div className="mt-6">
+          <ErrorState title="Couldn't load your payments" description="Please try refreshing the page." />
+        </div>
+      ) : (
+        <>
+          <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4">
+            {tiles.map((t) => (
+              <div key={t.label} className="bg-card px-4 py-3">
+                <dt className="text-xs text-muted-foreground">{t.label}</dt>
+                <dd className="mt-1 font-heading text-xl font-semibold tabular-nums text-foreground" data-testid={`wallet-${t.label}`}>
+                  {formatKobo(t.value)}
+                </dd>
+                <dd className="text-[11px] text-muted-foreground">{t.hint}</dd>
               </div>
+            ))}
+          </dl>
+
+          <div className="mt-5">
+            {escrows.length === 0 ? (
+              <EmptyState
+                icon={<WalletIcon className="h-5 w-5" />}
+                title="Nothing in escrow yet"
+                description="Hire a freelancer from your job's bids, then choose Fund job to pay into escrow."
+                action={
+                  <Button asChild variant="outline">
+                    <Link to="/agency/posts">Go to my jobs</Link>
+                  </Button>
+                }
+              />
             ) : (
-              <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              <ul className="divide-y divide-border rounded-lg border border-border bg-card">
                 {escrows.map((escrow) => (
-                  <div key={escrow.id} className="p-4 sm:p-5" data-testid={`escrow-${escrow.id}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <li key={escrow.id} className="p-4" data-testid={`escrow-${escrow.id}`}>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0 space-y-1.5">
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                          <h3 className="text-sm font-semibold text-foreground truncate">{escrow.job_title ?? "Job"}</h3>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <h2 className="truncate text-sm font-semibold text-foreground">{escrow.job_title ?? "Job"}</h2>
                           <EscrowStatusBadge status={escrow.status_v2} />
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                           <span>{escrow.freelancer_name ?? "Freelancer"}</span>
-                          <span className="font-medium text-foreground tabular-nums">{formatKobo(escrow.amount_kobo)}</span>
-                          <span>{new Date(escrow.funded_at ?? escrow.created_at).toLocaleDateString()}</span>
+                          <span className="font-medium tabular-nums text-foreground">{formatKobo(escrow.amount_kobo)}</span>
+                          <span>{escrow.funded_at ? `Funded ${formatTimeAgo(escrow.funded_at)}` : `Started ${formatTimeAgo(escrow.created_at)}`}</span>
                         </div>
                         {escrow.status_v2 === "funded" && escrow.submission_status === "submitted" && (
-                          <p className="text-xs text-primary">Work submitted — review it in the workspace.</p>
+                          <p className="text-xs font-medium text-primary">Work submitted. Review it in the workspace.</p>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
                         {escrow.status_v2 === "awaiting" && <ResumePayment />}
                         {escrow.status_v2 === "funded" && (
                           <>
-                            <Button asChild size="sm" variant="outline" className="gap-1.5">
+                            <Button asChild size="sm" variant="outline">
                               <Link to={`/workspace/${escrow.job_id}`}>
-                                <FileText className="h-3.5 w-3.5" /> Workspace
+                                <FileText /> Workspace
                               </Link>
                             </Button>
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => setDisputingId(disputingId === escrow.id ? null : escrow.id)}
                             >
-                              <ShieldAlert className="h-3.5 w-3.5" /> Dispute
+                              <ShieldAlert /> Dispute
                             </Button>
                           </>
                         )}
                         {escrow.open_dispute_id && (
-                          <Button asChild size="sm" variant="outline" className="gap-1.5">
+                          <Button asChild size="sm" variant="outline">
                             <Link to={`/disputes/${escrow.open_dispute_id}`}>
-                              <ShieldAlert className="h-3.5 w-3.5" /> View dispute
+                              <ShieldAlert /> View dispute
                             </Link>
                           </Button>
                         )}
                       </div>
                     </div>
                     {disputingId === escrow.id && <DisputeForm escrow={escrow} onCancel={() => setDisputingId(null)} />}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </>
-        )}
-      </div>
-    </div>
+          </div>
+        </>
+      )}
+    </PageContainer>
   )
 }
 
 // An escrow left 'awaiting' (checkout opened but not paid) is resumed from the
-// proposal's "Fund job" button -- the server hands back the same Paystack
-// checkout -- so this points the agency at their job posts.
+// bid's "Complete payment" button -- the server hands back the same Paystack
+// checkout -- so this points the agency at their jobs.
 function ResumePayment() {
   return (
-    <Button asChild size="sm" variant="outline">
+    <Button asChild size="sm">
       <Link to="/agency/posts">Complete payment</Link>
     </Button>
   )
