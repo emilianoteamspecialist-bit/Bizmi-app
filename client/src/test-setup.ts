@@ -34,3 +34,19 @@ if (!("IntersectionObserver" in globalThis)) {
   }
   globalThis.IntersectionObserver = MockIntersectionObserver
 }
+
+// jsdom has no matchMedia. The shadcn Sidebar's useIsMobile hook (portal
+// shell) subscribes to it on mount; report "desktop" (no match).
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList
+}

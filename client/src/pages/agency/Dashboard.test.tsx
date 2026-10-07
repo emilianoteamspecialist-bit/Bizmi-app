@@ -39,6 +39,19 @@ beforeEach(() => {
 })
 
 describe("AgencyDashboard", () => {
+  it("opens the post-job composer when arriving with ?post=true (sidebar's Post a job)", async () => {
+    useAgencyJobsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { jobs: [] } })
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={["/agency/dashboard?post=true"]}>
+          <AgencyDashboard />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+    expect(await screen.findByRole("heading", { name: "Post a Job" })).toBeInTheDocument()
+  })
+
   it("shows a loading state while the agency jobs query is pending", () => {
     useAgencyJobsQueryMock.mockReturnValue({ isLoading: true, data: undefined })
     renderDashboard()

@@ -40,6 +40,7 @@ import FundedJobs from "./pages/freelancer/FundedJobs"
 import AgencyWallet from "./pages/agency/Wallet"
 import EscrowReturn from "./pages/agency/EscrowReturn"
 import Workspace from "./pages/shared/Workspace"
+import PortalLayout from "./components/portal/PortalLayout"
 import DisputeRoom from "./pages/shared/DisputeRoom"
 import InfluencerDashboard from "./pages/influencer/Dashboard"
 import InfluencerReferrals from "./pages/influencer/Referrals"
@@ -58,151 +59,32 @@ export default function App() {
             {/* Legacy recovery-email target; kept so already-sent reset links still land here. */}
             <Route path="/freelancer/reset-password" element={<ResetPassword />} />
             <Route path="/contact" element={<Contact />} />
-            <Route
-              path="/freelancer/dashboard"
-              element={
-                <RequireAuth>
-                  <Dashboard />
-                </RequireAuth>
-              }
-            />
-            <Route path="/freelancer/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
-            <Route
-              path="/freelancer/saved-jobs"
-              element={
-                <RequireAuth>
-                  <SavedJobs />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/proposals"
-              element={
-                <RequireAuth>
-                  <Proposals />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/profile"
-              element={
-                <RequireAuth>
-                  <FreelancerProfile />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/identity"
-              element={
-                <RequireAuth>
-                  <Identity />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/settings"
-              element={
-                <RequireAuth>
-                  <Settings />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/tutorial"
-              element={
-                <RequireAuth>
-                  <Tutorial />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/contact"
-              element={
-                <RequireAuth>
-                  <SupportContact />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/policy"
-              element={
-                <RequireAuth>
-                  <Policy />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/dashboard"
-              element={
-                <RequireAuth>
-                  <AgencyDashboard />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/profile"
-              element={
-                <RequireAuth>
-                  <AgencyProfile />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/settings"
-              element={
-                <RequireAuth>
-                  <AgencySettings />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/tutorial"
-              element={
-                <RequireAuth>
-                  <AgencyTutorial />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/posts"
-              element={
-                <RequireAuth>
-                  <AgencyPosts />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/find-freelancers"
-              element={
-                <RequireAuth>
-                  <FindFreelancers />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/bizpal"
-              element={
-                <RequireAuth>
-                  <Bizpal />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/messages"
-              element={
-                <RequireAuth>
-                  <Messages />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/messages"
-              element={
-                <RequireAuth>
-                  <Messages />
-                </RequireAuth>
-              }
-            />
+            {/* /agency/* and /freelancer/*: shared portal shell (sidebar + top bar), auth-guarded once. */}
+            <Route element={<PortalLayout />}>
+              <Route path="/freelancer/dashboard" element={<Dashboard />} />
+              <Route path="/freelancer/marketplace" element={<Marketplace />} />
+              <Route path="/freelancer/saved-jobs" element={<SavedJobs />} />
+              <Route path="/freelancer/proposals" element={<Proposals />} />
+              <Route path="/freelancer/profile" element={<FreelancerProfile />} />
+              <Route path="/freelancer/identity" element={<Identity />} />
+              <Route path="/freelancer/settings" element={<Settings />} />
+              <Route path="/freelancer/tutorial" element={<Tutorial />} />
+              <Route path="/freelancer/contact" element={<SupportContact />} />
+              <Route path="/freelancer/policy" element={<Policy />} />
+              <Route path="/agency/dashboard" element={<AgencyDashboard />} />
+              <Route path="/agency/profile" element={<AgencyProfile />} />
+              <Route path="/agency/settings" element={<AgencySettings />} />
+              <Route path="/agency/tutorial" element={<AgencyTutorial />} />
+              <Route path="/agency/posts" element={<AgencyPosts />} />
+              <Route path="/agency/find-freelancers" element={<FindFreelancers />} />
+              <Route path="/freelancer/bizpal" element={<Bizpal />} />
+              <Route path="/freelancer/messages" element={<Messages />} />
+              <Route path="/agency/messages" element={<Messages />} />
+              <Route path="/freelancer/funded-jobs" element={<FundedJobs />} />
+              <Route path="/agency/wallet" element={<AgencyWallet />} />
+              <Route path="/agency/escrow/return" element={<EscrowReturn />} />
+              <Route path="/agency/contact" element={<SupportContact />} />
+            </Route>
             <Route
               path="/influencer/dashboard"
               element={
@@ -273,30 +155,6 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AdminInfluencers />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/freelancer/funded-jobs"
-              element={
-                <RequireAuth>
-                  <FundedJobs />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/wallet"
-              element={
-                <RequireAuth>
-                  <AgencyWallet />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/agency/escrow/return"
-              element={
-                <RequireAuth>
-                  <EscrowReturn />
                 </RequireAuth>
               }
             />

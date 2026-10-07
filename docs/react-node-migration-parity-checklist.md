@@ -44,6 +44,7 @@ Legend: ✅ ported and wired in `client/`+`server/` · 🟡 built on escrow v2, 
 | `/agency/posts` | `/agency/posts` | ✅⚠️ | Slim port 2026-10-03: job-post grid + title/description search (client-side over `useAgencyJobsQuery`, so no pagination) + shared `ProposalsModal`. **Omitted:** legacy "Fund job" (`/api/escrow/initialize`) and "Mark done" (`/api/paystack/mark-complete`) — escrow-gated, add in Phase 4; also the realtime proposal-count refresh and the inline "Message freelancer" box on accepted proposals (`/agency/messages` covers messaging). |
 | `/agency/settings` | `/agency/settings` | ✅ | Ported 2026-10-02 — mirrors `/freelancer/settings`; reuses `DeleteAccountDialog` + `POST /api/user/account` (Danger Zone under the Security tab, as in legacy). Notification/privacy saves are still no-op stubs, same as legacy. |
 | `/agency/tutorial` | `/agency/tutorial` | ✅ | Ported 2026-10-02, static content port |
+| `/agency/contact` | `/agency/contact` | ✅ | Added 2026-10-07 — identical to `/freelancer/contact` (same `SupportContact` page); reached from the portal top bar's Support item. Was missing from the checklist. |
 
 ## Shared workspaces & escrow
 
@@ -79,7 +80,8 @@ Real, live routes in both the legacy app and the new SPA (documented in `docs/pl
 
 ## Summary
 
-- **Fully ported and wired:** 31 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; the "request reset" step is now ported, but the Supabase redirect-URL allowlist still needs confirming before it can be called complete. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
+- **Portal shell:** until 2026-10-07 the SPA's `/agency/*` and `/freelancer/*` pages had no sidebar or top bar — the Next.js `app/agency/layout.tsx` / `app/freelancer/layout.tsx` (AppSidebar, DashboardTopBar, PageTransition) were never ported. Now `components/portal/PortalLayout` wraps both portals, backed by `GET /api/user/shell`.
+- **Fully ported and wired:** 32 routes (all public/freelancer/agency/admin/influencer routes with no escrow dependency). This includes `/reset-password`, ported but with a known, tracked gap — see its row above; the "request reset" step is now ported, but the Supabase redirect-URL allowlist still needs confirming before it can be called complete. And it includes `/agency/posts`, a slim port whose escrow actions (Fund job, Mark done) wait on Phase 4 — see its row above.
 - **Built on escrow v2, awaiting go-live checks (🟡):** `/freelancer/funded-jobs`, `/agency/wallet`, `/workspace/[job_id]`, `/disputes/[id]`, `/admin/transactions`, `/admin/disputes`, `/admin/analytics` — 7 routes, plus "Fund job" on accepted proposals and `/agency/escrow/return`. Code and tests are in; what's left is verification against live Supabase and Paystack test mode, and the webhook cutover (readiness doc §4).
 - **Not started, no blocker (⬜):** none — every remaining unported route is escrow-gated. (`/admin/analytics` was listed here until 2026-10-03; reclassified ⛔ because it reads only `Funded_jobs101`.)
 - **Doc gaps:** resolved 2026-10-03 — `docs/platform-routes.md` now covers `/freelancer/marketplace`, `/freelancer/contact`, `/freelancer/policy`, `/freelancer/reset-password`, `/admin/jobs`, `/admin/audit`, `/admin/influencers`, and the Influencer role.
