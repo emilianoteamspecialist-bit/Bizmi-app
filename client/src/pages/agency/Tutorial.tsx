@@ -141,9 +141,9 @@ export default function AgencyTutorial() {
           <div className="space-y-6 min-w-0">
             {sections.map((s, i) => (
               <Reveal key={s.id} delay={i * 0.04}>
-                <section id={s.id} className="scroll-mt-20 rounded-xl border border-border bg-card p-6">
+                <section id={s.id} className="scroll-mt-20 rounded-lg border border-border bg-card p-5">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="h-9 w-9 shrink-0 rounded-md bg-surface-2 text-foreground flex items-center justify-center">
                     <s.icon className="h-5 w-5" />
                   </div>
                   <h2 className="text-base font-semibold text-foreground">{s.title}</h2>
@@ -165,7 +165,7 @@ export default function AgencyTutorial() {
 
             {/* Support */}
             <Reveal>
-            <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <div className="rounded-lg border border-border bg-card p-5 text-center">
               <h2 className="text-base font-semibold text-foreground">Still need help?</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Can&apos;t find what you&apos;re looking for? Our support team is here to help.

@@ -3,7 +3,9 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, Mail, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { FormMessage } from "@/components/marketplace/AuthShell"
 import { supabase } from "@/lib/supabase"
 
 interface ForgotPasswordModalProps {
@@ -35,7 +37,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
         setMessage(error.message)
         setIsSuccess(false)
       } else {
-        setMessage("Password reset email sent! Please check your inbox.")
+        setMessage("Password reset email sent. Check your inbox for the link.")
         setIsSuccess(true)
         setEmail("")
       }
@@ -55,93 +57,47 @@ export default function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordM
     onClose()
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div role="dialog" aria-modal="true" aria-labelledby="forgot-password-title" className="bg-white rounded-lg shadow-xl w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center space-x-2">
-            <Mail className="h-5 w-5 text-primary" />
-            <h2 id="forgot-password-title" className="text-xl font-semibold text-slate-900">
-              Reset Password
-            </h2>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className="w-[95vw] max-w-md p-5 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="font-heading">Reset password</DialogTitle>
+          <DialogDescription>Enter the email you signed up with and we'll send you a link to set a new password.</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="reset-email">Email address</Label>
+            <Input
+              id="reset-email"
+              type="email"
+              autoComplete="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
+            />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            aria-label="Close"
-            className="h-8 w-8 text-slate-400 hover:text-slate-600"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
 
-        {/* Content */}
-        <div className="p-6">
-          <p className="text-slate-600 mb-6">
-            Enter your email address and we'll send you a link to reset your password.
-          </p>
+          {message && <FormMessage tone={isSuccess ? "success" : "error"}>{message}</FormMessage>}
 
-          <form onSubmit={handleResetPassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="reset-email" className="text-slate-700">
-                Email Address
-              </Label>
-              <Input
-                id="reset-email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                className="focus:ring-primary focus:border-primary"
-              />
-            </div>
-
-            {message && (
-              <div
-                className={`p-3 rounded-xl text-sm ${
-                  isSuccess
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-red-50 text-red-700 border border-red-200"
-                }`}
-              >
-                {message}
-              </div>
-            )}
-
-            <div className="flex space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                className="flex-1 bg-transparent"
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-primary hover:bg-primary-hover text-white"
-                disabled={isLoading || !email}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Send Reset Link"
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          <div className="flex gap-2 pt-1">
+            <Button type="button" variant="outline" onClick={handleClose} className="flex-1" disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1" disabled={isLoading || !email}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin" /> Sending…
+                </>
+              ) : (
+                "Send reset link"
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

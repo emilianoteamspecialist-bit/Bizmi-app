@@ -1,6 +1,6 @@
 import { Mail, MessageCircle, Instagram, Facebook } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Reveal } from "@/components/shared/reveal"
+import { PageContainer } from "@/components/marketplace/primitives"
 
 export default function FreelancerContactPage() {
   const handleEmailClick = () => {
@@ -44,27 +44,26 @@ export default function FreelancerContactPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <PageContainer>
+      <div className="space-y-6">
         {/* Header */}
         <header className="space-y-1">
           <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Contact &amp; support</h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
-            Need help or have questions? Reach us through any of the channels below — we&apos;re happy to assist.
+            Questions about your account, a job or a payment? Reach us on any of these.
           </p>
         </header>
 
         {/* Contact channels */}
-        <Reveal>
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {channels.map((c) => (
-            <div key={c.title} className="rounded-xl border border-border bg-card p-6 text-center">
-              <div className="mx-auto h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <c.icon className="h-6 w-6" />
+            <div key={c.title} className="flex flex-col rounded-lg border border-border bg-card p-5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-2 text-foreground">
+                <c.icon className="h-4 w-4" />
               </div>
-              <h3 className="mt-4 text-sm font-semibold text-foreground">{c.title}</h3>
-              <p className="mt-1 text-sm text-muted-foreground">{c.desc}</p>
-              <Button onClick={c.onClick} className="w-full gap-2 mt-4">
+              <h3 className="mt-3 text-sm font-semibold text-foreground">{c.title}</h3>
+              <p className="mt-0.5 flex-1 text-sm text-muted-foreground">{c.desc}</p>
+              <Button onClick={c.onClick} variant="outline" className="mt-4 w-full">
                 <c.icon className="h-4 w-4" />
                 {c.action}
               </Button>
@@ -72,13 +71,11 @@ export default function FreelancerContactPage() {
             </div>
           ))}
         </section>
-        </Reveal>
 
         {/* Social */}
-        <Reveal>
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-base font-semibold text-foreground text-center">Follow us on social media</h2>
-          <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-foreground">Follow us</h2>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <Button
               variant="outline"
               className="gap-2 w-full sm:w-auto"
@@ -107,15 +104,13 @@ export default function FreelancerContactPage() {
             </Button>
           </div>
         </div>
-        </Reveal>
 
         {/* How we can help */}
-        <Reveal>
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-base font-semibold text-foreground text-center">How we can help</h2>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-foreground">How we can help</h2>
           <div className="mt-5 grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-semibold text-primary mb-2">For freelancers</h3>
+              <h3 className="mb-2 text-sm font-medium text-foreground">For freelancers</h3>
               <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5 marker:text-border">
                 <li>Account setup and verification</li>
                 <li>Proposal submission help</li>
@@ -124,7 +119,7 @@ export default function FreelancerContactPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-primary mb-2">For agencies</h3>
+              <h3 className="mb-2 text-sm font-medium text-foreground">For agencies</h3>
               <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5 marker:text-border">
                 <li>Job posting guidance</li>
                 <li>Freelancer selection process</li>
@@ -134,13 +129,12 @@ export default function FreelancerContactPage() {
             </div>
           </div>
         </div>
-        </Reveal>
 
         {/* Response time */}
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           <strong className="font-medium text-foreground">Response times:</strong> Email within 24 hours · WhatsApp within 2 hours during business hours
         </p>
       </div>
-    </div>
+    </PageContainer>
   )
 }

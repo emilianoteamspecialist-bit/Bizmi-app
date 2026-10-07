@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, Lock, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { Check, Eye, EyeOff, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { AuthShell, FormMessage } from "@/components/marketplace/AuthShell"
 import { supabase } from "@/lib/supabase"
 
 export default function ResetPassword() {
@@ -75,7 +76,7 @@ export default function ResetPassword() {
         setMessage(error.message)
         setIsSuccess(false)
       } else {
-        setMessage("Password updated successfully! Redirecting to login...")
+        setMessage("Password updated successfully. Taking you to sign in…")
         setIsSuccess(true)
 
         setTimeout(() => {
@@ -93,151 +94,107 @@ export default function ResetPassword() {
 
   if (!isValidSession && !message) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="text-slate-600 font-medium">Verifying reset link...</span>
-        </div>
-      </div>
+      <AuthShell title="Set a new password">
+        <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Checking your reset link…
+        </p>
+      </AuthShell>
     )
   }
 
+  if (!isValidSession) {
+    return (
+      <AuthShell title="Set a new password">
+        <div className="space-y-4">
+          <FormMessage tone="error">{message}</FormMessage>
+          <p className="text-sm text-muted-foreground">Reset links expire after a short time and work once. Request a new one from the sign-in page.</p>
+          <Button onClick={() => navigate("/login")} className="w-full">
+            Back to login
+          </Button>
+        </div>
+      </AuthShell>
+    )
+  }
+
+  const rules = [
+    { label: "At least 8 characters", met: password.length >= 8 },
+    { label: "An uppercase and a lowercase letter", met: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+    { label: "A number", met: /\d/.test(password) },
+  ]
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-8 selection:bg-primary/20 selection:text-primary">
-      <div className="w-full max-w-[440px]">
-        <Card className="border-slate-200 shadow-2xl shadow-slate-200/50 rounded-[2rem] overflow-hidden bg-white">
-          <CardHeader className="text-center space-y-2 pt-10 px-8">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-2">
-              <Lock className="h-8 w-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Reset Password</CardTitle>
-            <CardDescription className="text-slate-500 font-medium">Create a new secure password for your account</CardDescription>
-          </CardHeader>
+    <AuthShell title="Set a new password" description="Choose a password you haven't used on Bizimi before.">
+      <form onSubmit={handleResetPassword} className="space-y-4">
+        <PasswordInput id="password" label="New password" value={password} onChange={setPassword} shown={showPassword} onToggle={() => setShowPassword(!showPassword)} disabled={isLoading} />
+        <ul className="space-y-1" aria-label="Password requirements">
+          {rules.map((r) => (
+            <li key={r.label} className={cn("flex items-center gap-1.5 text-xs", r.met ? "text-success" : "text-muted-foreground")}>
+              <Check className={cn("h-3.5 w-3.5", !r.met && "opacity-30")} aria-hidden />
+              {r.label}
+              <span className="sr-only">{r.met ? " (met)" : " (not met)"}</span>
+            </li>
+          ))}
+        </ul>
+        <PasswordInput
+          id="confirmPassword"
+          label="Confirm new password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          shown={showConfirmPassword}
+          onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+          disabled={isLoading}
+        />
 
-          <CardContent className="px-8 pb-10 space-y-6">
-            {!isValidSession ? (
-              <div className="text-center space-y-6">
-                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl">
-                  <div className="flex items-center justify-center space-x-2">
-                    <AlertCircle className="h-5 w-5 text-red-500" />
-                    <span className="text-red-700 font-bold text-sm">{message}</span>
-                  </div>
-                </div>
-                <Button onClick={() => navigate("/login")} className="w-full h-12 rounded-xl text-base">
-                  Back to Login
-                </Button>
-              </div>
-            ) : (
-              <form onSubmit={handleResetPassword} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-bold text-slate-700">
-                    New Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter new password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      className="pr-12 h-12 border-slate-200 rounded-xl"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+        {message && <FormMessage tone={isSuccess ? "success" : "error"}>{message}</FormMessage>}
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-sm font-bold text-slate-700">
-                    Confirm New Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm new password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      className="pr-12 h-12 border-slate-200 rounded-xl"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      disabled={isLoading}
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </div>
-                </div>
+        <Button type="submit" className="w-full" disabled={isLoading || !password || !confirmPassword}>
+          {isLoading ? (
+            <>
+              <Loader2 className="animate-spin" /> Updating…
+            </>
+          ) : (
+            "Update password"
+          )}
+        </Button>
+        <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/login")} disabled={isLoading}>
+          Back to login
+        </Button>
+      </form>
+    </AuthShell>
+  )
+}
 
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500 font-medium space-y-2">
-                  <p className="font-bold text-slate-700">Password Requirements:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-1">
-                    <li>At least 8 characters long</li>
-                    <li>One uppercase letter</li>
-                    <li>One lowercase letter</li>
-                    <li>One number</li>
-                  </ul>
-                </div>
-
-                {message && (
-                  <div
-                    className={`p-4 rounded-2xl text-sm font-bold flex items-center space-x-2 ${
-                      isSuccess
-                        ? "bg-green-50 text-green-700 border border-green-100"
-                        : "bg-red-50 text-red-700 border border-red-100"
-                    }`}
-                  >
-                    {isSuccess ? <CheckCircle className="h-5 w-5 flex-shrink-0" /> : <AlertCircle className="h-5 w-5 flex-shrink-0" />}
-                    <span>{message}</span>
-                  </div>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full h-12 rounded-xl text-base shadow-lg shadow-primary/25"
-                  disabled={isLoading || !password || !confirmPassword}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update Password"
-                  )}
-                </Button>
-
-                <div className="text-center pt-2">
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={() => navigate("/login")}
-                    className="text-primary font-bold hover:underline underline-offset-4"
-                    disabled={isLoading}
-                  >
-                    Back to Login
-                  </Button>
-                </div>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+function PasswordInput({
+  id,
+  label,
+  value,
+  onChange,
+  shown,
+  onToggle,
+  disabled,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (v: string) => void
+  shown: boolean
+  onToggle: () => void
+  disabled: boolean
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input id={id} type={shown ? "text" : "password"} autoComplete="new-password" value={value} onChange={(e) => onChange(e.target.value)} required disabled={disabled} className="pr-10" />
+        <button
+          type="button"
+          className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+          onClick={onToggle}
+          disabled={disabled}
+          aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        >
+          {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
       </div>
     </div>
   )

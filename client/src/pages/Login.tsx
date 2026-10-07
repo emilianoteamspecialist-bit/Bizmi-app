@@ -4,8 +4,9 @@ import { useNavigate, Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, Loader2, ArrowLeft, ArrowUpRight } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { AuthShell, FormMessage } from "@/components/marketplace/AuthShell"
 import ForgotPasswordModal from "../components/ForgotPasswordModal"
 
 export default function Login() {
@@ -14,34 +15,34 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const [showForgotModal, setShowForgotModal] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError("")
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
       if (authError) {
-        if (authError.message.includes("Email not confirmed")) {
-          alert("Please check your email and click the confirmation link before signing in.")
-        } else {
-          alert(`Login error: ${authError.message}`)
-        }
+        setError(
+          authError.message.includes("Email not confirmed")
+            ? "Confirm your email first: open the link we sent you, then sign in."
+            : authError.message.includes("Invalid login credentials")
+              ? "That email and password don't match. Check them and try again."
+              : authError.message
+        )
         setIsLoading(false)
         return
       }
 
       if (authData.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", authData.user.id)
-          .single()
+        const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", authData.user.id).single()
 
         if (profileError || !profile) {
-          alert("Profile not found. Please contact support or try signing up again.")
+          setError("We couldn't find a profile for this account. Contact support, or sign up again.")
           setIsLoading(false)
           return
         }
@@ -51,147 +52,86 @@ export default function Login() {
         else if (profile.account_type === "influencer") navigate("/influencer/dashboard")
         else navigate("/freelancer/dashboard")
       }
-    } catch (error) {
-      console.error("Unexpected login error:", error)
-      alert("An unexpected error occurred. Please try again.")
+    } catch (err) {
+      console.error("Unexpected login error:", err)
+      setError("Something went wrong signing you in. Check your connection and try again.")
     } finally {
       setTimeout(() => setIsLoading(false), 1000)
     }
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] bg-cream font-sans">
-      <aside className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 border-r border-ink/10">
-        <Link to="/" className="inline-flex items-center gap-2 self-start text-sm font-bold text-ink/50 hover:text-ink transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          Back to home
-        </Link>
-
-        <div className="max-w-lg space-y-6">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-ink rounded-xl flex items-center justify-center">
-              <span className="text-cream font-black text-lg font-heading">B</span>
-            </div>
-            <span className="text-2xl font-black tracking-tight text-ink font-heading">Bizimi</span>
+    <AuthShell
+      title="Sign in to Bizimi"
+      description="Pick up where you left off."
+      topRight={
+        <>
+          New here?{" "}
+          <Link to="/signup" className="font-medium text-primary hover:underline">
+            Create an account
           </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleLogin} className="space-y-4">
+        {error && <FormMessage tone="error">{error}</FormMessage>}
 
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">Nigeria's freelance marketplace</p>
-
-          <h1 className="text-5xl xl:text-6xl font-black font-heading text-ink leading-[0.95] tracking-[-0.04em]">
-            Welcome{" "}
-            <span className="relative inline-block">
-              back.
-              <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden>
-                <path d="M0 8 Q 50 0, 100 6 T 200 6" stroke="hsl(var(--primary))" strokeWidth="5" fill="none" strokeLinecap="round" />
-              </svg>
-            </span>
-          </h1>
-
-          <p className="text-lg text-ink/60 font-medium leading-relaxed max-w-md">
-            The work hasn't stopped. Agencies have posted new briefs while you were away — let's get you to them.
-          </p>
+        <div className="space-y-1.5">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isLoading}
+          />
         </div>
 
-        <p className="text-sm font-bold text-ink/40">Lagos · Abuja · Port Harcourt</p>
-      </aside>
-
-      <main className="flex flex-col justify-center bg-white p-8 sm:p-12 lg:p-16">
-        <div className="w-full max-w-md mx-auto space-y-8">
-          <div className="flex items-center justify-between lg:hidden">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-ink rounded-xl flex items-center justify-center">
-                <span className="text-cream font-black text-lg font-heading">B</span>
-              </div>
-              <span className="text-xl font-black tracking-tight text-ink font-heading">Bizimi</span>
-            </Link>
-            <Link to="/" className="inline-flex items-center gap-1.5 text-sm font-bold text-ink/50 hover:text-ink">
-              <ArrowLeft className="h-4 w-4" /> Home
-            </Link>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <button type="button" onClick={() => setShowForgotModal(true)} className="text-sm font-medium text-primary hover:underline">
+              Forgot?
+            </button>
           </div>
-
-          <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-ink/40">Sign in</span>
-            <h2 className="text-4xl font-black font-heading text-ink tracking-[-0.03em]">Continue your work.</h2>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              className="pr-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={isLoading}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-[0.15em] text-ink/50">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                className="h-14 rounded-2xl border-2 border-ink/10 bg-white px-4 text-base shadow-none focus-visible:border-ink focus-visible:ring-0"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-bold uppercase tracking-[0.15em] text-ink/50">Password</Label>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotModal(true)}
-                  className="text-xs font-bold uppercase tracking-[0.15em] text-primary hover:text-primary-hover"
-                >
-                  Forgot?
-                </button>
-              </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="h-14 rounded-2xl border-2 border-ink/10 bg-white px-4 pr-12 text-base shadow-none focus-visible:border-ink focus-visible:ring-0"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 text-ink/40 hover:text-ink transition-colors flex items-center justify-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <Button type="submit" className="group w-full h-14 rounded-2xl bg-ink text-white hover:bg-aubergine text-base font-bold mt-2" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing you in…
-                </>
-              ) : (
-                <>
-                  Sign in
-                  <ArrowUpRight className="ml-1.5 h-4 w-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="pt-6 border-t border-ink/10">
-            <p className="text-sm font-medium text-ink/60">
-              New to Bizimi?{" "}
-              <Link to="/signup" className="text-primary font-bold hover:underline underline-offset-4">
-                Create an account
-              </Link>
-            </p>
-          </div>
-
-          <p className="text-xs font-medium text-ink/40">Encrypted in transit. Your credentials stay yours.</p>
         </div>
-      </main>
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="animate-spin" /> Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </Button>
+      </form>
 
       <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
-    </div>
+    </AuthShell>
   )
 }
