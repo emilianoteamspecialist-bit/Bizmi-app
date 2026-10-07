@@ -42,11 +42,20 @@ describe("GET /", () => {
     useService((op) => {
       if (op.table === "escrow_deposits") return { data: escrow("funded") }
       if (op.table === "jobs") return { data: { id: "job-1", title: "Site" } }
+      if (op.table === "profiles") return { data: [{ id: "agency-1", company_name: "Acme" }, { id: "free-1", full_name: "Jane" }] }
+      if (op.table === "disputes") return { data: null }
       return {}
     })
     const user = fakeSupabase(() => ({ data: submission("submitted") }))
     const res = await request(appWith({ id: "agency-1" }, user.client)).get("/?jobId=job-1")
-    expect(res.body).toMatchObject({ role: "agency", job: { title: "Site" }, escrow: { status: "funded" }, submission: { status: "submitted" } })
+    expect(res.body).toMatchObject({
+      role: "agency",
+      job: { title: "Site" },
+      escrow: { status: "funded" },
+      parties: { agency_name: "Acme", freelancer_name: "Jane" },
+      open_dispute_id: null,
+      submission: { status: "submitted" },
+    })
   })
 })
 

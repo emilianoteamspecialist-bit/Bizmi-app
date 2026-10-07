@@ -97,8 +97,19 @@ export type Submission = {
 
 export type Workspace = {
   role: "agency" | "freelancer"
-  job: { id: string; title: string; description: string | null } | null
-  escrow: { id: string; status: EscrowStatus; amount_kobo: number }
+  job: { id: string; title: string; description: string | null; duration?: string | null } | null
+  escrow: {
+    id: string
+    status: EscrowStatus
+    amount_kobo: number
+    funded_at?: string | null
+    released_at?: string | null
+    paid_out_at?: string | null
+    disputed_at?: string | null
+    refunded_at?: string | null
+  }
+  parties?: { agency_name: string | null; freelancer_name: string | null }
+  open_dispute_id?: string | null
   submission: Submission | null
 }
 

@@ -41,17 +41,28 @@ submissionsRouter.get(
       return
     }
 
-    const [{ data: submission, error: subError }, { data: job, error: jobError }] = await Promise.all([
+    const service = createServiceClient()
+    const [{ data: submission, error: subError }, { data: job, error: jobError }, { data: timeline }, { data: parties }, { data: dispute }] = await Promise.all([
       req.supabase!.from("project_submissions").select("*").eq("job_id", jobId).maybeSingle(),
-      createServiceClient().from("jobs").select("id, title, description").eq("id", jobId).maybeSingle(),
+      service.from("jobs").select("id, title, description, duration").eq("id", jobId).maybeSingle(),
+      service.from("escrow_deposits").select("funded_at, released_at, paid_out_at, disputed_at, refunded_at").eq("id", escrow.id).maybeSingle(),
+      service.from("profiles").select("id, full_name, company_name").in("id", [escrow.agency_id, escrow.freelancer_id].filter(Boolean)),
+      service.from("disputes").select("id").eq("job_id", jobId).neq("status", "resolved").maybeSingle(),
     ])
     if (subError) throw subError
     if (jobError) throw jobError
 
+    const nameOf = (id: string | null) => {
+      const p: any = (parties ?? []).find((x: any) => x.id === id)
+      return p?.company_name || p?.full_name || null
+    }
+
     res.json({
       role: escrow.agency_id === userId ? "agency" : "freelancer",
       job,
-      escrow: { id: escrow.id, status: escrow.status_v2, amount_kobo: escrow.amount_kobo },
+      escrow: { id: escrow.id, status: escrow.status_v2, amount_kobo: escrow.amount_kobo, ...(timeline ?? {}) },
+      parties: { agency_name: nameOf(escrow.agency_id), freelancer_name: nameOf(escrow.freelancer_id) },
+      open_dispute_id: dispute?.id ?? null,
       submission: submission ?? null,
     })
   })

@@ -57,6 +57,28 @@ beforeEach(() => {
 })
 
 describe("Workspace", () => {
+  it("shows the contract parties and the payment timeline", () => {
+    workspace.mockReturnValue({
+      isLoading: false,
+      data: {
+        role: "freelancer",
+        job: { id: "job-1", title: "Landing page", description: null, duration: "2 weeks" },
+        escrow: { id: "esc-1", status: "released", amount_kobo: 5_000_000, funded_at: "2026-01-02T00:00:00Z", released_at: "2026-01-09T00:00:00Z" },
+        parties: { agency_name: "Acme", freelancer_name: "Jane" },
+        open_dispute_id: null,
+        submission: { ...submitted, status: "approved" },
+      },
+    })
+    renderPage()
+    const details = screen.getByRole("complementary", { name: "Contract details" })
+    expect(details).toHaveTextContent("Acme")
+    expect(details).toHaveTextContent("2 weeks")
+    const timeline = screen.getByRole("list", { name: "Payment progress" })
+    expect(timeline).toHaveTextContent("Approved and released (done)")
+    expect(timeline).toHaveTextContent("Paid out to freelancer (not yet)")
+    expect(screen.getByRole("link", { name: /message client/i })).toHaveAttribute("href", "/freelancer/messages")
+  })
+
   it("explains access when the workspace can't be loaded", () => {
     workspace.mockReturnValue({ isLoading: false, isError: true })
     renderPage()
