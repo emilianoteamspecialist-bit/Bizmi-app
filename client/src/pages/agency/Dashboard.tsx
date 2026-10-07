@@ -1,36 +1,27 @@
 import { useEffect, useState } from "react"
-import { Navigate, useSearchParams } from "react-router-dom"
+import { Link, Navigate, useSearchParams } from "react-router-dom"
+import { Edit, FileText, MessageSquare, MoreHorizontal, Pause, Play, Plus, ShieldAlert, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Reveal } from "@/components/shared/reveal"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Calendar, Clock, Edit, FileText, MapPin, MoreHorizontal, Pause, Play, Plus, Users, X } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useAgencyJobsQuery, useUpdateJobStatusMutation, type AgencyJob } from "@/lib/queries/jobs"
+import { formatKobo, useMyEscrowsQuery } from "@/lib/queries/escrow"
+import { useShellQuery } from "@/lib/queries/shell"
+import { formatBudgetRange, formatTimeAgo } from "@/lib/format"
+import EscrowStatusBadge from "@/components/shared/EscrowStatusBadge"
+import { EmptyState, ErrorState, PageContainer, Panel, SkeletonBlock } from "@/components/marketplace/primitives"
 import PostJobModal from "./PostJobModal"
 import ProposalsModal from "./ProposalsModal"
 
-function statusColor(status: string) {
-  switch (status) {
-    case "active":
-      return "bg-success/10 text-success border-success/30"
-    case "paused":
-      return "bg-warning/10 text-warning border-warning/30"
-    default:
-      return "bg-muted text-muted-foreground border-border"
-  }
+const JOB_STATUS: Record<string, { label: string; className: string }> = {
+  active: { label: "Open", className: "bg-success/10 text-success" },
+  paused: { label: "Paused", className: "bg-warning/10 text-warning" },
+  closed: { label: "Closed", className: "bg-surface-2 text-muted-foreground" },
 }
 
-function statusIcon(status: string) {
-  switch (status) {
-    case "active":
-      return <Play className="h-3 w-3" />
-    case "paused":
-      return <Pause className="h-3 w-3" />
-    case "closed":
-      return <X className="h-3 w-3" />
-    default:
-      return null
-  }
+function greeting() {
+  const hour = new Date().getHours()
+  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
 }
 
 export default function AgencyDashboard() {
@@ -40,10 +31,13 @@ export default function AgencyDashboard() {
   const [viewingProposalsJob, setViewingProposalsJob] = useState<AgencyJob | null>(null)
 
   const agencyJobsQuery = useAgencyJobsQuery()
+  const updateJobStatus = useUpdateJobStatusMutation()
+  const escrowsQuery = useMyEscrowsQuery()
+  const shell = useShellQuery("agency")
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // The sidebar's "Post a job" button links to ?post=true (as in the Next.js
-  // app): open the composer, then drop the param so a refresh doesn't reopen it.
+  // The header's "Post a Job" links to ?post=true: open the composer, then
+  // drop the param so a refresh doesn't reopen it.
   useEffect(() => {
     if (searchParams.get("post") === "true") {
       setEditingJob(null)
@@ -51,31 +45,26 @@ export default function AgencyDashboard() {
       setSearchParams({}, { replace: true })
     }
   }, [searchParams, setSearchParams])
-  const updateJobStatus = useUpdateJobStatusMutation()
 
   if (agencyJobsQuery.isLoading) {
     return (
-      <div data-testid="agency-dashboard-skeleton" className="min-h-screen bg-surface pb-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-pulse">
-          <div className="h-7 w-56 bg-foreground/5 rounded" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-card border border-border rounded-xl" />
-            ))}
+      <PageContainer>
+        <div data-testid="agency-dashboard-skeleton" className="space-y-6" aria-label="Loading your dashboard">
+          <SkeletonBlock className="h-8 w-72" />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <SkeletonBlock className="h-80" />
+            <SkeletonBlock className="h-64" />
           </div>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   if (agencyJobsQuery.isError && !agencyJobsQuery.data) {
     return (
-      <div className="min-h-screen bg-surface pb-20 flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <p className="text-sm font-semibold text-foreground">Couldn't load your hiring desk</p>
-          <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
-        </div>
-      </div>
+      <PageContainer>
+        <ErrorState title="Couldn't load your hiring desk" description="Please try refreshing the page." />
+      </PageContainer>
     )
   }
 
@@ -84,12 +73,23 @@ export default function AgencyDashboard() {
   }
 
   const jobs: AgencyJob[] = agencyJobsQuery.data?.jobs ?? []
-  const agencyName = profile?.company_name || profile?.full_name || "Your"
+  const agencyName = profile?.company_name || profile?.full_name || ""
+  const openJobs = jobs.filter((j) => j.status === "active")
+  const newProposals = openJobs.reduce((sum, j) => sum + (Number(j.proposals) || 0), 0)
+  const escrows = (escrowsQuery.data?.escrows ?? []).filter((e) => e.role === "agency")
+  const contracts = escrows.filter((e) => e.status_v2 === "funded" || e.status_v2 === "disputed")
+  const inEscrow = contracts.reduce((t, e) => t + Number(e.amount_kobo || 0), 0)
+  const unread = shell.data?.recentUnread ?? []
 
-  const activeJobs = jobs.filter((j) => j.status === "active").length
-  const pausedJobs = jobs.filter((j) => j.status === "paused").length
-  const closedJobs = jobs.filter((j) => j.status === "closed").length
-  const totalProposals = jobs.reduce((sum, j) => sum + j.proposals, 0)
+  // Pending actions: work waiting for review, checkouts left unpaid, open disputes.
+  const actions: { key: string; text: string; to: string; cta: string }[] = []
+  for (const e of contracts.filter((c) => c.submission_status === "submitted").slice(0, 3)) {
+    actions.push({ key: `review-${e.id}`, text: `${e.freelancer_name ?? "Your freelancer"} submitted work for ${e.job_title ?? "a job"}.`, to: `/workspace/${e.job_id}`, cta: "Review work" })
+  }
+  const unpaid = escrows.filter((e) => e.status_v2 === "awaiting")
+  if (unpaid.length) actions.push({ key: "unpaid", text: `${unpaid.length === 1 ? "A job is" : `${unpaid.length} jobs are`} waiting for you to finish paying into escrow.`, to: "/agency/wallet", cta: "Complete payment" })
+  const disputes = escrows.filter((e) => e.open_dispute_id)
+  if (disputes[0]) actions.push({ key: "dispute", text: `There's an open dispute on ${disputes[0].job_title ?? "a job"}.`, to: `/disputes/${disputes[0].open_dispute_id}`, cta: "View dispute" })
 
   const openPostJobModal = () => {
     setEditingJob(null)
@@ -98,154 +98,179 @@ export default function AgencyDashboard() {
 
   const handlePauseResume = (job: AgencyJob) => {
     const newStatus = job.status === "paused" ? "active" : "paused"
-    updateJobStatus.mutate(
-      { jobId: job.id, status: newStatus },
-      { onError: () => alert("Error updating job. Please try again.") }
-    )
+    updateJobStatus.mutate({ jobId: job.id, status: newStatus }, { onError: () => alert("Error updating job. Please try again.") })
   }
 
   const handleClose = (job: AgencyJob) => {
     if (!confirm("Close this job permanently? This action cannot be undone.")) return
-    updateJobStatus.mutate(
-      { jobId: job.id, status: "closed" },
-      { onError: () => alert("Error updating job. Please try again.") }
-    )
+    updateJobStatus.mutate({ jobId: job.id, status: "closed" }, { onError: () => alert("Error updating job. Please try again.") })
   }
 
   return (
-    <div className="min-h-screen bg-surface pb-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div className="space-y-1 min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hiring desk</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground truncate">
-              {agencyName === "Your" ? "Your hiring desk" : agencyName}
-            </h1>
-            <p className="text-sm text-muted-foreground">Compose briefs, weigh proposals, hire decisively.</p>
-          </div>
-          <Button onClick={openPostJobModal} className="h-10 px-4 rounded-lg gap-2 shrink-0 w-full sm:w-auto justify-center">
-            <Plus className="h-4 w-4" /> Post a job
-          </Button>
-        </header>
+    <PageContainer>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            {greeting()}
+            {agencyName ? `, ${agencyName}` : ""}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {openJobs.length} open {openJobs.length === 1 ? "job" : "jobs"} · {newProposals} {newProposals === 1 ? "proposal" : "proposals"} to review · {contracts.length} active{" "}
+            {contracts.length === 1 ? "contract" : "contracts"}
+          </p>
+        </div>
+        <Button onClick={openPostJobModal} className="shrink-0">
+          <Plus /> Post a job
+        </Button>
+      </div>
 
-        <Reveal>
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "Active", value: activeJobs, icon: Play, tone: "text-success", accent: false },
-              { label: "Paused", value: pausedJobs, icon: Pause, tone: "text-warning", accent: false },
-              { label: "Closed", value: closedJobs, icon: X, tone: "text-muted-foreground", accent: false },
-              { label: "Proposals", value: totalProposals, icon: Users, tone: "text-primary", accent: true },
-            ].map((stat) => (
-              <div key={stat.label} className={`rounded-xl border bg-card p-4 ${stat.accent ? "border-primary/30" : "border-border"}`}>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-                  <stat.icon className={`h-3.5 w-3.5 ${stat.tone}`} />
-                </div>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">{stat.value}</p>
-              </div>
-            ))}
-          </section>
-        </Reveal>
+      {actions.length > 0 && (
+        <section aria-label="Action items" className="mt-5 divide-y divide-border rounded-lg border border-border bg-card">
+          {actions.map((a) => (
+            <div key={a.key} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-start gap-2 text-sm text-foreground">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+                {a.text}
+              </p>
+              <Button asChild size="sm" variant="outline" className="shrink-0">
+                <Link to={a.to}>{a.cta}</Link>
+              </Button>
+            </div>
+          ))}
+        </section>
+      )}
 
-        <Reveal delay={0.08}>
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">
-              Your jobs <span className="font-normal text-muted-foreground">· {jobs.length}</span>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section aria-labelledby="your-jobs" className="min-w-0 space-y-3">
+          <div className="flex items-baseline justify-between">
+            <h2 id="your-jobs" className="text-base font-semibold text-foreground">
+              Your jobs <span className="font-normal text-muted-foreground">({jobs.length})</span>
             </h2>
+            <Link to="/agency/posts" className="text-sm font-medium text-primary hover:underline">
+              All posts
+            </Link>
+          </div>
 
-            {jobs.length === 0 ? (
-              <div className="rounded-xl border border-border bg-card py-16 px-6 text-center">
-                <div className="mx-auto h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <h3 className="mt-4 text-sm font-semibold text-foreground">No jobs yet</h3>
-                <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-                  Post your first opportunity and we'll bring qualified freelancers to your door.
-                </p>
-                <Button className="mt-5 gap-2" onClick={openPostJobModal}>
-                  <Plus className="h-4 w-4" /> Post a job
+          {jobs.length === 0 ? (
+            <EmptyState
+              icon={<FileText className="h-5 w-5" />}
+              title="No jobs yet"
+              description="Post your first brief and freelancers can start sending proposals."
+              action={
+                <Button size="sm" onClick={openPostJobModal}>
+                  <Plus /> Post a job
                 </Button>
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
-                {jobs.map((job) => (
-                  <div key={job.id} className="p-4 sm:p-5 transition-colors hover:bg-surface/60">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <div className="flex items-center gap-2.5">
-                          <h3 className="text-sm font-semibold text-foreground truncate">{job.title}</h3>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusColor(job.status)}`}>
-                            {statusIcon(job.status)}
-                            {job.status}
-                          </span>
-                        </div>
-                        {job.description && <p className="text-sm text-muted-foreground line-clamp-1 max-w-2xl">{job.description}</p>}
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground tabular-nums">
-                            ₦{job.budget_min?.toLocaleString() ?? "—"} – ₦{job.budget_max?.toLocaleString() ?? "—"}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {job.duration || "Flexible"}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {job.location || "Remote"}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(job.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" })}
-                          </span>
-                          <span className="font-medium text-primary">
-                            {job.proposals} {job.proposals === 1 ? "proposal" : "proposals"}
-                          </span>
-                        </div>
+              }
+            />
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+              {jobs.map((job) => {
+                const st = JOB_STATUS[job.status] ?? JOB_STATUS.closed
+                return (
+                  <li key={job.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-sm font-semibold text-foreground">{job.title}</h3>
+                        <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${st.className}`}>{st.label}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Button variant="outline" size="sm" onClick={() => setViewingProposalsJob(job)}>
-                          Review bids
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingJob(job)
-                                setShowPostJobModal(true)
-                              }}
-                            >
-                              <Edit className="mr-2 h-4 w-4 text-muted-foreground" /> Edit brief
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePauseResume(job)}>
-                              <Pause className="mr-2 h-4 w-4 text-muted-foreground" /> {job.status === "paused" ? "Resume hiring" : "Pause hiring"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleClose(job)}>
-                              <X className="mr-2 h-4 w-4" /> Close listing
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium tabular-nums text-foreground">{formatBudgetRange(job.budget_min, job.budget_max)}</span>
+                        {job.duration ? ` · ${job.duration}` : ""} · {job.location || "Remote"} · posted {formatTimeAgo(job.created_at)}
+                      </p>
+                      <p className="text-xs font-medium text-primary">
+                        {job.proposals} {job.proposals === 1 ? "proposal" : "proposals"}
+                      </p>
                     </div>
-                    {!!job.skills?.length && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {job.skills.slice(0, 6).map((sk) => (
-                          <span key={sk} className="px-2 py-0.5 rounded-md bg-surface-2 text-muted-foreground text-[11px]">
-                            {sk}
-                          </span>
-                        ))}
-                        {job.skills.length > 6 && <span className="px-2 py-0.5 text-[11px] text-muted-foreground">+{job.skills.length - 6}</span>}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => setViewingProposalsJob(job)}>
+                        Review bids
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`More actions for ${job.title}`}>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditingJob(job)
+                              setShowPostJobModal(true)
+                            }}
+                          >
+                            <Edit className="mr-2 h-4 w-4 text-muted-foreground" /> Edit brief
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handlePauseResume(job)}>
+                            {job.status === "paused" ? <Play className="mr-2 h-4 w-4 text-muted-foreground" /> : <Pause className="mr-2 h-4 w-4 text-muted-foreground" />}
+                            {job.status === "paused" ? "Resume hiring" : "Pause hiring"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleClose(job)}>
+                            <X className="mr-2 h-4 w-4" /> Close listing
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <aside className="space-y-5" aria-label="Contracts and messages">
+          <Panel title="Active contracts" action={<Link to="/agency/wallet" className="text-sm font-medium text-primary hover:underline">Payments</Link>} bodyClassName="p-0">
+            {contracts.length === 0 ? (
+              <p className="px-4 py-4 text-sm text-muted-foreground">Fund an accepted proposal to start a contract.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {contracts.slice(0, 5).map((c) => (
+                  <li key={c.id}>
+                    <Link to={`/workspace/${c.job_id}`} className="block px-4 py-2.5 hover:bg-surface-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-medium text-foreground">{c.job_title ?? "Job"}</p>
+                        <EscrowStatusBadge status={c.status_v2} />
                       </div>
-                    )}
-                  </div>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {c.freelancer_name ?? "Freelancer"} · <span className="tabular-nums">{formatKobo(c.amount_kobo)}</span>
+                      </p>
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
-          </section>
-        </Reveal>
+            {contracts.length > 0 && (
+              <p className="border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+                <span className="font-medium tabular-nums text-foreground">{formatKobo(inEscrow)}</span> held in escrow
+              </p>
+            )}
+          </Panel>
+
+          <Panel title="Unread messages" action={<Link to="/agency/messages" className="text-sm font-medium text-primary hover:underline">Open</Link>} bodyClassName="p-0">
+            {unread.length === 0 ? (
+              <p className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
+                <MessageSquare className="h-4 w-4" aria-hidden /> You're all caught up.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {unread.slice(0, 4).map((m) => (
+                  <li key={m.id}>
+                    <Link to={`/agency/messages?conversationId=${m.conversation_id}`} className="block px-4 py-2.5 hover:bg-surface-2">
+                      <p className="truncate text-sm font-medium text-foreground">{m.sender_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{m.message_text}</p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          <Panel title="Find the right freelancer">
+            <p className="text-sm text-muted-foreground">Browse identity-verified freelancers by skill while you wait for proposals.</p>
+            <Button asChild variant="outline" size="sm" className="mt-3 w-full">
+              <Link to="/agency/find-freelancers">Find talent</Link>
+            </Button>
+          </Panel>
+        </aside>
       </div>
 
       <PostJobModal
@@ -263,6 +288,6 @@ export default function AgencyDashboard() {
       />
 
       <ProposalsModal job={viewingProposalsJob} isOpen={!!viewingProposalsJob} onClose={() => setViewingProposalsJob(null)} />
-    </div>
+    </PageContainer>
   )
 }
