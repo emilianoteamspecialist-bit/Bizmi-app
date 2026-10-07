@@ -10,6 +10,8 @@ vi.mock("../../contexts/AuthContext", () => ({ useAuth: () => useAuthMock() }))
 const useFreelancerLogosQueryMock = vi.fn()
 const updateProfileMutate = vi.fn()
 const uploadAvatarMutate = vi.fn()
+const verificationMock = vi.fn()
+vi.mock("@/lib/queries/verification", () => ({ useVerificationQuery: () => verificationMock() }))
 vi.mock("../../lib/queries/user", () => ({
   useFreelancerLogosQuery: (...args: unknown[]) => useFreelancerLogosQueryMock(...args),
   useUpdateProfileMutation: () => ({ mutate: updateProfileMutate, isPending: false }),
@@ -40,9 +42,19 @@ beforeEach(() => {
     refreshProfile: vi.fn(),
   })
   useFreelancerLogosQueryMock.mockReturnValue({ data: { logos: {} } })
+  verificationMock.mockReturnValue({ data: null })
 })
 
 describe("FreelancerProfile", () => {
+  it("shows identity verification and a profile-strength checklist with what's left to do", () => {
+    verificationMock.mockReturnValue({ data: { status: "verified" } })
+    renderProfile()
+    expect(screen.getByText("Identity verified")).toBeInTheDocument()
+    const strength = screen.getByRole("complementary", { name: "Profile strength" })
+    expect(strength).toHaveTextContent("Verify your identity")
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow")
+  })
+
   it("redirects home when the signed-in user's account_type isn't freelancer", async () => {
     useAuthMock.mockReturnValue({
       user: { id: "agency-1" },
@@ -56,7 +68,7 @@ describe("FreelancerProfile", () => {
   it("renders the current profile read-only, then reveals form fields in edit mode", async () => {
     renderProfile()
     expect(screen.getByText("Jane Doe")).toBeInTheDocument()
-    expect(screen.getByDisplayValue("A bio")).toBeInTheDocument()
+    expect(screen.getByText("A bio")).toBeInTheDocument()
     expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole("button", { name: /edit profile/i }))
