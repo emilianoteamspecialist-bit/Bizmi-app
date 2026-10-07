@@ -1,3 +1,8 @@
+-- Fix get_jobs_with_details total_count: it was computed with a FROM-less
+-- scalar subquery, (SELECT count(*) OVER()), which is always 1, so the
+-- marketplace showed "1 project found" and stopped paging after 20 jobs.
+-- Same function as scripts/get_jobs_with_details.sql. Apply in Supabase Studio.
+
 CREATE OR REPLACE FUNCTION get_jobs_with_details(
     p_user_id UUID,
     p_search_query TEXT DEFAULT '',
