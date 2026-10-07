@@ -48,8 +48,7 @@ export default function FreelancerContactPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header */}
         <header className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Support</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Contact &amp; support</h1>
+          <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Contact &amp; support</h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
             Need help or have questions? Reach us through any of the channels below — we&apos;re happy to assist.
           </p>

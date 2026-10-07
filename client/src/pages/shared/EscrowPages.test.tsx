@@ -64,7 +64,7 @@ describe("DisputeRoom", () => {
       data: { dispute, messages: [{ id: "m1", dispute_id: "d-1", sender_id: "agency-1", message: "We were travelling", created_at: "2026-01-06T10:00:00Z", sender: { full_name: "Acme" } }] },
     })
     renderRoom()
-    expect(screen.getByRole("heading", { name: "Landing page" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Dispute: Landing page" })).toBeInTheDocument()
     expect(screen.getByText(/client abandoned the job/i)).toBeInTheDocument()
     expect(screen.getByText("We were travelling")).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText("Message"), { target: { value: "Please respond" } })

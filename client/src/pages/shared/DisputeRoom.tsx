@@ -71,8 +71,7 @@ export default function DisputeRoom() {
         <header className="rounded-xl border border-border bg-card p-5 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dispute room</p>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">{dispute.job?.title ?? "Job"}</h1>
+              <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">Dispute: {dispute.job?.title ?? "Job"}</h1>
               <p className="text-sm text-muted-foreground">
                 {DISPUTE_TYPE_LABELS[dispute.dispute_type] ?? dispute.dispute_type} · ₦{Number(dispute.amount_disputed).toLocaleString()} frozen in escrow
               </p>

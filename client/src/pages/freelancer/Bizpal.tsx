@@ -95,8 +95,7 @@ export default function Bizpal() {
       <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Wallet</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Bizpal</h1>
+            <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Bizpal</h1>
             <p className="text-sm text-muted-foreground">Manage your payments and credits.</p>
           </div>
           <Button
