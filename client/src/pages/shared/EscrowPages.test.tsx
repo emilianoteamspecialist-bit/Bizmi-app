@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, within } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 
 const disputeQuery = vi.fn()
@@ -65,17 +65,33 @@ describe("DisputeRoom", () => {
     })
     renderRoom()
     expect(screen.getByRole("heading", { name: "Dispute: Landing page" })).toBeInTheDocument()
-    expect(screen.getByText(/client abandoned the job/i)).toBeInTheDocument()
+    const details = screen.getByRole("complementary", { name: "Dispute details" })
+    expect(within(details).getByText(/client abandoned the job/i)).toBeInTheDocument()
+    expect(within(details).getByText("₦50,000")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Conversation with Acme" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Workspace" })).toHaveAttribute("href", "/workspace/job-1")
+    expect(within(screen.getByRole("list", { name: "Dispute progress" })).getByText(/talk it through here/i)).toHaveTextContent("(current step)")
     expect(screen.getByText("We were travelling")).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText("Message"), { target: { value: "Please respond" } })
     fireEvent.click(screen.getByRole("button", { name: "Send" }))
     expect(postMessage).toHaveBeenCalledWith("Please respond", expect.anything())
   })
 
+  it("sends on Enter but not on Shift+Enter", () => {
+    disputeQuery.mockReturnValue({ isLoading: false, data: { dispute, messages: [] } })
+    renderRoom()
+    const box = screen.getByLabelText("Message")
+    fireEvent.change(box, { target: { value: "Line one" } })
+    fireEvent.keyDown(box, { key: "Enter", shiftKey: true })
+    expect(postMessage).not.toHaveBeenCalled()
+    fireEvent.keyDown(box, { key: "Enter" })
+    expect(postMessage).toHaveBeenCalledWith("Line one", expect.anything())
+  })
+
   it("shows the outcome and hides the composer once resolved", () => {
     disputeQuery.mockReturnValue({ isLoading: false, data: { dispute: { ...dispute, status: "resolved", resolution_outcome: "refund" }, messages: [] } })
     renderRoom()
-    expect(screen.getByText(/payment refunded to the agency/i)).toBeInTheDocument()
+    expect(screen.getByRole("status")).toHaveTextContent(/payment refunded to the agency/i)
     expect(screen.queryByLabelText("Message")).not.toBeInTheDocument()
   })
 })
