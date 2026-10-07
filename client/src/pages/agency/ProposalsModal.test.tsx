@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen, waitFor, fireEvent } from "@testing-library/react"
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 const useJobProposalsQueryMock = vi.fn()
@@ -74,6 +74,41 @@ const acceptedProposal = {
 }
 
 describe("ProposalsModal", () => {
+  it("shows each bidder's real trust signals", async () => {
+    useJobProposalsQueryMock.mockReturnValue({
+      isLoading: false,
+      isError: false,
+      data: {
+        proposals: [
+          { ...acceptedProposal, status: "pending", identity_verified: true, jobs_completed: 3 },
+          { ...acceptedProposal, id: "prop-2", freelancer_id: "freelancer-2", status: "pending", identity_verified: false, jobs_completed: 0, profiles: { ...acceptedProposal.profiles, id: "freelancer-2", full_name: "John Smith" } },
+        ],
+      },
+    })
+    renderModal()
+
+    const [jane, john] = await screen.findAllByRole("listitem")
+    expect(within(jane).getByText("Identity verified")).toBeInTheDocument()
+    expect(within(jane).getByText("3 jobs completed")).toBeInTheDocument()
+    expect(within(jane).getByText("₦5,000")).toBeInTheDocument()
+    expect(within(john).getByText("Identity not yet verified")).toBeInTheDocument()
+    expect(within(john).getByText("No completed jobs yet")).toBeInTheDocument()
+  })
+
+  it("confirms a hire inline instead of a browser alert", async () => {
+    const mutate = vi.fn((_vars: unknown, opts: any) => opts.onSuccess({ success: true }))
+    useRespondToProposalMutationMock.mockReturnValue({ mutate, isPending: false })
+    useJobProposalsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { proposals: [{ ...acceptedProposal, status: "pending" }] } })
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {})
+
+    renderModal()
+    fireEvent.click(await screen.findByRole("button", { name: /hire jane/i }))
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/freelancer hired/i)
+    expect(alertSpy).not.toHaveBeenCalled()
+    alertSpy.mockRestore()
+  })
+
   it("funds an accepted proposal by sending the agency to Paystack checkout", async () => {
     useJobProposalsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { proposals: [acceptedProposal] } })
     const assign = vi.fn()
@@ -101,10 +136,10 @@ describe("ProposalsModal", () => {
   it("shows an empty state when there are no proposals", async () => {
     useJobProposalsQueryMock.mockReturnValue({ isLoading: false, isError: false, data: { proposals: [] } })
     renderModal()
-    await waitFor(() => expect(screen.getByText("No Proposals Yet")).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText("No bids yet")).toBeInTheDocument())
   })
 
-  it("renders a pending proposal with Accept/Reject buttons", async () => {
+  it("renders a pending bid with Hire/Decline buttons", async () => {
     useJobProposalsQueryMock.mockReturnValue({
       isLoading: false,
       isError: false,
@@ -130,11 +165,11 @@ describe("ProposalsModal", () => {
     renderModal()
 
     await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument())
-    expect(screen.getByRole("button", { name: /accept/i })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /reject/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /hire jane/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /decline/i })).toBeInTheDocument()
   })
 
-  it("calls the respond mutation with accept when Accept is clicked", async () => {
+  it("calls the respond mutation with accept when Hire is clicked", async () => {
     const mutate = vi.fn()
     useRespondToProposalMutationMock.mockReturnValue({ mutate, isPending: false })
     useJobProposalsQueryMock.mockReturnValue({
@@ -160,7 +195,7 @@ describe("ProposalsModal", () => {
     })
 
     renderModal()
-    const acceptButton = await screen.findByRole("button", { name: /accept/i })
+    const acceptButton = await screen.findByRole("button", { name: /hire jane/i })
     acceptButton.click()
 
     expect(mutate).toHaveBeenCalledWith(

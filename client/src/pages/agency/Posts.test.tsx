@@ -105,12 +105,25 @@ describe("AgencyPosts", () => {
     expect(screen.getByText("No matching job posts")).toBeInTheDocument()
   })
 
-  it("shows the empty state with a Post a job button linking to the dashboard", () => {
+  it("shows the empty state with a Post a job link that opens the dashboard composer", () => {
     useAgencyJobsQueryMock.mockReturnValue({ isLoading: false, data: { jobs: [] } })
     renderPage()
     expect(screen.getByText("No job posts yet")).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: /post a job/i }))
+    const links = screen.getAllByRole("link", { name: /post a job/i })
+    expect(links[0]).toHaveAttribute("href", "/agency/dashboard?post=true")
+    fireEvent.click(links[0])
     expect(screen.getByText("Agency dashboard")).toBeInTheDocument()
+  })
+
+  it("filters jobs by status with per-status counts", () => {
+    useAgencyJobsQueryMock.mockReturnValue({
+      isLoading: false,
+      data: { jobs: [makeJob({}), makeJob({ id: "job-2", title: "Logo design", status: "closed" })] },
+    })
+    renderPage()
+    fireEvent.click(screen.getByRole("tab", { name: /closed 1/i }))
+    expect(screen.getByText("Logo design")).toBeInTheDocument()
+    expect(screen.queryByText("Build a landing page")).not.toBeInTheDocument()
   })
 
   it("opens the proposals modal for the clicked job", () => {

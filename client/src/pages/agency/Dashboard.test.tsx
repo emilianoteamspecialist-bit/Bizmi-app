@@ -74,7 +74,7 @@ describe("AgencyDashboard", () => {
         </MemoryRouter>
       </QueryClientProvider>
     )
-    expect(await screen.findByRole("heading", { name: "Post a Job" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Post a job" })).toBeInTheDocument()
   })
 
   it("shows a loading state while the agency jobs query is pending", () => {

@@ -29,6 +29,7 @@ export default function AgencyDashboard() {
   const [showPostJobModal, setShowPostJobModal] = useState(false)
   const [editingJob, setEditingJob] = useState<AgencyJob | null>(null)
   const [viewingProposalsJob, setViewingProposalsJob] = useState<AgencyJob | null>(null)
+  const [notice, setNotice] = useState<{ tone: "success" | "error"; text: string } | null>(null)
 
   const agencyJobsQuery = useAgencyJobsQuery()
   const updateJobStatus = useUpdateJobStatusMutation()
@@ -98,12 +99,12 @@ export default function AgencyDashboard() {
 
   const handlePauseResume = (job: AgencyJob) => {
     const newStatus = job.status === "paused" ? "active" : "paused"
-    updateJobStatus.mutate({ jobId: job.id, status: newStatus }, { onError: () => alert("Error updating job. Please try again.") })
+    updateJobStatus.mutate({ jobId: job.id, status: newStatus }, { onError: () => setNotice({ tone: "error", text: "Couldn't update the job. Please try again." }) })
   }
 
   const handleClose = (job: AgencyJob) => {
     if (!confirm("Close this job permanently? This action cannot be undone.")) return
-    updateJobStatus.mutate({ jobId: job.id, status: "closed" }, { onError: () => alert("Error updating job. Please try again.") })
+    updateJobStatus.mutate({ jobId: job.id, status: "closed" }, { onError: () => setNotice({ tone: "error", text: "Couldn't close the job. Please try again." }) })
   }
 
   return (
@@ -123,6 +124,18 @@ export default function AgencyDashboard() {
           <Plus /> Post a job
         </Button>
       </div>
+
+      {notice && (
+        <div
+          role={notice.tone === "error" ? "alert" : "status"}
+          className={`mt-5 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm ${notice.tone === "error" ? "border-destructive/30 bg-destructive/5 text-destructive" : "border-success/30 bg-success/5 text-success"}`}
+        >
+          <span>{notice.text}</span>
+          <button onClick={() => setNotice(null)} aria-label="Dismiss" className="text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {actions.length > 0 && (
         <section aria-label="Action items" className="mt-5 divide-y divide-border rounded-lg border border-border bg-card">
@@ -283,7 +296,7 @@ export default function AgencyDashboard() {
         onSuccess={() => {
           setShowPostJobModal(false)
           setEditingJob(null)
-          alert(editingJob ? "Job updated successfully!" : "Job posted successfully!")
+          setNotice({ tone: "success", text: editingJob ? "Job updated." : "Job posted. Bids will show up here as freelancers apply." })
         }}
       />
 
