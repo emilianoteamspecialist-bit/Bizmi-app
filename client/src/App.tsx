@@ -59,7 +59,7 @@ export default function App() {
             {/* Legacy recovery-email target; kept so already-sent reset links still land here. */}
             <Route path="/freelancer/reset-password" element={<ResetPassword />} />
             <Route path="/contact" element={<Contact />} />
-            {/* /agency/* and /freelancer/*: shared portal shell (sidebar + top bar), auth-guarded once. */}
+            {/* /agency/*, /freelancer/* and the shared contract pages: marketplace header, auth-guarded once. */}
             <Route element={<PortalLayout />}>
               <Route path="/freelancer/dashboard" element={<Dashboard />} />
               <Route path="/freelancer/marketplace" element={<Marketplace />} />
@@ -84,6 +84,9 @@ export default function App() {
               <Route path="/agency/wallet" element={<AgencyWallet />} />
               <Route path="/agency/escrow/return" element={<EscrowReturn />} />
               <Route path="/agency/contact" element={<SupportContact />} />
+              {/* Shared by both parties to a contract; the header follows the account type. */}
+              <Route path="/workspace/:jobId" element={<Workspace />} />
+              <Route path="/disputes/:id" element={<DisputeRoom />} />
             </Route>
             <Route
               path="/influencer/dashboard"
@@ -155,22 +158,6 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AdminInfluencers />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/workspace/:jobId"
-              element={
-                <RequireAuth>
-                  <Workspace />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/disputes/:id"
-              element={
-                <RequireAuth>
-                  <DisputeRoom />
                 </RequireAuth>
               }
             />
